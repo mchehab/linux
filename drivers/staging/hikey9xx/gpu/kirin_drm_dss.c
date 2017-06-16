@@ -213,6 +213,7 @@ static void dss_disable_vblank(struct drm_device *dev, unsigned int pipe)
 static irqreturn_t dss_irq_handler(int irq, void *data)
 {
 	struct dss_crtc *acrtc = data;
+	struct drm_crtc *crtc = &acrtc->base;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 	void __iomem *dss_base = ctx->base;
 
@@ -241,8 +242,10 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 		wake_up_interruptible_all(&ctx->vactive0_start_wq);
 	}
 
-	if (isr_s2 & BIT_VSYNC)
+	if (isr_s2 & BIT_VSYNC) {
 		ctx->vsync_timestamp = ktime_get();
+		drm_crtc_handle_vblank(crtc);
+	}
 
 	if (isr_s2 & BIT_LDI_UNFLOW) {
 		mask = inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
@@ -271,6 +274,7 @@ static void dss_crtc_enable(struct drm_crtc *crtc)
 	}
 
 	acrtc->enable = true;
+	drm_crtc_vblank_on(crtc);
 }
 
 static void dss_crtc_disable(struct drm_crtc *crtc)
@@ -282,13 +286,7 @@ static void dss_crtc_disable(struct drm_crtc *crtc)
 
 	/*dss_power_down(acrtc);*/
 	acrtc->enable = false;
-}
-
-static int dss_crtc_atomic_check(struct drm_crtc *crtc,
-				 struct drm_crtc_state *state)
-{
-	/* do nothing */
-	return 0;
+	drm_crtc_vblank_off(crtc);
 }
 
 static void dss_crtc_mode_set_nofb(struct drm_crtc *crtc)
@@ -315,13 +313,24 @@ static void dss_crtc_atomic_flush(struct drm_crtc *crtc,
 				  struct drm_crtc_state *old_state)
 
 {
+	struct drm_pending_vblank_event *event = crtc->state->event;
+
+	if (event) {
+		crtc->state->event = NULL;
+
+		spin_lock_irq(&crtc->dev->event_lock);
+		if (drm_crtc_vblank_get(crtc) == 0)
+			drm_crtc_arm_vblank_event(crtc, event);
+		else
+			drm_crtc_send_vblank_event(crtc, event);
+		spin_unlock_irq(&crtc->dev->event_lock);
+	}
 
 }
 
 static const struct drm_crtc_helper_funcs dss_crtc_helper_funcs = {
 	.enable		= dss_crtc_enable,
 	.disable	= dss_crtc_disable,
-	.atomic_check	= dss_crtc_atomic_check,
 	.mode_set_nofb	= dss_crtc_mode_set_nofb,
 	.atomic_begin	= dss_crtc_atomic_begin,
 	.atomic_flush	= dss_crtc_atomic_flush,
@@ -357,7 +366,7 @@ static int dss_crtc_init(struct drm_device *dev, struct drm_crtc *crtc,
 	crtc->port = port;
 
 	ret = drm_crtc_init_with_planes(dev, crtc, plane, NULL,
-					&dss_crtc_funcs);
+					&dss_crtc_funcs, NULL);
 	if (ret) {
 		DRM_ERROR("failed to init crtc.\n");
 		return ret;
@@ -367,19 +376,6 @@ static int dss_crtc_init(struct drm_device *dev, struct drm_crtc *crtc,
 	priv->crtc[drm_crtc_index(crtc)] = crtc;
 
 	return 0;
-}
-
-static int dss_plane_prepare_fb(struct drm_plane *plane,
-				const struct drm_plane_state *new_state)
-{
-	/* do nothing */
-	return 0;
-}
-
-static void dss_plane_cleanup_fb(struct drm_plane *plane,
-				 const struct drm_plane_state *old_state)
-{
-	/* do nothing */
 }
 
 static int dss_plane_atomic_check(struct drm_plane *plane,
@@ -441,8 +437,6 @@ static void dss_plane_atomic_disable(struct drm_plane *plane,
 }
 
 static const struct drm_plane_helper_funcs dss_plane_helper_funcs = {
-	.prepare_fb = dss_plane_prepare_fb,
-	.cleanup_fb = dss_plane_cleanup_fb,
 	.atomic_check = dss_plane_atomic_check,
 	.atomic_update = dss_plane_atomic_update,
 	.atomic_disable = dss_plane_atomic_disable,
@@ -471,7 +465,7 @@ static int dss_plane_init(struct drm_device *dev, struct dss_plane *aplane,
 		return ret;
 
 	ret = drm_universal_plane_init(dev, &aplane->base, 1, &dss_plane_funcs,
-				       fmts, fmts_cnt, type);
+				       fmts, fmts_cnt, type, NULL);
 	if (ret) {
 		DRM_ERROR("fail to init plane, ch=%d\n", aplane->ch);
 		return ret;
