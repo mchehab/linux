@@ -12,6 +12,7 @@
 #define __KIRIN_DRM_DRV_H__
 
 #include <drm/drmP.h>
+#include <linux/iommu.h>
 #include <linux/ion.h>
 #include <linux/hisi/hisi_ion.h>
 #include <linux/hisi/hisi-iommu.h>
