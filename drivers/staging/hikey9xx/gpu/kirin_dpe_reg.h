@@ -18,6 +18,7 @@
 #include <linux/kernel.h>
 #include <linux/wait.h>
 #include <linux/bug.h>
+#include <linux/iommu.h>
 
 #include <linux/ion.h>
 #include <linux/hisi/hisi_ion.h>
