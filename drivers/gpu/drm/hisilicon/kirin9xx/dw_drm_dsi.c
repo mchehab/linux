@@ -1079,7 +1079,7 @@ static int dw_drm_encoder_init(struct device *dev,
 
 	encoder->possible_crtcs = crtc_mask;
 	ret = drm_encoder_init(drm_dev, encoder, &dw_encoder_funcs,
-			       DRM_MODE_ENCODER_DSI);
+			       DRM_MODE_ENCODER_DSI, NULL);
 	if (ret) {
 		DRM_ERROR("failed to init dsi encoder\n");
 		return ret;
@@ -1104,7 +1104,7 @@ static int dsi_host_attach(struct mipi_dsi_host *host,
 	dsi->client[id].lanes = mdsi->lanes;
 	dsi->client[id].format = mdsi->format;
 	dsi->client[id].mode_flags = mdsi->mode_flags;
-	dsi->client[id].phy_clock = mdsi->phy_clock;
+	dsi->client[id].phy_clock = 0;
 
 	DRM_INFO("host attach, client name=[%s], id=%d\n", mdsi->name, id);
 

@@ -1117,7 +1117,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	dss_rect_ltrb_t rect;
 	u32 bpp;
 	u32 stride;
-	u32 display_addr;
+	u32 display_addr = 0;
 	u32 hal_fmt;
 	int chn_idx = DSS_RCHN_D2;
 
@@ -1138,7 +1138,10 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	bpp = fb->bits_per_pixel / 8;
 	stride = fb->pitches[0];
 
-	display_addr = (u32)fbdev->smem_start + src_y * stride;
+	if (fbdev)
+		display_addr = (u32)fbdev->smem_start + src_y * stride;
+	else
+		printk("JDB: fbdev is null?\n");
 
 	rect.left = 0;
 	rect.right = src_w - 1;
