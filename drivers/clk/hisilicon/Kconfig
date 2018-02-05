@@ -66,3 +66,10 @@ config STUB_CLK_HI3660
 	default COMMON_CLK_HI3660
 	help
 	  Build the Hisilicon Hi3660 stub clock driver.
+
+config STUB_CLK_KIRIN970
+	bool "Kirin970 Stub Clock Driver"
+	depends on ARCH_HISI
+	default ARCH_HISI
+	help
+	  Build the Hisilicon Kirin970 stub clock driver.
