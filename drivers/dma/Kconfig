@@ -240,13 +240,22 @@ config FSL_RAID
 	  for raid5/6.
 
 config HISI_DMA
-	tristate "HiSilicon DMA Engine support"
+	tristate "HiSilicon Kupeng DMA Engine support"
 	depends on ARM64 || COMPILE_TEST
 	depends on PCI_MSI
 	select DMA_ENGINE
 	select DMA_VIRTUAL_CHANNELS
 	help
 	  Support HiSilicon Kunpeng DMA engine.
+
+config HISI_KIRIN_DMA
+	tristate "Hisilicon Kirin DMA support"
+	depends on ARM64 || COMPILE_TEST
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS
+	help
+	  Support the DMA engine for Hisilicon Kirin platform
+	  devices.
 
 config IMG_MDC_DMA
 	tristate "IMG MDC support"
