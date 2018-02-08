@@ -22,6 +22,7 @@
 
 #define MAX_CRTC	2
 
+//#define CMA_BUFFER_USED
 #define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper)
 
 /* display controller init/cleanup ops */
@@ -56,6 +57,5 @@ struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
 		struct drm_mode_fb_cmd2 *mode_cmd);
 struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev);
 void kirin_drm_fbdev_fini(struct drm_device *dev);
-
 
 #endif /* __KIRIN_DRM_DRV_H__ */
