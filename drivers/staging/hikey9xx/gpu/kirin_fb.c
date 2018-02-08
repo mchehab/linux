@@ -83,7 +83,7 @@ struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
 		goto fail;
 	}
 
-	DRM_DEBUG("create: FB ID: %d (%p)", fb->base.id, fb);
+	DRM_DEBUG("create: FB ID: %d (%p) \n", fb->base.id, fb);
 
 	return fb;
 

@@ -37,10 +37,21 @@
 #include "kirin_drm_drv.h"
 
 #include "kirin_drm_dpe_utils.h"
+#if defined (CONFIG_HISI_FB_970)
+#include "kirin970_dpe_reg.h"
+#else
 #include "kirin_dpe_reg.h"
+#endif
 
+#define DSS_POWER_UP_ON_UEFI
+
+#if defined (CONFIG_HISI_FB_970)
+#define DTS_COMP_DSS_NAME "hisilicon,kirin970-dpe"
+#else
 #define DTS_COMP_DSS_NAME "hisilicon,hi3660-dpe"
+#endif
 
+#define PPLL7_USED_IN_DRV
 #define DSS_DEBUG	0
 
 static const struct dss_format dss_formats[] = {
@@ -90,41 +101,215 @@ u32 dss_get_format(u32 pixel_format)
 	return HISI_FB_PIXEL_FORMAT_UNSUPPORT;
 }
 
+#ifdef PPLL7_USED_IN_DRV
+/*******************************************************************************
+**
+*/
+int hdmi_ceil(uint64_t a, uint64_t b)
+{
+	if (b == 0)
+		return -1;
+
+	if (a%b != 0) {
+		return a/b + 1;
+	} else {
+		return a/b;
+	}
+}
+
+int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, uint64_t pixel_clock)
+{
+	uint64_t refdiv, fbdiv, frac, postdiv1, postdiv2;
+	uint64_t vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUPUT;
+	uint64_t sys_clock_fref = KIRIN970_SYS_19M2;
+	uint64_t ppll7_freq_divider;
+	uint64_t vco_freq_output;
+	uint64_t frac_range = 0x1000000;/*2^24*/
+	uint64_t pixel_clock_ori;
+	uint64_t pixel_clock_cur;
+	uint32_t ppll7ctrl0;
+	uint32_t ppll7ctrl1;
+	uint32_t ppll7ctrl0_val;
+	uint32_t ppll7ctrl1_val;
+	int i, ret;
+	int ceil_temp;
+	int freq_divider_list[22] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+			12, 14, 15, 16, 20, 21, 24,
+			25, 30, 36, 42, 49};
+
+	int postdiv1_list[22] = {1, 2, 3, 4, 5, 6, 7, 4, 3, 5,
+		   4, 7, 5, 4, 5, 7, 6, 5, 6, 6,
+			7, 7};
+
+	int postdiv2_list[22] = {1, 1, 1, 1, 1, 1, 1, 2, 3, 2,
+		3, 2, 3, 4, 4, 3, 4, 5, 5, 6,
+			6, 7};
+	ret = 0;
+	postdiv1 = 0;
+	postdiv2 = 0;
+	if (pixel_clock == 0)
+		return -EINVAL;
+
+	if (ctx == NULL) {
+		DRM_ERROR("NULL Pointer\n");
+		return -EINVAL;
+	}
+
+	pixel_clock_ori = pixel_clock;
+
+	if (pixel_clock_ori <= 255000000)
+		pixel_clock_cur = pixel_clock * 7;
+	else if (pixel_clock_ori <= 415000000)
+		pixel_clock_cur = pixel_clock * 5;
+	else if (pixel_clock_ori <= 594000000)
+		pixel_clock_cur = pixel_clock * 3;
+	else {
+		DRM_ERROR("Clock don't support!!\n");
+		return -EINVAL;
+	}
+
+	pixel_clock_cur = pixel_clock_cur / 1000;
+	ceil_temp = hdmi_ceil(vco_min_freq_output, pixel_clock_cur);
+
+	if (ceil_temp < 0)
+		return -EINVAL;
+
+	ppll7_freq_divider = (uint64_t)ceil_temp;
+
+	for (i = 0; i < 22; i++) {
+		if (freq_divider_list[i] >= ppll7_freq_divider) {
+			ppll7_freq_divider = freq_divider_list[i];
+			postdiv1 = postdiv1_list[i];
+			postdiv2 = postdiv2_list[i];
+			DRM_INFO("postdiv1=0x%llx, POSTDIV2=0x%llx\n", postdiv1, postdiv2);
+			break;
+		}
+	}
+
+	vco_freq_output = ppll7_freq_divider * pixel_clock_cur;
+	if (vco_freq_output == 0)
+		return -EINVAL;
+
+	ceil_temp = hdmi_ceil(400000, vco_freq_output);
+
+	if (ceil_temp < 0)
+		return -EINVAL;
+
+	refdiv = ((vco_freq_output * ceil_temp) >= 494000) ? 1 : 2;
+	DRM_DEBUG("refdiv=0x%llx\n", refdiv);
+
+	fbdiv = (vco_freq_output * ceil_temp) * refdiv / sys_clock_fref;
+	DRM_DEBUG("fbdiv=0x%llx\n", fbdiv);
+
+	frac = (uint64_t)(ceil_temp * vco_freq_output - sys_clock_fref / refdiv * fbdiv) * refdiv * frac_range;
+	frac = (uint64_t)frac / sys_clock_fref;
+	DRM_DEBUG("frac=0x%llx\n", frac);
+
+	ppll7ctrl0 = inp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
+	ppll7ctrl0 &= ~MIDIA_PPLL7_FREQ_DEVIDER_MASK;
+
+	ppll7ctrl0_val = 0x0;
+	ppll7ctrl0_val |= (uint32_t)(postdiv2 << 23 | postdiv1 << 20 | fbdiv << 8 | refdiv << 2);
+	ppll7ctrl0_val &= MIDIA_PPLL7_FREQ_DEVIDER_MASK;
+	ppll7ctrl0 |= ppll7ctrl0_val;
+
+	outp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0, ppll7ctrl0);
+
+	ppll7ctrl1 = inp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
+	ppll7ctrl1 &= ~MIDIA_PPLL7_FRAC_MODE_MASK;
+
+	ppll7ctrl1_val = 0x0;
+	ppll7ctrl1_val |= (uint32_t)(1 << 25 | 0 << 24 | frac);
+	ppll7ctrl1_val &= MIDIA_PPLL7_FRAC_MODE_MASK;
+	ppll7ctrl1 |= ppll7ctrl1_val;
+
+	outp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1, ppll7ctrl1);
+
+#if 1
+	ret = clk_set_rate(ctx->dss_pxl0_clk, 144000000UL);
+#else
+	/*comfirm ldi1 switch ppll7*/
+	if (pixel_clock_ori <= 255000000)
+		ret = clk_set_rate(ctx->dss_pxl0_clk, DEFAULT_MIDIA_PPLL7_CLOCK_FREQ/7);
+	else if (pixel_clock_ori <= 415000000)
+		ret = clk_set_rate(ctx->dss_pxl0_clk, DEFAULT_MIDIA_PPLL7_CLOCK_FREQ/5);
+	else if (pixel_clock_ori <= 594000000)
+		ret = clk_set_rate(ctx->dss_pxl0_clk, DEFAULT_MIDIA_PPLL7_CLOCK_FREQ/3);
+	else {
+		DRM_ERROR("Clock don't support!!\n");
+		return -EINVAL;
+	}
+#endif
+
+	if (ret < 0) {
+		DRM_ERROR("dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
+			pixel_clock_cur, ret);
+	}
+	return ret;
+}
+#endif
+
 /*******************************************************************************
  **
  */
 static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 {
 	int ret;
-	u32 clk_Hz;
+	uint64_t clk_Hz;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 	struct drm_display_mode *mode = &acrtc->base.state->mode;
 	struct drm_display_mode *adj_mode = &acrtc->base.state->adjusted_mode;
 
-
 	DRM_INFO("mode->clock(org) = %u\n", mode->clock);
-	if(mode->clock == 148500){
-		clk_Hz = 144000 * 1000UL;
-	} else if(mode->clock == 83496){
-		clk_Hz = 80000 * 1000UL;
-	} else if(mode->clock == 74440){
-		clk_Hz = 72000 * 1000UL;
-	} else if(mode->clock == 74250){
-		clk_Hz = 72000 * 1000UL;
+	if (acrtc->ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		if (mode->clock == 148500)
+			clk_Hz = 144000 * 1000UL;
+		else if (mode->clock == 83496)
+			clk_Hz = 80000 * 1000UL;
+		else if (mode->clock == 74440)
+			clk_Hz = 72000 * 1000UL;
+		else if (mode->clock == 74250)
+			clk_Hz = 72000 * 1000UL;
+		else
+			clk_Hz = mode->clock * 1000UL;
+
+#ifdef PPLL7_USED_IN_DRV
+		hdmi_pxl_ppll7_init(ctx, clk_Hz);
+#else
+		/*
+		 * Success should be guaranteed in mode_valid call back,
+		 * so failure shouldn't happen here
+		 */
+		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
+		if (ret) {
+			DRM_ERROR("failed to set pixel clk %dHz (%d)\n", clk_Hz, ret);
+		}
+#endif
+		adj_mode->clock = clk_Hz / 1000;
 	} else {
-		clk_Hz = mode->clock * 1000UL;;
+		if (mode->clock == 148500)
+			clk_Hz = 144000 * 1000UL;
+		else if (mode->clock == 83496)
+			clk_Hz = 80000 * 1000UL;
+		else if (mode->clock == 74440)
+			clk_Hz = 72000 * 1000UL;
+		else if (mode->clock == 74250)
+			clk_Hz = 72000 * 1000UL;
+		else
+			clk_Hz = mode->clock * 1000UL;
+
+		/*
+		 * Success should be guaranteed in mode_valid call back,
+		 * so failure shouldn't happen here
+		 */
+		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
+		if (ret) {
+			DRM_ERROR("failed to set pixel clk %dHz (%d)\n", clk_Hz, ret);
+		}
+		adj_mode->clock = clk_get_rate(ctx->dss_pxl0_clk) / 1000;
 	}
 
-	/*
-	 * Success should be guaranteed in mode_valid call back,
-	 * so failure shouldn't happen here
-	 */
-	ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
-	if (ret) {
-		DRM_ERROR("failed to set pixel clk %dHz (%d)\n", clk_Hz, ret);
-	}
-	adj_mode->clock = clk_get_rate(ctx->dss_pxl0_clk) / 1000;
-	DRM_INFO("dss_pxl0_clk = %u\n",  adj_mode->clock);
+	DRM_INFO("dss_pxl0_clk [%llu]->[%llu] \n", clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
 
 	dpe_init(acrtc);
 }
@@ -134,6 +319,15 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	int ret;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
+#if defined (CONFIG_HISI_FB_970)
+	//mds_regulator_enable(ctx);
+	dpe_common_clk_enable(ctx);
+	dpe_inner_clk_enable(ctx);
+	#ifndef DSS_POWER_UP_ON_UEFI
+	dpe_regulator_enable(ctx);
+	#endif
+	dpe_set_clk_rate(ctx);
+#else
 	ret = clk_prepare_enable(ctx->dss_pxl0_clk);
 	if (ret) {
 		DRM_ERROR("failed to enable dss_pxl0_clk (%d)\n", ret);
@@ -163,8 +357,11 @@ static int dss_power_up(struct dss_crtc *acrtc)
 		DRM_ERROR("failed to enable dss_mmbuf_clk (%d)\n", ret);
 		return ret;
 	}
-	dss_inner_clk_pdp_enable(acrtc);
-	dss_inner_clk_common_enable(acrtc);
+#endif
+
+	dss_inner_clk_common_enable(ctx);
+	dss_inner_clk_pdp_enable(ctx);
+
 	dpe_interrupt_mask(acrtc);
 	dpe_interrupt_clear(acrtc);
 	dpe_irq_enable(acrtc);
@@ -225,17 +422,14 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 
 	isr_s1 = inp32(dss_base + GLB_CPU_PDP_INTS);
 	isr_s2 = inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
-	isr_s2_dpp = inp32(dss_base + DSS_DPP_OFFSET + DPP_INTS);
-	isr_s2_smmu = inp32(dss_base + DSS_SMMU_OFFSET + SMMU_INTSTAT_NS);
+	DRM_INFO_ONCE("isr_s1 = 0x%x!\n", isr_s1);
+	DRM_INFO_ONCE("isr_s2 = 0x%x!\n", isr_s2);
 
-	outp32(dss_base + DSS_SMMU_OFFSET + SMMU_INTCLR_NS, isr_s2_smmu);
-	outp32(dss_base + DSS_DPP_OFFSET + DPP_INTS, isr_s2_dpp);
 	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS, isr_s2);
 	outp32(dss_base + GLB_CPU_PDP_INTS, isr_s1);
 
 	isr_s1 &= ~(inp32(dss_base + GLB_CPU_PDP_INT_MSK));
 	isr_s2 &= ~(inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK));
-	isr_s2_dpp &= ~(inp32(dss_base + DSS_DPP_OFFSET + DPP_INT_MSK));
 
 	if (isr_s2 & BIT_VACTIVE0_END) {
 		ctx->vactive0_end_flag++;
@@ -498,44 +692,80 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *np = NULL;
+	u32 dss_version_tag;
 	int ret = 0;
 
 	np = of_find_compatible_node(NULL, NULL, DTS_COMP_DSS_NAME);
 	if (!np) {
-			DRM_ERROR("NOT FOUND device node %s!\n",
-				    DTS_COMP_DSS_NAME);
-			return -ENXIO;
+		DRM_ERROR("NOT FOUND device node %s!\n",
+			DTS_COMP_DSS_NAME);
+		return -ENXIO;
 	}
+
+#if defined (CONFIG_HISI_FB_970)
+	ret = of_property_read_u32(np, "dss_version_tag", &dss_version_tag);
+	if (ret) {
+		DRM_ERROR("failed to get dss_version_tag.\n");
+	}
+	ctx->g_dss_version_tag = dss_version_tag;
+	DRM_INFO("dss_version_tag=0x%x.\n", ctx->g_dss_version_tag);
+#else
+	ctx->g_dss_version_tag = FB_ACCEL_HI366x;
+	DRM_INFO("dss_version_tag=0x%x.\n", ctx->g_dss_version_tag);
+#endif
 
 	ctx->base = of_iomap(np, 0);
 	if (!(ctx->base)) {
-			DRM_ERROR ("failed to get ade base resource.\n");
-			return -ENXIO;
+		DRM_ERROR ("failed to get dss base resource.\n");
+		return -ENXIO;
 	}
+	DRM_INFO("dss base =0x%x.\n", ctx->base);
 
 	ctx->peri_crg_base  = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
-			DRM_ERROR ("failed to get ade peri_crg_base  resource.\n");
-			return -ENXIO;
+		DRM_ERROR ("failed to get dss peri_crg_base resource.\n");
+		return -ENXIO;
 	}
 
 	ctx->sctrl_base  = of_iomap(np, 2);
 	if (!(ctx->sctrl_base)) {
-			DRM_ERROR ("failed to get ade sctrl_base  resource.\n");
-			return -ENXIO;
+		DRM_ERROR ("failed to get dss sctrl_base resource.\n");
+		return -ENXIO;
 	}
 
-	ctx->pmc_base = of_iomap(np, 3);
-	if (!(ctx->pmc_base)) {
-			DRM_ERROR ("failed to get ade pmc_base   resource.\n");
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		ctx->pctrl_base = of_iomap(np, 3);
+		if (!(ctx->pctrl_base)) {
+			DRM_ERROR ("failed to get dss pctrl_base resource.\n");
 			return -ENXIO;
+		}
+	} else {
+		ctx->pmc_base = of_iomap(np, 3);
+		if (!(ctx->pmc_base)) {
+			DRM_ERROR ("failed to get dss pmc_base resource.\n");
+			return -ENXIO;
+		}
 	}
 
 	ctx->noc_dss_base = of_iomap(np, 4);
 	if (!(ctx->noc_dss_base)) {
-			DRM_ERROR ("failed to get noc_dss_base  resource.\n");
-			return -ENXIO;
+		DRM_ERROR ("failed to get noc_dss_base resource.\n");
+		return -ENXIO;
 	}
+
+#if defined (CONFIG_HISI_FB_970)
+	ctx->pmctrl_base = of_iomap(np, 5);
+	if (!(ctx->pmctrl_base)) {
+		DRM_ERROR ("failed to get dss pmctrl_base resource.\n");
+		return -ENXIO;
+	}
+
+	ctx->media_crg_base = of_iomap(np, 6);
+	if (!(ctx->media_crg_base)) {
+		DRM_ERROR ("failed to get dss media_crg_base resource.\n");
+		return -ENXIO;
+	}
+#endif
 
 	/* get irq no */
 	ctx->irq = irq_of_parse_and_map(np, 0);
@@ -544,12 +774,22 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		return -ENXIO;
 	}
 
-	DRM_INFO("dss irq = %d.", ctx->irq);
+	DRM_INFO("dss irq = %d. \n", ctx->irq);
+
+#ifndef DSS_POWER_UP_ON_UEFI
+#if defined (CONFIG_HISI_FB_970)
+	ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
+	if (!ctx->dpe_regulator) {
+		DRM_ERROR("failed to get regulator resource! ret=%d.\n", ret);
+		return -ENXIO;
+	}
+#endif
+#endif
 
 	ctx->dss_mmbuf_clk = devm_clk_get(dev, "clk_dss_axi_mm");
 	if (!ctx->dss_mmbuf_clk) {
 		DRM_ERROR("failed to parse dss_mmbuf_clk\n");
-	    return -ENODEV;
+		return -ENODEV;
 	}
 
 	ctx->dss_axi_clk = devm_clk_get(dev, "aclk_dss");
@@ -561,7 +801,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	ctx->dss_pclk_dss_clk = devm_clk_get(dev, "pclk_dss");
 	if (!ctx->dss_pclk_dss_clk) {
 		DRM_ERROR("failed to parse dss_pclk_dss_clk\n");
-	    return -ENODEV;
+		return -ENODEV;
 	}
 
 	ctx->dss_pri_clk = devm_clk_get(dev, "clk_edc0");
@@ -570,15 +810,17 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	    return -ENODEV;
 	}
 
-	ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_07V_RATE);
-	if (ret < 0) {
-		DRM_ERROR("dss_pri_clk clk_set_rate(%lu) failed, error=%d!\n",
-			DEFAULT_DSS_CORE_CLK_07V_RATE, ret);
-		return -EINVAL;
-	}
+	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
+		ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_07V_RATE);
+		if (ret < 0) {
+			DRM_ERROR("dss_pri_clk clk_set_rate(%lu) failed, error=%d!\n",
+				DEFAULT_DSS_CORE_CLK_07V_RATE, ret);
+			return -EINVAL;
+		}
 
-	DRM_INFO("dss_pri_clk:[%lu]->[%llu].\n",
-		DEFAULT_DSS_CORE_CLK_07V_RATE, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+		DRM_INFO("dss_pri_clk:[%lu]->[%llu].\n",
+			DEFAULT_DSS_CORE_CLK_07V_RATE, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+	}
 
 	ctx->dss_pxl0_clk = devm_clk_get(dev, "clk_ldi0");
 	if (!ctx->dss_pxl0_clk) {
@@ -586,18 +828,19 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		return -ENODEV;
 	}
 
-	ret = clk_set_rate(ctx->dss_pxl0_clk, DSS_MAX_PXL0_CLK_144M);
-	if (ret < 0) {
-		DRM_ERROR("dss_pxl0_clk clk_set_rate(%lu) failed, error=%d!\n",
-			DSS_MAX_PXL0_CLK_144M, ret);
-		return -EINVAL;
+	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
+		ret = clk_set_rate(ctx->dss_pxl0_clk, DSS_MAX_PXL0_CLK_144M);
+		if (ret < 0) {
+			DRM_ERROR("dss_pxl0_clk clk_set_rate(%lu) failed, error=%d!\n",
+				DSS_MAX_PXL0_CLK_144M, ret);
+			return -EINVAL;
+		}
+
+		DRM_INFO("dss_pxl0_clk:[%lu]->[%llu].\n",
+			DSS_MAX_PXL0_CLK_144M, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 	}
 
-	DRM_INFO("dss_pxl0_clk:[%lu]->[%llu].\n",
-		DSS_MAX_PXL0_CLK_144M, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
-
 	/* regulator enable */
-
 	dss_enable_iommu(pdev, ctx);
 
 	return 0;
@@ -667,7 +910,7 @@ static int dss_drm_init(struct drm_device *dev)
 	ret = devm_request_irq(dev->dev, ctx->irq, dss_irq_handler,
 			       IRQF_SHARED, dev->driver->name, acrtc);
 	if (ret) {
-	    DRM_ERROR("fail to  devm_request_irq, ret=%d!", ret);
+		DRM_ERROR("fail to  devm_request_irq, ret=%d!", ret);
 		return ret;
 	}
 
