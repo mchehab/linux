@@ -17,6 +17,10 @@
 
 int g_debug_set_reg_val = 0;
 
+DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
+
+static int dss_regulator_refcount;
+
 extern u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX];
 
 mipi_ifbc_division_t g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
@@ -102,6 +106,39 @@ void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs)
 		printk(KERN_INFO "writel: [%p] = 0x%x\n", addr,
 			     tmp | ((val & mask) << bs));
 	}
+}
+
+uint32_t set_bits32(uint32_t old_val, uint32_t val, uint8_t bw, uint8_t bs)
+{
+	uint32_t mask = (1UL << bw) - 1UL;
+	uint32_t tmp = 0;
+
+	tmp = old_val;
+	tmp &= ~(mask << bs);
+
+	return (tmp | ((val & mask) << bs));
+}
+
+struct dss_clk_rate *get_dss_clk_rate(struct dss_hw_ctx *ctx)
+{
+	struct dss_clk_rate *pdss_clk_rate = NULL;
+	uint64_t default_dss_pri_clk_rate;
+
+	if (ctx == NULL) {
+		DRM_ERROR("ctx is null.\n");
+		return pdss_clk_rate;
+	}
+
+	pdss_clk_rate = &(ctx->dss_clk);
+	default_dss_pri_clk_rate = DEFAULT_DSS_CORE_CLK_RATE_L1;
+
+	pdss_clk_rate->dss_pri_clk_rate = default_dss_pri_clk_rate;
+	pdss_clk_rate->dss_mmbuf_rate = DEFAULT_DSS_MMBUF_CLK_RATE_L1;
+	pdss_clk_rate->dss_pclk_dss_rate = DEFAULT_PCLK_DSS_RATE;
+	pdss_clk_rate->dss_pclk_pctrl_rate = DEFAULT_PCLK_PCTRL_RATE;
+
+
+	return pdss_clk_rate;
 }
 
 static int mipi_ifbc_get_rect(struct dss_rect *rect)
@@ -260,7 +297,7 @@ void init_ldi(struct dss_crtc *acrtc)
 	/* for 1Hz LCD and mipi command LCD*/
 	set_reg(ldi_base + LDI_DSI_CMD_MOD_CTRL, 0x1, 1, 1);
 
-	/*ldi_data_gate(hisifd, true);*/
+	/*ldi_data_gate(ctx, true);*/
 
 #ifdef CONFIG_HISI_FB_LDI_COLORBAR_USED
 	/* colorbar width*/
@@ -309,6 +346,7 @@ void init_dbuf(struct dss_crtc *acrtc)
 	int dfs_time = 0;
 	int dfs_time_min = 0;
 	int depth = 0;
+	int dfs_ram = 0;
 
 	ctx = acrtc->ctx;
 	if (!ctx) {
@@ -328,10 +366,13 @@ void init_dbuf(struct dss_crtc *acrtc)
 
 	dbuf_base = ctx->base + DSS_DBUF0_OFFSET;
 
-	if (mode->hdisplay * mode->vdisplay >= RES_4K_PHONE)
+	if (mode->hdisplay * mode->vdisplay >= RES_4K_PHONE) {
 		dfs_time_min = DFS_TIME_MIN_4K;
-	else
+		dfs_ram = 0x0;
+	} else {
 		dfs_time_min = DFS_TIME_MIN;
+		dfs_ram = 0xF00;
+	}
 
 	dfs_time = DFS_TIME;
 	depth = DBUF0_DEPTH;
@@ -341,6 +382,9 @@ void init_dbuf(struct dss_crtc *acrtc)
 		"hsw=%d\n"
 		"hbp=%d\n"
 		"hfp=%d\n"
+		"vfp = %d\n"
+		"vbp = %d\n"
+		"vsw = %d\n"
 		"mode->hdisplay=%d\n"
 		"mode->vdisplay=%d\n",
 		dfs_time,
@@ -348,6 +392,9 @@ void init_dbuf(struct dss_crtc *acrtc)
 		hsw,
 		hbp,
 		hfp,
+		vfp,
+		vbp,
+		vsw,
 		mode->hdisplay,
 		mode->vdisplay);
 
@@ -420,6 +467,9 @@ void init_dbuf(struct dss_crtc *acrtc)
 	outp32(dbuf_base + DBUF_FLUX_REQ_CTRL, (dfs_ok_mask << 1) | thd_flux_req_sw_en);
 
 	outp32(dbuf_base + DBUF_DFS_LP_CTRL, 0x1);
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		outp32(dbuf_base + DBUF_DFS_RAM_MANAGE, dfs_ram);
+	}
 }
 
 void init_dpp(struct dss_crtc *acrtc)
@@ -430,6 +480,7 @@ void init_dpp(struct dss_crtc *acrtc)
 	char __iomem *dpp_base;
 	char __iomem *mctl_sys_base;
 
+	DRM_INFO("+. \n");
 	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
@@ -448,8 +499,14 @@ void init_dpp(struct dss_crtc *acrtc)
 		(DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
 
 #ifdef CONFIG_HISI_FB_DPP_COLORBAR_USED
+	#if defined (CONFIG_HISI_FB_970)
+	outp32(dpp_base + DPP_CLRBAR_CTRL, (0x30 << 24) | (0 << 1) | 0x1);
+	set_reg(dpp_base + DPP_CLRBAR_1ST_CLR, 0x3FF00000, 30, 0); //Red
+	set_reg(dpp_base + DPP_CLRBAR_2ND_CLR, 0x000FFC00, 30, 0); //Green
+	set_reg(dpp_base + DPP_CLRBAR_3RD_CLR, 0x000003FF, 30, 0); //Blue
+	#else
 	void __iomem *mctl_base;
-	outp32(dpp_base + DPP_CLRBAR_CTRL, (0x30 << 24) |(0 << 1) | 0x1);
+	outp32(dpp_base + DPP_CLRBAR_CTRL, (0x30 << 24) | (0 << 1) | 0x1);
 	set_reg(dpp_base + DPP_CLRBAR_1ST_CLR, 0xFF, 8, 16);
 	set_reg(dpp_base + DPP_CLRBAR_2ND_CLR, 0xFF, 8, 8);
 	set_reg(dpp_base + DPP_CLRBAR_3RD_CLR, 0xFF, 8, 0);
@@ -465,7 +522,10 @@ void init_dpp(struct dss_crtc *acrtc)
 	set_reg(mctl_base + MCTL_CTL_MUTEX_ITF, 0x1, 2, 0);
 	set_reg(mctl_sys_base + MCTL_OV0_FLUSH_EN, 0x8, 4, 0);
 	set_reg(mctl_base + MCTL_CTL_MUTEX, 0x0, 1, 0);
+	#endif
 #endif
+
+	DRM_INFO("-. \n");
 }
 
 void enable_ldi(struct dss_crtc *acrtc)
@@ -550,13 +610,14 @@ void dpe_interrupt_unmask(struct dss_crtc *acrtc)
 	dss_base = ctx->base;
 
 	unmask = ~0;
-	unmask &= ~(BIT_DPP_INTS | BIT_ITF0_INTS | BIT_MMU_IRPT_NS);
+	unmask &= ~(BIT_ITF0_INTS | BIT_MMU_IRPT_NS);
 	outp32(dss_base + GLB_CPU_PDP_INT_MSK, unmask);
 
 	unmask = ~0;
 	unmask &= ~(BIT_VSYNC | BIT_VACTIVE0_END | BIT_LDI_UNFLOW);
 
 	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, unmask);
+
 }
 
 void dpe_interrupt_mask(struct dss_crtc *acrtc)
@@ -620,12 +681,10 @@ int dpe_init(struct dss_crtc *acrtc)
 	return 0;
 }
 
-void dss_inner_clk_pdp_enable(struct dss_crtc *acrtc)
+void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
 {
-	struct dss_hw_ctx *ctx;
 	char __iomem *dss_base;
 
-	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
 		return;
@@ -639,16 +698,74 @@ void dss_inner_clk_pdp_enable(struct dss_crtc *acrtc)
 	outp32(dss_base + DSS_DPP_DITHER_OFFSET + DITHER_MEM_CTRL, 0x00000008);
 }
 
-void dss_inner_clk_common_enable(struct dss_crtc *acrtc)
+static void dss_normal_set_reg(char __iomem *dss_base)
 {
-	struct dss_hw_ctx *ctx;
-	char __iomem *dss_base;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
+	if (NULL == dss_base) {
+		DRM_ERROR("dss_base is null.\n");
 		return;
 	}
+	//core/axi/mmbuf
+	outp32(dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
+	outp32(dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);
+
+	outp32(dss_base + DSS_RCH_VG0_ARSR_OFFSET + ARSR2P_LB_MEM_CTRL, 0x00000008);
+
+	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
+
+	outp32(dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
+	outp32(dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
+
+	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
+	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
+	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
+	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
+
+	outp32(dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+
+	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
+	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x0000008);
+	outp32(dss_base + DSS_RCH_G0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_G0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
+
+	outp32(dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
+	outp32(dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x0000008);
+	outp32(dss_base + DSS_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
+
+	outp32(dss_base + DSS_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
+	outp32(dss_base + DSS_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_D2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_RCH_D3_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+
+	outp32(dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL, 0x00000888);
+	outp32(dss_base + DSS_WCH0_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	outp32(dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL, 0x88888888);
+	outp32(dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL_1, 0x00000088);
+	outp32(dss_base + DSS_WCH1_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);
+
+	outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL, 0x00000088);
+	outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_LB_MEM_CTRL, 0x00000088);
+	outp32(dss_base + GLB_DSS_MEM_CTRL, 0x02605550);
+
+}
+
+void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
+{
+	char __iomem *dss_base;
+
+	if (NULL == ctx) {
+		DRM_ERROR("NULL Pointer!\n");
+		return -EINVAL;
+	}
+
 	dss_base = ctx->base;
 
 	/*core/axi/mmbuf*/
@@ -666,8 +783,16 @@ void dss_inner_clk_common_enable(struct dss_crtc *acrtc)
 	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_v1 ,dma_buf mem*/
 	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);/*rch_v1 ,afbcd mem*/
 
-	outp32(dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_v2 ,scf mem*/
-	outp32(dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);/*rch_v2 ,scf mem*/
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
+		outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
+		outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
+		outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
+	} else {
+		outp32(dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_v2 ,scf mem*/
+		outp32(dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);/*rch_v2 ,scf mem*/
+	}
+
 	outp32(dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_v2 ,dma_buf mem*/
 
 	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_g0 ,scf mem*/
@@ -692,9 +817,18 @@ void dss_inner_clk_common_enable(struct dss_crtc *acrtc)
 	outp32(dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*wch1 DMA/AFBCE mem*/
 	outp32(dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL, 0x00000888);/*wch1 DMA/AFBCE mem*/
 	outp32(dss_base + DSS_WCH1_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);/*wch1 rot mem*/
-	outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*wch2 DMA/AFBCE mem*/
-	outp32(dss_base + DSS_WCH2_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);/*wch2 rot mem*/
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL, 0x00000088);
+		outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_LB_MEM_CTRL, 0x00000008);
+		outp32(dss_base + GLB_DSS_MEM_CTRL, 0x02605550);
+	} else {
+		outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*wch2 DMA/AFBCE mem*/
+		outp32(dss_base + DSS_WCH2_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);/*wch2 rot mem*/
+		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+	}
 }
+
 int dpe_irq_enable(struct dss_crtc *acrtc)
 {
 	struct dss_hw_ctx *ctx;
@@ -727,4 +861,200 @@ int dpe_irq_disable(struct dss_crtc *acrtc)
 	/*disable_irq_nosync(ctx->irq);*/
 
 	return 0;
+}
+
+void mds_regulator_enable(struct dss_hw_ctx *ctx)
+{
+	int ret = 0;
+
+	if (NULL == ctx) {
+		DRM_ERROR("NULL ptr.\n");
+		return -EINVAL;
+	}
+
+	ret = regulator_bulk_enable(1, ctx->media_subsys_regulator);
+	if (ret) {
+		DRM_ERROR(" media subsys regulator_enable failed, error=%d!\n", ret);
+	}
+
+	return ret;
+}
+
+int dpe_common_clk_enable(struct dss_hw_ctx *ctx)
+{
+	int ret = 0;
+	struct clk *clk_tmp = NULL;
+
+	if (ctx == NULL) {
+		DRM_ERROR("ctx is NULL point!\n");
+		return -EINVAL;
+	}
+
+	clk_tmp = ctx->dss_mmbuf_clk;
+	if (clk_tmp) {
+		ret = clk_prepare(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_mmbuf_clk clk_prepare failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+
+		ret = clk_enable(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_mmbuf_clk clk_enable failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+	}
+
+	clk_tmp = ctx->dss_axi_clk;
+	if (clk_tmp) {
+		ret = clk_prepare(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_axi_clk clk_prepare failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+
+		ret = clk_enable(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_axi_clk clk_enable failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+	}
+
+	clk_tmp = ctx->dss_pclk_dss_clk;
+	if (clk_tmp) {
+		ret = clk_prepare(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_pclk_dss_clk clk_prepare failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+
+		ret = clk_enable(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_pclk_dss_clk clk_enable failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
+{
+	int ret = 0;
+	struct clk *clk_tmp = NULL;
+
+	if (ctx == NULL) {
+		DRM_ERROR("ctx is NULL point!\n");
+		return -EINVAL;
+	}
+
+	clk_tmp = ctx->dss_pri_clk;
+	if (clk_tmp) {
+		ret = clk_prepare(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_pri_clk clk_prepare failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+
+		ret = clk_enable(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_pri_clk clk_enable failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+	}
+
+	clk_tmp = ctx->dss_pxl0_clk;
+	if (clk_tmp) {
+		ret = clk_prepare(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_pxl0_clk clk_prepare failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+
+		ret = clk_enable(clk_tmp);
+		if (ret) {
+			DRM_ERROR(" dss_pxl0_clk clk_enable failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+int dpe_regulator_enable(struct dss_hw_ctx *ctx)
+{
+	int ret = 0;
+
+	DRM_INFO("+. \n");
+	if (NULL == ctx) {
+		DRM_ERROR("NULL ptr.\n");
+		return -EINVAL;
+	}
+
+	ret = regulator_enable(ctx->dpe_regulator);
+	if (ret) {
+		DRM_ERROR(" dpe regulator_enable failed, error=%d!\n", ret);
+		return -EINVAL;
+	}
+
+	DRM_INFO("-. \n");
+
+	return ret;
+}
+
+int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
+{
+	struct dss_clk_rate *pdss_clk_rate = NULL;
+	uint64_t dss_pri_clk_rate;
+	uint64_t dss_mmbuf_rate;
+	int ret = 0;
+
+	DRM_INFO("+. \n");
+	if (NULL == ctx) {
+		DRM_ERROR("NULL Pointer!\n");
+		return -EINVAL;
+	}
+
+	pdss_clk_rate = get_dss_clk_rate(ctx);
+	if (NULL == pdss_clk_rate) {
+		DRM_ERROR("NULL Pointer!\n");
+		return -EINVAL;
+	}
+
+	dss_pri_clk_rate = pdss_clk_rate->dss_pri_clk_rate;
+	ret = clk_set_rate(ctx->dss_pri_clk, dss_pri_clk_rate);
+	if (ret < 0) {
+		DRM_ERROR("dss_pri_clk clk_set_rate(%llu) failed, error=%d!\n",
+			dss_pri_clk_rate, ret);
+		return -EINVAL;
+	}
+	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n",
+		dss_pri_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+
+#if 0 /* it will be set on dss_ldi_set_mode func */
+	ret = clk_set_rate(ctx->dss_pxl0_clk, pinfo->pxl_clk_rate);
+	if (ret < 0) {
+		DRM_ERROR("fb%d dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
+			ctx->index, pinfo->pxl_clk_rate, ret);
+		if (g_fpga_flag == 0) {
+			return -EINVAL;
+		}
+	}
+
+	DRM_INFO("dss_pxl0_clk:[%llu]->[%llu].\n",
+			pinfo->pxl_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
+#endif
+
+	dss_mmbuf_rate = pdss_clk_rate->dss_mmbuf_rate;
+	ret = clk_set_rate(ctx->dss_mmbuf_clk, dss_mmbuf_rate);
+	if (ret < 0) {
+		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n",
+			dss_mmbuf_rate, ret);
+		return -EINVAL;
+	}
+
+	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n",
+		dss_mmbuf_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
+
+	return ret;
 }
