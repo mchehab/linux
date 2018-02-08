@@ -22,7 +22,11 @@
 #include <linux/hisi/hisi_ion.h>
 
 #include "kirin_drm_drv.h"
+#if defined (CONFIG_HISI_FB_970)
+#include "kirin970_dpe_reg.h"
+#else
 #include "kirin_dpe_reg.h"
+#endif
 #include "kirin_drm_dpe_utils.h"
 
 #include "drm_crtc.h"
@@ -30,7 +34,7 @@
 
 //#define CONFIG_HISI_FB_HEAP_CARVEOUT_USED
 
-#define FBDEV_BUFFER_NUM 3
+#define FBDEV_BUFFER_NUM 2
 struct fb_dmabuf_export
 {
     __u32 fd;
@@ -110,6 +114,9 @@ unsigned long kirin_alloc_fb_buffer(struct kirin_fbdev *fbdev, int size)
 	fbdev->ion_client = client;
 	fbdev->ion_handle = handle;
 
+	DRM_INFO("fbdev->smem_start = 0x%x, fbdev->screen_base = 0x%x\n",
+		fbdev->smem_start, fbdev->screen_base);
+
 	return buf_addr;
 
 err_ion_get_addr:
@@ -157,11 +164,13 @@ static int kirin_fbdev_mmap(struct fb_info *info, struct vm_area_struct * vma)
 	addr = vma->vm_start;
 	offset = vma->vm_pgoff * PAGE_SIZE;
 	size = vma->vm_end - vma->vm_start;
-
+	DRM_INFO("addr = 0x%x, offset = %d, size = %d!\n", addr, offset, size);
 	if (size > info->fix.smem_len) {
 		DRM_ERROR("size=%lu is out of range(%u)!\n", size, info->fix.smem_len);
 		return -EFAULT;
 	}
+	DRM_INFO("fbdev->smem_start = 0x%x, fbdev->screen_base = 0x%x\n",
+		fbdev->smem_start, fbdev->screen_base);
 
 	for_each_sg(table->sgl, sg, table->nents, i) {
 		page = sg_page(sg);
@@ -184,9 +193,14 @@ static int kirin_fbdev_mmap(struct fb_info *info, struct vm_area_struct * vma)
 		}
 
 		addr += len;
-		if (addr >= vma->vm_end)
+		if (addr >= vma->vm_end) {
+			DRM_ERROR("addr = 0x%x!, vma->vm_end = 0x%x\n", addr, vma->vm_end);
+
 			return 0;
+		}
 	}
+
+	DRM_INFO("kirin_fbdev_mmap addr = 0x%x!\n", addr);
 
 	return 0;
 }
@@ -211,6 +225,7 @@ static int kirin_dmabuf_export(struct fb_info *info, void __user *argp)
 		if (dmabuf_export.fd < 0) {
 			DRM_ERROR("failed to ion_share!\n");
 		}
+		DRM_INFO("dmabuf_export.fd = %d.\n", dmabuf_export.fd);
 
 		ret = copy_to_user(argp, &dmabuf_export, sizeof(struct fb_dmabuf_export));
 		if (ret) {
@@ -228,12 +243,15 @@ static int kirin_dss_online_compose(struct fb_info *info, void __user *argp)
 	struct drm_fb_helper *helper;
 	struct kirin_drm_private *priv;
 	struct drm_plane *plane;
+	struct kirin_fbdev *fbdev;
 
 	struct drm_dss_layer layer;
 
 	helper = (struct drm_fb_helper *)info->par;
 	priv = helper->dev->dev_private;
-	plane =priv->crtc[0]->primary;
+	plane = priv->crtc[0]->primary;
+
+	fbdev = to_kirin_fbdev(helper);
 
 	ret = copy_from_user(&layer, argp, sizeof(struct drm_dss_layer));
 	if (ret) {
@@ -241,7 +259,7 @@ static int kirin_dss_online_compose(struct fb_info *info, void __user *argp)
 		return -EINVAL;
 	}
 
-	hisi_dss_online_play(plane, &layer);
+	hisi_dss_online_play(fbdev, plane, &layer);
 
 	return ret;
 }
@@ -324,7 +342,7 @@ static int kirin_fbdev_create(struct drm_fb_helper *helper,
 
 	/* allocate backing bo */
 	size = mode_cmd.pitches[0] * mode_cmd.height;
-	DRM_DEBUG("allocating %d bytes for fb %d", size, dev->primary->index);
+	DRM_DEBUG("allocating %d bytes for fb %d \n", size, dev->primary->index);
 
 	fb = kirin_framebuffer_init(dev, &mode_cmd);
 	if (IS_ERR(fb)) {
@@ -354,7 +372,7 @@ static int kirin_fbdev_create(struct drm_fb_helper *helper,
 		goto fail_unlock;
 	}
 
-	DRM_DEBUG("fbi=%p, dev=%p", fbi, dev);
+	DRM_DEBUG("fbi=%p, dev=%p \n", fbi, dev);
 
 	fbdev->fb = fb;
 	helper->fb = fb;
@@ -374,8 +392,8 @@ static int kirin_fbdev_create(struct drm_fb_helper *helper,
 	fbi->fix.smem_start = fbdev->smem_start;
 	fbi->fix.smem_len = fbdev->screen_size;
 
-	DRM_DEBUG("par=%p, %dx%d", fbi->par, fbi->var.xres, fbi->var.yres);
-	DRM_DEBUG("allocated %dx%d fb", fbdev->fb->width, fbdev->fb->height);
+	DRM_DEBUG("par=%p, %dx%d \n", fbi->par, fbi->var.xres, fbi->var.yres);
+	DRM_DEBUG("allocated %dx%d fb \n", fbdev->fb->width, fbdev->fb->height);
 
 	mutex_unlock(&dev->struct_mutex);
 

@@ -30,15 +30,344 @@
 
 
 #define DSS_CHN_MAX_DEFINE (DSS_COPYBIT_MAX)
+
 static int mid_array[DSS_CHN_MAX_DEFINE] = {0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x2, 0x1, 0x3, 0x0};
 
+#if defined (CONFIG_HISI_FB_970)
+uint32_t g_dss_module_base[DSS_CHN_MAX_DEFINE][MODULE_CHN_MAX] = {
+	// D0
+	{
+	MIF_CH0_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH0_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH0_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH0,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD0_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_D0_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_D0_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_D0_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// D1
+	{
+	MIF_CH1_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH1_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH1_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH1,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD1_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_D1_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_D1_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_D1_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// V0
+	{
+	MIF_CH2_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH2_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH2_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH2,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD2_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_VG0_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_VG0_DFC_OFFSET,  //MODULE_DFC
+	DSS_RCH_VG0_SCL_OFFSET,  //MODULE_SCL
+	DSS_RCH_VG0_SCL_LUT_OFFSET,  //MODULE_SCL_LUT
+	DSS_RCH_VG0_ARSR_OFFSET,  //MODULE_ARSR2P
+	DSS_RCH_VG0_ARSR_LUT_OFFSET,  //MODULE_ARSR2P_LUT
+	DSS_RCH_VG0_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
+	DSS_RCH_VG0_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
+	DSS_RCH_VG0_PCSC_OFFSET,  //MODULE_PCSC
+	DSS_RCH_VG0_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// G0
+	{
+	MIF_CH3_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH3_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH3_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH3,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD3_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_G0_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_G0_DFC_OFFSET,  //MODULE_DFC
+	DSS_RCH_G0_SCL_OFFSET,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	DSS_RCH_G0_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
+	DSS_RCH_G0_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_G0_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// V1
+	{
+	MIF_CH4_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH4_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH4_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH4,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD4_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_VG1_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_VG1_DFC_OFFSET,  //MODULE_DFC
+	DSS_RCH_VG1_SCL_OFFSET,  //MODULE_SCL
+	DSS_RCH_VG1_SCL_LUT_OFFSET,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	DSS_RCH_VG1_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
+	DSS_RCH_VG1_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_VG1_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// G1
+	{
+	MIF_CH5_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH5_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH5_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH5,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD5_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_G1_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_G1_DFC_OFFSET,  //MODULE_DFC
+	DSS_RCH_G1_SCL_OFFSET,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	DSS_RCH_G1_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
+	DSS_RCH_G1_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_G1_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// D2
+	{
+	MIF_CH6_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH6_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH6_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH6,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD6_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_D2_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_D2_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_D2_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// D3
+	{
+	MIF_CH7_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH7_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH7_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH7,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_STARTY,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD7_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_D3_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_D3_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_D3_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// W0
+	{
+	MIF_CH8_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH8_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH8_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_WCH0,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_WCH0_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_WCH0_OV_IEN,  //MODULE_MCTL_CHN_OV_OEN
+	0,  //MODULE_MCTL_CHN_STARTY
+	0,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_WCH0_DMA_OFFSET,  //MODULE_DMA
+	DSS_WCH0_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_WCH0_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// W1
+	{
+	MIF_CH9_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH9_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH9_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_WCH1,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_WCH1_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_WCH1_OV_IEN,  //MODULE_MCTL_CHN_OV_OEN
+	0,  //MODULE_MCTL_CHN_STARTY
+	0,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_WCH1_DMA_OFFSET,  //MODULE_DMA
+	DSS_WCH1_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_WCH1_CSC_OFFSET,  //MODULE_CSC
+	},
+
+	// V2
+	{
+	MIF_CH10_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH11_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH11_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_RCH8,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH8_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	DSS_MCTRL_SYS_OFFSET + MCTL_RCH8_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
+	0,  //MODULE_MCTL_CHN_STARTY
+	DSS_MCTRL_SYS_OFFSET + MCTL_MOD8_DBG,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_RCH_VG2_DMA_OFFSET,  //MODULE_DMA
+	DSS_RCH_VG2_DFC_OFFSET,  //MODULE_DFC
+	DSS_RCH_VG2_SCL_OFFSET,  //MODULE_SCL
+	DSS_RCH_VG2_SCL_LUT_OFFSET,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	DSS_RCH_VG2_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
+	DSS_RCH_VG2_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_RCH_VG2_CSC_OFFSET,  //MODULE_CSC
+	},
+	// W2
+	{
+	MIF_CH11_OFFSET,   //MODULE_MIF_CHN
+	AIF0_CH12_OFFSET,  //MODULE_AIF0_CHN
+	AIF1_CH12_OFFSET,  //MODULE_AIF1_CHN
+	MCTL_CTL_MUTEX_WCH2,  //MODULE_MCTL_CHN_MUTEX
+	DSS_MCTRL_SYS_OFFSET + MCTL_WCH2_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
+	0,  //MODULE_MCTL_CHN_OV_OEN
+	0,  //MODULE_MCTL_CHN_STARTY
+	0,  //MODULE_MCTL_CHN_MOD_DBG
+	DSS_WCH2_DMA_OFFSET,  //MODULE_DMA
+	DSS_WCH2_DFC_OFFSET,  //MODULE_DFC
+	0,  //MODULE_SCL
+	0,  //MODULE_SCL_LUT
+	0,  //MODULE_ARSR2P
+	0,  //MODULE_ARSR2P_LUT
+	0, //MODULE_POST_CLIP_ES
+	0,  //MODULE_POST_CLIP
+	0,  //MODULE_PCSC
+	DSS_WCH2_CSC_OFFSET,  //MODULE_CSC
+	},
+};
+
+uint32_t g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX] = {
+	{DSS_OVL0_OFFSET,
+	DSS_MCTRL_CTL0_OFFSET},
+
+	{DSS_OVL1_OFFSET,
+	DSS_MCTRL_CTL1_OFFSET},
+
+	{DSS_OVL2_OFFSET,
+	DSS_MCTRL_CTL2_OFFSET},
+
+	{DSS_OVL3_OFFSET,
+	DSS_MCTRL_CTL3_OFFSET},
+
+	{0,
+	DSS_MCTRL_CTL4_OFFSET},
+
+	{0,
+	DSS_MCTRL_CTL5_OFFSET},
+};
+
+//SCF_LUT_CHN coef_idx
+int g_scf_lut_chn_coef_idx[DSS_CHN_MAX_DEFINE] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+uint32_t g_dss_module_cap[DSS_CHN_MAX_DEFINE][MODULE_CAP_MAX] = {
+	/* D2 */
+	{0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
+	/* D3 */
+	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+	/* V0 */
+	{0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1},
+	/* G0 */
+	{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+	/* V1 */
+	{0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1},
+	/* G1 */
+	{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+	/* D0 */
+	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+	/* D1 */
+	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+
+	/* W0 */
+	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
+	/* W1 */
+	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
+
+	/* V2 */
+	{0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1},
+	/* W2 */
+	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
+};
+
+/* number of smrx idx for each channel */
+uint32_t g_dss_chn_sid_num[DSS_CHN_MAX_DEFINE] = {
+    4, 1, 4, 4, 4, 4, 1, 1, 3, 4, 3, 3
+};
+
+/* start idx of each channel */
+/* smrx_idx = g_dss_smmu_smrx_idx[chn_idx] + (0 ~ g_dss_chn_sid_num[chn_idx]) */
+uint32_t g_dss_smmu_smrx_idx[DSS_CHN_MAX_DEFINE] = {
+    0, 4, 5, 9, 13, 17, 21, 22, 26, 29, 23, 36
+};
+#else
 /*
 ** dss_chn_idx
 ** DSS_RCHN_D2 = 0,	DSS_RCHN_D3,	DSS_RCHN_V0,	DSS_RCHN_G0,	DSS_RCHN_V1,
 ** DSS_RCHN_G1,	DSS_RCHN_D0,	DSS_RCHN_D1,	DSS_WCHN_W0,	DSS_WCHN_W1,
 ** DSS_RCHN_V2,   DSS_WCHN_W2,
 */
-/*lint -e785*/
 u32 g_dss_module_base[DSS_CHN_MAX_DEFINE][MODULE_CHN_MAX] = {
 	/* D0 */
 	{
@@ -291,7 +620,6 @@ u32 g_dss_module_base[DSS_CHN_MAX_DEFINE][MODULE_CHN_MAX] = {
 	},
 };
 
-/*lint +e785*/
 u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX] = {
 	{DSS_OVL0_OFFSET,
 	DSS_MCTRL_CTL0_OFFSET},
@@ -357,7 +685,7 @@ u32 g_dss_smmu_smrx_idx[DSS_CHN_MAX_DEFINE] = {
 u32 g_dss_mif_sid_map[DSS_CHN_MAX] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
-
+#endif
 static int hisi_pixel_format_hal2dma(int format)
 {
 	int ret = 0;
@@ -555,10 +883,12 @@ static int hisi_dss_smmu_config(struct dss_hw_ctx *ctx, int chn_idx, bool mmu_en
 
 	for (i = 0; i < g_dss_chn_sid_num[chn_idx]; i++) {
 		idx = g_dss_smmu_smrx_idx[chn_idx] + i;
-		if (!mmu_enable)
+		if (!mmu_enable) {
 			set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 1, 32, 0);
-		else
-			set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 0x70, 32, 0);
+		} else {
+			//set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 0x70, 32, 0);
+			set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 0x1C, 32, 0);
+		}
 	}
 
 	return 0;
@@ -668,7 +998,11 @@ static int hisi_dss_mctl_sys_config(struct dss_hw_ctx *ctx, int chn_idx)
 	set_reg(mctl_sys_base + mctl_rch_ov_oen_offset,
 		((1 << (layer_idx + 1)) | (0x100 << DSS_OVL0)), 32, 0);
 
-	set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, 0x8, 4, 0);
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, 0xe, 4, 0);
+	} else {
+		set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, 0x8, 4, 0);
+	}
 
 	set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, chn_idx, 4, (layer_idx + 1) * 4);
 
@@ -805,8 +1139,10 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 		set_reg(rdma_base + DMA_OFT_Y0, rdma_oft_y0, 16, 0);
 		set_reg(rdma_base + DMA_OFT_X1, rdma_oft_x1, 12, 0);
 		set_reg(rdma_base + DMA_OFT_Y1, rdma_oft_y1, 16, 0);
-		set_reg(rdma_base + DMA_CTRL, rdma_format, 5, 3);
-		set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8);
+		//set_reg(rdma_base + DMA_CTRL, rdma_format, 5, 3);
+		//set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8);
+		set_reg(rdma_base + DMA_CTRL, 0x130, 32, 0);
+		//set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8);
 		set_reg(rdma_base + DMA_STRETCH_SIZE_VRT, stretch_size_vrt, 32, 0);
 		set_reg(rdma_base + DMA_DATA_ADDR0, display_addr, 32, 0);
 		set_reg(rdma_base + DMA_STRIDE0, rdma_stride, 13, 0);
@@ -866,31 +1202,53 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 		return -1;
 	}
 
+	DRM_INFO("+. \n");
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 	mctl_base = ctx->base +
 		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 	ovl0_base = ctx->base +
 		g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
 
-	set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x1, 32, 0);
-	set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x0, 32, 0);
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		set_reg(ovl0_base + OV8_REG_DEFAULT, 0x1, 32, 0);
+		set_reg(ovl0_base + OV8_REG_DEFAULT, 0x0, 32, 0);
+		set_reg(ovl0_base + OVL_SIZE, (xres - 1) |
+			((yres - 1) << 16), 32, 0);
 
-	set_reg(ovl0_base + OVL_SIZE, (xres - 1) | ((yres - 1) << 16), 32, 0);
 #ifdef CONFIG_HISI_FB_OV_BASE_USED
-	set_reg(ovl0_base + OVL_BG_COLOR, 0xFFFF0000, 32, 0);
+		DRM_INFO("CONFIG_HISI_FB_OV_BASE_USED !!. \n");
+		set_reg(ovl0_base + OV_BG_COLOR_RGB, 0x3FF00000, 32, 0);
+		set_reg(ovl0_base + OV_BG_COLOR_A, 0x3FF, 32, 0);
 #else
-	set_reg(ovl0_base + OVL_BG_COLOR, 0xFF000000, 32, 0);
+		set_reg(ovl0_base + OV_BG_COLOR_RGB, 0x00000000, 32, 0);
+		set_reg(ovl0_base + OV_BG_COLOR_A, 0x00000000, 32, 0);
 #endif
-	set_reg(ovl0_base + OVL_DST_STARTPOS, 0x0, 32, 0);
-	set_reg(ovl0_base + OVL_DST_ENDPOS, (xres - 1) | ((yres - 1) << 16), 32, 0);
-	set_reg(ovl0_base + OVL_GCFG, 0x10001, 32, 0);
+		set_reg(ovl0_base + OV_DST_STARTPOS, 0x0, 32, 0);
+		set_reg(ovl0_base + OV_DST_ENDPOS, (xres - 1) |
+			((yres - 1) << 16), 32, 0);
+		set_reg(ovl0_base + OV_GCFG, 0x10001, 32, 0);
+		set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, 0xE, 4, 0);
+	} else {
+		set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x1, 32, 0);
+		set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x0, 32, 0);
+		set_reg(ovl0_base + OVL_SIZE, (xres - 1) | ((yres - 1) << 16), 32, 0);
+#ifdef CONFIG_HISI_FB_OV_BASE_USED
+		set_reg(ovl0_base + OVL_BG_COLOR, 0xFFFF0000, 32, 0);
+#else
+		set_reg(ovl0_base + OVL_BG_COLOR, 0xFF000000, 32, 0);
+#endif
+		set_reg(ovl0_base + OVL_DST_STARTPOS, 0x0, 32, 0);
+		set_reg(ovl0_base + OVL_DST_ENDPOS, (xres - 1) | ((yres - 1) << 16), 32, 0);
+		set_reg(ovl0_base + OVL_GCFG, 0x10001, 32, 0);
+		set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, 0x8, 4, 0);
+	}
 
 	set_reg(mctl_base + MCTL_CTL_MUTEX_ITF, 0x1, 32, 0);
 	set_reg(mctl_base + MCTL_CTL_MUTEX_DBUF, 0x1, 2, 0);
 	set_reg(mctl_base + MCTL_CTL_MUTEX_OV, 1 << DSS_OVL0, 4, 0);
-
-	set_reg(mctl_sys_base + MCTL_RCH_OV0_SEL, 0x8, 4, 0);
 	set_reg(mctl_sys_base + MCTL_OV0_FLUSH_EN, 0xd, 4, 0);
+
+	DRM_INFO("-. \n");
 
 	return 0;
 }
@@ -908,21 +1266,43 @@ static int hisi_dss_ovl_config(struct dss_hw_ctx *ctx,
 	ovl0_base = ctx->base +
 		g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
 
-	set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x1, 32, 0);
-	set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x0, 32, 0);
-	set_reg(ovl0_base + OVL_SIZE, (xres - 1) |
-		((yres - 1) << 16), 32, 0);
-	set_reg(ovl0_base + OVL_BG_COLOR, 0xFF000000, 32, 0);
-	set_reg(ovl0_base + OVL_DST_STARTPOS, 0x0, 32, 0);
-	set_reg(ovl0_base + OVL_DST_ENDPOS, (xres - 1) |
-		((yres - 1) << 16), 32, 0);
-	set_reg(ovl0_base + OVL_GCFG, 0x10001, 32, 0);
-	set_reg(ovl0_base + OVL_LAYER0_POS, (rect->left) |
-		((rect->top) << 16), 32, 0);
-	set_reg(ovl0_base + OVL_LAYER0_SIZE, (rect->right) |
-		((rect->bottom) << 16), 32, 0);
-	set_reg(ovl0_base + OVL_LAYER0_ALPHA, 0x00ff40ff, 32, 0);
-	set_reg(ovl0_base + OVL_LAYER0_CFG, 0x1, 1, 0);
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		set_reg(ovl0_base + OV8_REG_DEFAULT, 0x1, 32, 0);
+		set_reg(ovl0_base + OV8_REG_DEFAULT, 0x0, 32, 0);
+		set_reg(ovl0_base + OVL_SIZE, (xres - 1) |
+			((yres - 1) << 16), 32, 0);
+		set_reg(ovl0_base + OV_BG_COLOR_RGB, 0x3FF00000, 32, 0);
+		set_reg(ovl0_base + OV_BG_COLOR_A, 0x3ff, 32, 0);
+
+		set_reg(ovl0_base + OV_DST_STARTPOS, 0x0, 32, 0);
+		set_reg(ovl0_base + OV_DST_ENDPOS, (xres - 1) |
+			((yres - 1) << 16), 32, 0);
+		set_reg(ovl0_base + OV_GCFG, 0x10001, 32, 0);
+		set_reg(ovl0_base + OV_LAYER0_POS, (rect->left) |
+			((rect->top) << 16), 32, 0);
+		set_reg(ovl0_base + OV_LAYER0_SIZE, (rect->right) |
+			((rect->bottom) << 16), 32, 0);
+		set_reg(ovl0_base + OV_LAYER0_ALPHA_MODE, 0x1004000, 32, 0);///NEED CHECK??
+		//set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3fc03fc, 32, 0);
+		set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3ff03ff, 32, 0);
+		set_reg(ovl0_base + OV_LAYER0_CFG, 0x1, 1, 0);
+	} else {
+		set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x1, 32, 0);
+		set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x0, 32, 0);
+		set_reg(ovl0_base + OVL_SIZE, (xres - 1) |
+			((yres - 1) << 16), 32, 0);
+		set_reg(ovl0_base + OVL_BG_COLOR, 0xFFFF0000, 32, 0);
+		set_reg(ovl0_base + OVL_DST_STARTPOS, 0x0, 32, 0);
+		set_reg(ovl0_base + OVL_DST_ENDPOS, (xres - 1) |
+			((yres - 1) << 16), 32, 0);
+		set_reg(ovl0_base + OVL_GCFG, 0x10001, 32, 0);
+		set_reg(ovl0_base + OVL_LAYER0_POS, (rect->left) |
+			((rect->top) << 16), 32, 0);
+		set_reg(ovl0_base + OVL_LAYER0_SIZE, (rect->right) |
+			((rect->bottom) << 16), 32, 0);
+		set_reg(ovl0_base + OVL_LAYER0_ALPHA, 0x00ff40ff, 32, 0);
+		set_reg(ovl0_base + OVL_LAYER0_CFG, 0x1, 1, 0);
+	}
 
 	return 0;
 }
@@ -978,13 +1358,18 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	void __iomem *smmu_base;
 	struct iommu_domain_data *domain_data = NULL;
 	uint32_t phy_pgd_base = 0;
+	uint64_t fama_phy_pgd_base;
+	uint32_t fama_ptw_msb;
 
+	DRM_INFO("+. \n");
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
 		return;
 	}
 
+	DRM_INFO("ctx->base = 0x%x \n", ctx->base);
 	smmu_base = ctx->base + DSS_SMMU_OFFSET;
+	DRM_INFO("smmu_base = 0x%x \n", smmu_base);
 
 	set_reg(smmu_base + SMMU_SCR, 0x0, 1, 0);  /*global bypass cancel*/
 	set_reg(smmu_base + SMMU_SCR, 0x1, 8, 20); /*ptw_mid*/
@@ -1009,8 +1394,12 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 
 	/*TTBR0*/
 	domain_data = (struct iommu_domain_data *)(ctx->mmu_domain->priv);
+	fama_phy_pgd_base = domain_data->phy_pgd_base;
 	phy_pgd_base = (uint32_t)(domain_data->phy_pgd_base);
+	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x \n", fama_phy_pgd_base, phy_pgd_base);
 	set_reg(smmu_base + SMMU_CB_TTBR0, phy_pgd_base, 32, 0);
+
+	DRM_INFO("-. \n");
 }
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx)
@@ -1105,8 +1494,12 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	struct dss_crtc *acrtc = aplane->acrtc;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
+#ifndef CMA_BUFFER_USED
 	struct kirin_drm_private *priv = plane->dev->dev_private;
 	struct kirin_fbdev *fbdev = to_kirin_fbdev(priv->fbdev);
+#else
+	struct drm_gem_cma_object *obj = drm_fb_cma_get_gem_obj(state->fb, 0);
+#endif
 
 	bool afbcd = false;
 	bool mmu_enable = true;
@@ -1116,6 +1509,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	u32 display_addr = 0;
 	u32 hal_fmt;
 	int chn_idx = DSS_RCHN_D2;
+	char filename[256] = {0};
 
 	int crtc_x = state->crtc_x;
 	int crtc_y = state->crtc_y;
@@ -1134,16 +1528,24 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	bpp = fb->bits_per_pixel / 8;
 	stride = fb->pitches[0];
 
+#if defined(CONFIG_HISI_FB_LDI_COLORBAR_USED) || defined(CONFIG_HISI_FB_DPP_COLORBAR_USED) || defined(CONFIG_HISI_FB_OV_BASE_USED)
+	return;
+#endif
+
+#ifndef CMA_BUFFER_USED
 	if (fbdev)
 		display_addr = (u32)fbdev->smem_start + src_y * stride;
 	else
-		printk("JDB: fbdev is null?\n");
+		DRM_ERROR("fbdev is null? \n");
+#else
+	display_addr = (u32)obj->paddr + src_y * stride;
+#endif
 
 	rect.left = 0;
 	rect.right = src_w - 1;
 	rect.top = 0;
 	rect.bottom = src_h - 1;
-	hal_fmt = dss_get_format(fb->pixel_format);
+	hal_fmt = HISI_FB_PIXEL_FORMAT_BGRA_8888;//dss_get_format(fb->pixel_format);
 
 	DRM_DEBUG("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),"
 		"fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d, bits_per_pixel=%d.\n",
@@ -1178,7 +1580,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	hisi_dss_wait_for_complete(ctx);
 }
 
-void hisi_dss_online_play(struct drm_plane *plane, drm_dss_layer_t *layer)
+void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, drm_dss_layer_t *layer)
 {
 	struct drm_plane_state *state = plane->state;
 	struct drm_display_mode *mode;
@@ -1207,13 +1609,20 @@ void hisi_dss_online_play(struct drm_plane *plane, drm_dss_layer_t *layer)
 
 	bpp = layer->img.bpp;
 	stride = layer->img.stride;
+
 	display_addr = layer->img.vir_addr;
-	hal_fmt = layer->img.format;
+	hal_fmt = HISI_FB_PIXEL_FORMAT_RGBA_8888;//layer->img.format;
 
 	rect.left = 0;
 	rect.right = src_w - 1;
 	rect.top = 0;
 	rect.bottom = src_h - 1;
+
+	DRM_DEBUG("channel%d: src:(%dx%d) rect(%d,%d,%d,%d),"
+		"pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
+		chn_idx, src_w, src_h,
+		rect.left, rect.top, rect.right, rect.bottom,
+		hal_fmt, stride, display_addr, bpp);
 
 	hfp = mode->hsync_start - mode->hdisplay;
 	hbp = mode->htotal - mode->hsync_end;
@@ -1229,7 +1638,7 @@ void hisi_dss_online_play(struct drm_plane *plane, drm_dss_layer_t *layer)
 
 	hisi_dss_rdma_config(ctx, &rect, display_addr, hal_fmt, bpp, chn_idx, afbcd, mmu_enable);
 	hisi_dss_rdfc_config(ctx, &rect, hal_fmt, bpp, chn_idx);
-	hisi_dss_ovl_config(ctx, &rect, mode->hdisplay, mode->vdisplay);
+	hisi_dss_ovl_config(ctx, &rect, src_w, src_h);
 
 	hisi_dss_mctl_ov_config(ctx, chn_idx);
 	hisi_dss_mctl_sys_config(ctx, chn_idx);
