@@ -26,7 +26,6 @@
 
 #include "kirin_drm_drv.h"
 
-
 #ifdef CONFIG_DRM_FBDEV_EMULATION
 static bool fbdev = true;
 MODULE_PARM_DESC(fbdev, "Enable fbdev compat layer");
@@ -61,10 +60,24 @@ static void kirin_fbdev_output_poll_changed(struct drm_device *dev)
 
 	dsi_set_output_client(dev);
 
+#ifdef CMA_BUFFER_USED
+	if (priv->fbdev) {
+		DRM_INFO("hotplug_event!!!!!!\n");
+		drm_fbdev_cma_hotplug_event(priv->fbdev);
+	} else {
+		DRM_INFO("cma_init!!!!!!\n");
+		priv->fbdev = drm_fbdev_cma_init(dev, 32,
+				dev->mode_config.num_crtc,
+				dev->mode_config.num_connector);
+		if (IS_ERR(priv->fbdev))
+			priv->fbdev = NULL;
+	}
+#else
 	if (priv->fbdev)
 		drm_fb_helper_hotplug_event(priv->fbdev);
 	else
 		priv->fbdev = kirin_drm_fbdev_init(dev);
+#endif
 }
 
 static const struct drm_mode_config_funcs kirin_drm_mode_config_funcs = {
@@ -125,14 +138,16 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	/* reset all the states of crtc/plane/encoder/connector */
 	drm_mode_config_reset(dev);
 
-	//if (fbdev)
-	//	priv->fbdev = kirin_drm_fbdev_init(dev);
+	if (fbdev)
+		priv->fbdev = kirin_drm_fbdev_init(dev);
 
 	/* init kms poll for handling hpd */
 	drm_kms_helper_poll_init(dev);
 
+#if 0
 	/* force detection after connectors init */
 	(void)drm_helper_hpd_irq_event(dev);
+#endif
 
 	return 0;
 
@@ -336,9 +351,12 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	DRM_INFO("the device node is %s\n", np->name);
 	remote = kirin_get_remote_node(np);
 	if (IS_ERR(remote))
 		return PTR_ERR(remote);
+
+	DRM_INFO("the device remote node is %s\n", remote->name);
 
 	component_match_add(dev, &match, compare_of, remote);
 
@@ -356,6 +374,9 @@ static int kirin_drm_platform_remove(struct platform_device *pdev)
 
 static const struct of_device_id kirin_drm_dt_ids[] = {
 	{ .compatible = "hisilicon,hi3660-dpe",
+	  .data = &dss_dc_ops,
+	},
+	{ .compatible = "hisilicon,kirin970-dpe",
 	  .data = &dss_dc_ops,
 	},
 	{ /* end node */ },
