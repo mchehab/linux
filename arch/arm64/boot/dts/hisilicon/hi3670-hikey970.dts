@@ -13,6 +13,7 @@
 #include "hi3670.dtsi"
 #include "hikey970-pinctrl.dtsi"
 #include "hikey970-pmic.dtsi"
+#include "hikey970-drm.dtsi"
 
 / {
 	model = "HiKey970";
@@ -38,6 +39,19 @@
 		device_type = "memory";
 		/* expect bootloader to fill in this region */
 		reg = <0x0 0x0 0x0 0x0>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		drm_dma_reserved: drm_dma_mem_region {
+			compatible = "shared-dma-pool";
+			reg = <0 0x32200000 0 0x8000000>;
+			alignment = <0x400000>;
+			no-map;
+		};
 	};
 
 	fixed_1v8: regulator-1v8 {
