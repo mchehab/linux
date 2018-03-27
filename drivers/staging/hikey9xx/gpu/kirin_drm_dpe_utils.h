@@ -38,19 +38,27 @@ void enable_ldi(struct dss_crtc *acrtc);
 void disable_ldi(struct dss_crtc *acrtc);
 
 void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx);
+void dss_inner_clk_pdp_disable(struct dss_hw_ctx *ctx);
 void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx);
+void dss_inner_clk_common_disable(struct dss_hw_ctx *ctx);
 void dpe_interrupt_clear(struct dss_crtc *acrtc);
 void dpe_interrupt_unmask(struct dss_crtc *acrtc);
 void dpe_interrupt_mask(struct dss_crtc *acrtc);
 int dpe_common_clk_enable(struct dss_hw_ctx *ctx);
+int dpe_common_clk_disable(struct dss_hw_ctx *ctx);
 int dpe_inner_clk_enable(struct dss_hw_ctx *ctx);
+int dpe_inner_clk_disable(struct dss_hw_ctx *ctx);
 int dpe_regulator_enable(struct dss_hw_ctx *ctx);
+int dpe_regulator_disable(struct dss_hw_ctx *ctx);
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx);
 
 int dpe_irq_enable(struct dss_crtc *acrtc);
 int dpe_irq_disable(struct dss_crtc *acrtc);
 
 int dpe_init(struct dss_crtc *acrtc);
+int dpe_deinit(struct dss_crtc *acrtc);
+void dpe_check_itf_status(acrtc);
+int dpe_set_clk_rate_on_pll0(struct dss_hw_ctx *ctx);
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx);
 void hisi_dss_mctl_on(struct dss_hw_ctx *ctx);
