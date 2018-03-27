@@ -315,6 +315,23 @@ void init_ldi(struct dss_crtc *acrtc)
 	set_reg(ldi_base + LDI_CTRL, 0x0, 1, 0);
 }
 
+void deinit_ldi(struct dss_crtc *acrtc)
+{
+	struct dss_hw_ctx *ctx;
+	char __iomem *ldi_base;
+
+	ctx = acrtc->ctx;
+	if (!ctx) {
+		DRM_ERROR("ctx is NULL!\n");
+		return ;
+	}
+
+	ldi_base = ctx->base + DSS_LDI0_OFFSET;
+
+	/* ldi disable*/
+	set_reg(ldi_base + LDI_CTRL, 0, 1, 0);
+}
+
 void init_dbuf(struct dss_crtc *acrtc)
 {
 	struct dss_hw_ctx *ctx;
@@ -480,7 +497,6 @@ void init_dpp(struct dss_crtc *acrtc)
 	char __iomem *dpp_base;
 	char __iomem *mctl_sys_base;
 
-	DRM_INFO("+. \n");
 	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
@@ -524,8 +540,6 @@ void init_dpp(struct dss_crtc *acrtc)
 	set_reg(mctl_base + MCTL_CTL_MUTEX, 0x0, 1, 0);
 	#endif
 #endif
-
-	DRM_INFO("-. \n");
 }
 
 void enable_ldi(struct dss_crtc *acrtc)
@@ -679,6 +693,52 @@ int dpe_init(struct dss_crtc *acrtc)
 	mdelay(60);
 
 	return 0;
+}
+
+int dpe_deinit(struct dss_crtc *acrtc)
+{
+	deinit_ldi(acrtc);
+
+	return 0;
+}
+
+void dpe_check_itf_status(struct dss_crtc *acrtc)
+{
+	struct dss_hw_ctx *ctx;
+	char __iomem *mctl_sys_base = NULL;
+	int tmp = 0;
+	int delay_count = 0;
+	bool is_timeout = true;
+	int itf_idx = 0;
+
+	ctx = acrtc->ctx;
+	if (!ctx) {
+		DRM_ERROR("ctx is NULL!\n");
+		return ;
+	}
+
+	itf_idx = 0;
+	mctl_sys_base =  ctx->base + DSS_MCTRL_SYS_OFFSET;
+
+	while (1) {
+		tmp = inp32(mctl_sys_base + MCTL_MOD17_STATUS + itf_idx * 0x4);
+		if (((tmp & 0x10) == 0x10) || delay_count > 100) {
+			is_timeout = (delay_count > 100) ? true : false;
+			delay_count = 0;
+			break;
+		} else {
+			mdelay(1);
+			++delay_count;
+		}
+	}
+
+	if (is_timeout) {
+		DRM_DEBUG_DRIVER("mctl_itf%d not in idle status,ints=0x%x !\n", itf_idx, tmp);
+	}
+}
+
+void dss_inner_clk_pdp_disable(struct dss_hw_ctx *ctx)
+{
 }
 
 void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
@@ -938,6 +998,36 @@ int dpe_common_clk_enable(struct dss_hw_ctx *ctx)
 	return 0;
 }
 
+int dpe_common_clk_disable(struct dss_hw_ctx *ctx)
+{
+	struct clk *clk_tmp = NULL;
+
+	if (ctx == NULL) {
+		DRM_ERROR("ctx is NULL point!\n");
+		return -EINVAL;
+	}
+
+	clk_tmp = ctx->dss_pclk_dss_clk;
+	if (clk_tmp) {
+		clk_disable(clk_tmp);
+		clk_unprepare(clk_tmp);
+	}
+
+	clk_tmp = ctx->dss_axi_clk;
+	if (clk_tmp) {
+		clk_disable(clk_tmp);
+		clk_unprepare(clk_tmp);
+	}
+
+	clk_tmp = ctx->dss_mmbuf_clk;
+	if (clk_tmp) {
+		clk_disable(clk_tmp);
+		clk_unprepare(clk_tmp);
+	}
+
+	return 0;
+}
+
 int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
@@ -981,6 +1071,31 @@ int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
 	return 0;
 }
 
+int dpe_inner_clk_disable(struct dss_hw_ctx *ctx)
+{
+	int ret = 0;
+	struct clk *clk_tmp = NULL;
+
+	if (ctx == NULL) {
+		DRM_ERROR("ctx is NULL point!\n");
+		return -EINVAL;
+	}
+
+	clk_tmp = ctx->dss_pxl0_clk;
+	if (clk_tmp) {
+		clk_disable(clk_tmp);
+		clk_unprepare(clk_tmp);
+	}
+
+	clk_tmp = ctx->dss_pri_clk;
+	if (clk_tmp) {
+		clk_disable(clk_tmp);
+		clk_unprepare(clk_tmp);
+	}
+
+	return 0;
+}
+
 int dpe_regulator_enable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
@@ -1002,6 +1117,38 @@ int dpe_regulator_enable(struct dss_hw_ctx *ctx)
 	return ret;
 }
 
+int dpe_regulator_disable(struct dss_hw_ctx *ctx)
+{
+	int ret = 0;
+
+	DRM_INFO("+. \n");
+	if (NULL == ctx) {
+		DRM_ERROR("NULL ptr.\n");
+		return -EINVAL;
+	}
+
+	#if defined (CONFIG_HISI_FB_970)
+		dpe_set_clk_rate_on_pll0(ctx);
+	#endif
+
+	ret = regulator_disable(ctx->dpe_regulator);
+	if (ret != 0) {
+		DRM_ERROR("dpe regulator_disable failed, error=%d!\n", ret);
+		return -EINVAL;
+	}
+
+	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
+		ret = regulator_bulk_disable(1, ctx->mmbuf_regulator);
+		if (ret != 0) {
+			DRM_ERROR("mmbuf regulator_disable failed, error=%d!\n", ret);
+			return -EINVAL;
+		}
+	}
+
+	DRM_INFO("-. \n");
+	return ret;
+}
+
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 {
 	struct dss_clk_rate *pdss_clk_rate = NULL;
@@ -1009,20 +1156,19 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 	uint64_t dss_mmbuf_rate;
 	int ret = 0;
 
-	DRM_INFO("+. \n");
 	if (NULL == ctx) {
 		DRM_ERROR("NULL Pointer!\n");
 		return -EINVAL;
 	}
 
+#if 0
 	pdss_clk_rate = get_dss_clk_rate(ctx);
 	if (NULL == pdss_clk_rate) {
 		DRM_ERROR("NULL Pointer!\n");
 		return -EINVAL;
 	}
-
-	dss_pri_clk_rate = pdss_clk_rate->dss_pri_clk_rate;
-	ret = clk_set_rate(ctx->dss_pri_clk, dss_pri_clk_rate);
+#endif
+	ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_RATE_L1);
 	if (ret < 0) {
 		DRM_ERROR("dss_pri_clk clk_set_rate(%llu) failed, error=%d!\n",
 			dss_pri_clk_rate, ret);
@@ -1045,8 +1191,7 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 			pinfo->pxl_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 #endif
 
-	dss_mmbuf_rate = pdss_clk_rate->dss_mmbuf_rate;
-	ret = clk_set_rate(ctx->dss_mmbuf_clk, dss_mmbuf_rate);
+	ret = clk_set_rate(ctx->dss_mmbuf_clk, DEFAULT_DSS_MMBUF_CLK_RATE_L1);
 	if (ret < 0) {
 		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n",
 			dss_mmbuf_rate, ret);
@@ -1055,6 +1200,47 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 
 	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n",
 		dss_mmbuf_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
+
+	return ret;
+}
+
+int dpe_set_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
+{
+	struct dss_clk_rate *pdss_clk_rate = NULL;
+	uint64_t dss_pri_clk_rate;
+	uint64_t dss_mmbuf_rate;
+	int ret;
+	uint64_t clk_rate;
+
+	DRM_INFO("+. \n");
+	if (NULL == ctx) {
+		DRM_ERROR("NULL Pointer!\n");
+		return -EINVAL;
+	}
+
+	clk_rate = DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF;
+	ret = clk_set_rate(ctx->dss_mmbuf_clk, clk_rate);
+	if (ret < 0) {
+		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n", clk_rate, ret);
+		return -EINVAL;
+	}
+	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n", clk_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
+
+	clk_rate = DEFAULT_DSS_CORE_CLK_RATE_POWER_OFF;
+	ret = clk_set_rate(ctx->dss_pri_clk, clk_rate);
+	if (ret < 0) {
+		DRM_ERROR("dss_pri_clk clk_set_rate(%llu) failed, error=%d!\n", clk_rate, ret);
+		return -EINVAL;
+	}
+	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n", clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+
+	clk_rate = DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF;
+	ret = clk_set_rate(ctx->dss_pxl0_clk, clk_rate);
+	if (ret < 0) {
+		DRM_ERROR("dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n", clk_rate, ret);
+		return -EINVAL;
+	}
+	DRM_INFO("dss_pxl0_clk:[%llu]->[%llu].\n", clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 
 	return ret;
 }
