@@ -43,7 +43,7 @@
 #include "kirin_dpe_reg.h"
 #endif
 
-#define DSS_POWER_UP_ON_UEFI
+//#define DSS_POWER_UP_ON_UEFI
 
 #if defined (CONFIG_HISI_FB_970)
 #define DTS_COMP_DSS_NAME "hisilicon,kirin970-dpe"
@@ -320,7 +320,6 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
 #if defined (CONFIG_HISI_FB_970)
-	//mds_regulator_enable(ctx);
 	dpe_common_clk_enable(ctx);
 	dpe_inner_clk_enable(ctx);
 	#ifndef DSS_POWER_UP_ON_UEFI
@@ -371,17 +370,29 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	return 0;
 }
 
-#if 0
 static void dss_power_down(struct dss_crtc *acrtc)
 {
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
 	dpe_interrupt_mask(acrtc);
 	dpe_irq_disable(acrtc);
+	dpe_deinit(acrtc);
 
+	//FIXME:
+	dpe_check_itf_status(acrtc);
+	dss_inner_clk_pdp_disable(ctx);
+
+	if (ctx->g_dss_version_tag & FB_ACCEL_KIRIN970 ) {
+		dpe_inner_clk_disable(ctx);
+		dpe_common_clk_disable(ctx);
+		dpe_regulator_disable(ctx);
+	} else {
+		dpe_regulator_disable(ctx);
+		dpe_inner_clk_disable(ctx);
+		dpe_common_clk_disable(ctx);
+	}
 	ctx->power_on = false;
 }
-#endif
 
 static int dss_enable_vblank(struct drm_device *dev, unsigned int pipe)
 {
@@ -478,7 +489,7 @@ static void dss_crtc_disable(struct drm_crtc *crtc)
 	if (!acrtc->enable)
 		return;
 
-	/*dss_power_down(acrtc);*/
+	dss_power_down(acrtc);
 	acrtc->enable = false;
 	drm_crtc_vblank_off(crtc);
 }
@@ -621,6 +632,7 @@ static int dss_plane_atomic_check(struct drm_plane *plane,
 static void dss_plane_atomic_update(struct drm_plane *plane,
 				    struct drm_plane_state *old_state)
 {
+	struct drm_atomic_state *atomic_state;
 	hisi_fb_pan_display(plane);
 }
 
@@ -932,7 +944,36 @@ static void dss_drm_cleanup(struct drm_device *dev)
 	drm_crtc_cleanup(crtc);
 }
 
+static int  dss_drm_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	struct dss_data *dss = platform_get_drvdata(pdev);
+	struct drm_crtc *crtc = &dss->acrtc.base;
+
+	DRM_INFO("+. platform_device name is %s \n", pdev->name);
+	dss_crtc_disable(crtc);
+
+	DRM_INFO("-. \n");
+
+	return 0;
+}
+
+static int  dss_drm_resume(struct platform_device *pdev)
+{
+	struct dss_data *dss = platform_get_drvdata(pdev);
+	struct drm_crtc *crtc = &dss->acrtc.base;
+
+	DRM_INFO("+. platform_device name is %s \n", pdev->name);
+
+	dss_crtc_mode_set_nofb(crtc);
+	dss_crtc_enable(crtc);
+
+	DRM_INFO("-. \n");
+	return 0;
+}
+
 const struct kirin_dc_ops dss_dc_ops = {
 	.init = dss_drm_init,
-	.cleanup = dss_drm_cleanup
+	.cleanup = dss_drm_cleanup,
+	.suspend = dss_drm_suspend,
+	.resume = dss_drm_resume,
 };

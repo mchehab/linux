@@ -372,6 +372,36 @@ static int kirin_drm_platform_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	struct device *dev = &pdev->dev;
+
+	DRM_INFO("+. pdev->name is %s, m_message is %d \n", pdev->name, state.event);
+	if (!dc_ops) {
+		DRM_ERROR("dc_ops is NULL\n");
+		return -EINVAL;
+	}
+	dc_ops->suspend(pdev, state);
+
+	DRM_INFO("-. \n");
+	return 0;
+}
+
+static int kirin_drm_platform_resume(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+
+	DRM_INFO("+. pdev->name is %s \n", pdev->name);
+	if (!dc_ops) {
+		DRM_ERROR("dc_ops is NULL\n");
+		return -EINVAL;
+	}
+	dc_ops->resume(pdev);
+
+	DRM_INFO("-. \n");
+	return 0;
+}
+
 static const struct of_device_id kirin_drm_dt_ids[] = {
 	{ .compatible = "hisilicon,hi3660-dpe",
 	  .data = &dss_dc_ops,
@@ -386,6 +416,8 @@ MODULE_DEVICE_TABLE(of, kirin_drm_dt_ids);
 static struct platform_driver kirin_drm_platform_driver = {
 	.probe = kirin_drm_platform_probe,
 	.remove = kirin_drm_platform_remove,
+	.suspend = kirin_drm_platform_suspend,
+	.resume = kirin_drm_platform_resume,
 	.driver = {
 		.name = "kirin-drm",
 		.of_match_table = kirin_drm_dt_ids,

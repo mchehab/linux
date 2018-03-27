@@ -2063,6 +2063,36 @@ static int dsi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int dsi_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	struct device *dev = &pdev->dev;
+	struct dsi_data *ddata = dev_get_drvdata(dev);
+	struct dw_dsi *dsi = &ddata->dsi;
+
+	DRM_INFO("+. pdev->name is %s, pm_message is %d \n", pdev->name, state.event);
+
+	dsi_encoder_disable(&dsi->encoder);
+
+	DRM_INFO("-. \n");
+
+	return 0;
+}
+
+static int dsi_resume(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct dsi_data *ddata = dev_get_drvdata(dev);
+	struct dw_dsi *dsi = &ddata->dsi;
+
+	DRM_INFO("+. pdev->name is %s \n", pdev->name);
+
+	dsi_encoder_enable(&dsi->encoder);
+
+	DRM_INFO("-. \n");
+
+	return 0;
+}
+
 static const struct of_device_id dsi_of_match[] = {
 	{.compatible = "hisilicon,hi3660-dsi"},
 	{.compatible = "hisilicon,kirin970-dsi"},
@@ -2073,6 +2103,8 @@ MODULE_DEVICE_TABLE(of, dsi_of_match);
 static struct platform_driver dsi_driver = {
 	.probe = dsi_probe,
 	.remove = dsi_remove,
+	.suspend = dsi_suspend,
+	.resume = dsi_resume,
 	.driver = {
 		.name = "dw-dsi",
 		.of_match_table = dsi_of_match,
