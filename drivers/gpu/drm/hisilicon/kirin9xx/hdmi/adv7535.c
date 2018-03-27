@@ -1231,12 +1231,10 @@ static int adv7533_init_regulators(struct adv7511 *adv75xx, struct device *dev)
 	if (IS_ERR(adv75xx->v1p2)) {
 		ret = PTR_ERR(adv75xx->v1p2);
 		dev_err(dev, "failed to get v1p2 regulator %d\n", ret);
-		//return ret;
+		return ret;
 	}
 
 	ret = regulator_set_voltage(adv75xx->vdd, 1800000, 1800000);
-	//ret = regulator_set_voltage(adv75xx->vdd, 1500000, 1500000);
-	//ret = regulator_set_voltage(adv75xx->vdd, 2000000, 2000000);
 	if (ret) {
 		dev_err(dev, "failed to set avdd voltage %d\n", ret);
 		return ret;
@@ -1244,11 +1242,11 @@ static int adv7533_init_regulators(struct adv7511 *adv75xx, struct device *dev)
 
 
 	DRM_INFO(" adv75xx->vdd = %d \n", regulator_get_voltage(adv75xx->vdd));
-	//ret = regulator_set_voltage(adv75xx->v1p2, 1200000, 1200000);
+	/*ret = regulator_set_voltage(adv75xx->v1p2, 1200000, 1200000);
 	if (ret) {
 		dev_err(dev, "failed to set v1p2 voltage %d\n", ret);
-		//return ret;
-	}
+		return ret;
+	}*/
 
 	/* keep the regulators always on */
 	ret = regulator_enable(adv75xx->vdd);
@@ -1257,11 +1255,11 @@ static int adv7533_init_regulators(struct adv7511 *adv75xx, struct device *dev)
 		return ret;
 	}
 
-	//ret = regulator_enable(adv75xx->v1p2);
+	/*ret = regulator_enable(adv75xx->v1p2);
 	if (ret) {
 		dev_err(dev, "failed to enable v1p2 %d\n", ret);
 		//return ret;
-	}
+	}*/
 
 	return 0;
 }

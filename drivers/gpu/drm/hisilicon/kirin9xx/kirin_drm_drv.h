@@ -29,6 +29,8 @@
 struct kirin_dc_ops {
 	int (*init)(struct drm_device *dev);
 	void (*cleanup)(struct drm_device *dev);
+	int (*suspend)(struct platform_device *pdev, pm_message_t state);
+	int (*resume)(struct platform_device *pdev);
 };
 
 struct kirin_drm_private {
