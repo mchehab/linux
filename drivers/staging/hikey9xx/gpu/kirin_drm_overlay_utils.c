@@ -1202,7 +1202,6 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 		return -1;
 	}
 
-	DRM_INFO("+. \n");
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 	mctl_base = ctx->base +
 		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
@@ -1247,8 +1246,6 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 	set_reg(mctl_base + MCTL_CTL_MUTEX_DBUF, 0x1, 2, 0);
 	set_reg(mctl_base + MCTL_CTL_MUTEX_OV, 1 << DSS_OVL0, 4, 0);
 	set_reg(mctl_sys_base + MCTL_OV0_FLUSH_EN, 0xd, 4, 0);
-
-	DRM_INFO("-. \n");
 
 	return 0;
 }
@@ -1361,15 +1358,12 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	uint64_t fama_phy_pgd_base;
 	uint32_t fama_ptw_msb;
 
-	DRM_INFO("+. \n");
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
 		return;
 	}
 
-	DRM_INFO("ctx->base = 0x%x \n", ctx->base);
 	smmu_base = ctx->base + DSS_SMMU_OFFSET;
-	DRM_INFO("smmu_base = 0x%x \n", smmu_base);
 
 	set_reg(smmu_base + SMMU_SCR, 0x0, 1, 0);  /*global bypass cancel*/
 	set_reg(smmu_base + SMMU_SCR, 0x1, 8, 20); /*ptw_mid*/
@@ -1398,8 +1392,6 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	phy_pgd_base = (uint32_t)(domain_data->phy_pgd_base);
 	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x \n", fama_phy_pgd_base, phy_pgd_base);
 	set_reg(smmu_base + SMMU_CB_TTBR0, phy_pgd_base, 32, 0);
-
-	DRM_INFO("-. \n");
 }
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx)
@@ -1452,11 +1444,54 @@ void hisi_dss_unflow_handler(struct dss_hw_ctx *ctx, bool unmask)
 	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, tmp);
 }
 
-static int hisi_dss_wait_for_complete(struct dss_hw_ctx *ctx)
+void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
+{
+	char __iomem *mctl_base = NULL;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
+	int mctl_idx;
+	int mctl_status;
+	int delay_count = 0;
+	bool is_timeout;
+
+	DRM_INFO("+.\n");
+	if (!ctx) {
+		DRM_ERROR("ctx is NULL!\n");
+		return;
+	}
+
+	mctl_base = ctx->base +
+		g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
+
+	if (mctl_base) {
+		set_reg(mctl_base + MCTL_CTL_CLEAR, 0x1, 1, 0);
+	}
+
+	while (1) {
+		mctl_status = inp32(mctl_base + MCTL_CTL_STATUS);
+		if (((mctl_status & 0x10) == 0) || (delay_count > 500)) {
+			is_timeout = (delay_count > 100) ? true : false;
+			delay_count = 0;
+			break;
+		} else {
+			udelay(1);
+			++delay_count;
+		}
+	}
+
+	if (is_timeout) {
+		DRM_ERROR("mctl_status =0x%x !\n", mctl_status);
+	}
+
+	enable_ldi(acrtc);
+	DRM_INFO("-.\n");
+}
+
+static int hisi_dss_wait_for_complete(struct dss_crtc *acrtc)
 {
 	int ret = 0;
 	u32 times = 0;
 	u32 prev_vactive0_end = 0;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 
 	prev_vactive0_end = ctx->vactive0_end_flag;
 
@@ -1473,6 +1508,8 @@ REDO:
 	}
 
 	if (ret <= 0) {
+		disable_ldi(acrtc);
+		hisifb_mctl_sw_clr(acrtc);
 		DRM_ERROR("wait_for vactive0_end_flag timeout! ret=%d.\n", ret);
 
 		ret = -ETIMEDOUT;
@@ -1547,7 +1584,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	rect.bottom = src_h - 1;
 	hal_fmt = HISI_FB_PIXEL_FORMAT_BGRA_8888;//dss_get_format(fb->pixel_format);
 
-	DRM_DEBUG("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),"
+	DRM_DEBUG_DRIVER("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),"
 		"fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d, bits_per_pixel=%d.\n",
 		chn_idx, src_x, src_y, src_w, src_h,
 		crtc_x, crtc_y, crtc_w, crtc_h,
@@ -1577,7 +1614,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	hisi_dss_unflow_handler(ctx, true);
 
 	enable_ldi(acrtc);
-	hisi_dss_wait_for_complete(ctx);
+	hisi_dss_wait_for_complete(acrtc);
 }
 
 void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, drm_dss_layer_t *layer)
@@ -1646,5 +1683,5 @@ void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, dr
 	hisi_dss_unflow_handler(ctx, true);
 
 	enable_ldi(acrtc);
-	hisi_dss_wait_for_complete(ctx);
+	hisi_dss_wait_for_complete(acrtc);
 }
