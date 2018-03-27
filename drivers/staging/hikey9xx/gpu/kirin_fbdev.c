@@ -194,8 +194,7 @@ static int kirin_fbdev_mmap(struct fb_info *info, struct vm_area_struct * vma)
 
 		addr += len;
 		if (addr >= vma->vm_end) {
-			DRM_ERROR("addr = 0x%x!, vma->vm_end = 0x%x\n", addr, vma->vm_end);
-
+			DRM_INFO("addr = 0x%x!, vma->vm_end = 0x%x\n", addr, vma->vm_end);
 			return 0;
 		}
 	}

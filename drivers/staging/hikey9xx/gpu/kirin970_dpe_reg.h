@@ -108,32 +108,32 @@ enum dss_ovl_idx {
 #define DSS_WCH_MAX  (2)
 
 typedef struct dss_img {
-	uint32_t format;
-	uint32_t width;
-	uint32_t height;
-	uint32_t bpp;		/* bytes per pixel */
-	uint32_t buf_size;
-	uint32_t stride;
-	uint32_t stride_plane1;
-	uint32_t stride_plane2;
+	u32 format;
+	u32 width;
+	u32 height;
+	u32 bpp;		/* bytes per pixel */
+	u32 buf_size;
+	u32 stride;
+	u32 stride_plane1;
+	u32 stride_plane2;
 	uint64_t phy_addr;
 	uint64_t vir_addr;
-	uint32_t offset_plane1;
-	uint32_t offset_plane2;
+	u32 offset_plane1;
+	u32 offset_plane2;
 
 	uint64_t afbc_header_addr;
 	uint64_t afbc_payload_addr;
-	uint32_t afbc_header_stride;
-	uint32_t afbc_payload_stride;
-	uint32_t afbc_scramble_mode;
-	uint32_t mmbuf_base;
-	uint32_t mmbuf_size;
+	u32 afbc_header_stride;
+	u32 afbc_payload_stride;
+	u32 afbc_scramble_mode;
+	u32 mmbuf_base;
+	u32 mmbuf_size;
 
-	uint32_t mmu_enable;
-	uint32_t csc_mode;
-	uint32_t secure_mode;
+	u32 mmu_enable;
+	u32 csc_mode;
+	u32 secure_mode;
 	int32_t shared_fd;
-	uint32_t reserved0;
+	u32 reserved0;
 } dss_img_t;
 
 typedef struct drm_dss_layer {
@@ -141,13 +141,13 @@ typedef struct drm_dss_layer {
 	dss_rect_t src_rect;
 	dss_rect_t src_rect_mask;
 	dss_rect_t dst_rect;
-	uint32_t transform;
+	u32 transform;
 	int32_t blending;
-	uint32_t glb_alpha;
-	uint32_t color;		/* background color or dim color */
+	u32 glb_alpha;
+	u32 color;		/* background color or dim color */
 	int32_t layer_idx;
 	int32_t chn_idx;
-	uint32_t need_cap;
+	u32 need_cap;
 	int32_t acquire_fence;
 } drm_dss_layer_t;
 
