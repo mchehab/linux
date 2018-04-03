@@ -265,7 +265,7 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		if (mode->clock == 148500)
 			clk_Hz = 144000 * 1000UL;
 		else if (mode->clock == 83496)
-			clk_Hz = 80000 * 1000UL;
+			clk_Hz = 84000 * 1000UL;
 		else if (mode->clock == 74440)
 			clk_Hz = 72000 * 1000UL;
 		else if (mode->clock == 74250)
@@ -282,7 +282,7 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		 */
 		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
 		if (ret) {
-			DRM_ERROR("failed to set pixel clk %dHz (%d)\n", clk_Hz, ret);
+			DRM_ERROR("failed to set pixel clk %llu Hz (%d)\n", clk_Hz, ret);
 		}
 #endif
 		adj_mode->clock = clk_Hz / 1000;
@@ -304,20 +304,20 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		 */
 		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
 		if (ret) {
-			DRM_ERROR("failed to set pixel clk %dHz (%d)\n", clk_Hz, ret);
+			DRM_ERROR("failed to set pixel clk %llu Hz (%d)\n", clk_Hz, ret);
 		}
 		adj_mode->clock = clk_get_rate(ctx->dss_pxl0_clk) / 1000;
 	}
 
-	DRM_INFO("dss_pxl0_clk [%llu]->[%llu] \n", clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
+	DRM_INFO("dss_pxl0_clk [%llu]->[%lu] \n", clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
 
 	dpe_init(acrtc);
 }
 
 static int dss_power_up(struct dss_crtc *acrtc)
 {
-	int ret;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
+	int ret = 0;
 
 #if defined (CONFIG_HISI_FB_970)
 	dpe_common_clk_enable(ctx);
@@ -367,7 +367,8 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	dpe_interrupt_unmask(acrtc);
 
 	ctx->power_on = true;
-	return 0;
+
+	return ret;
 }
 
 static void dss_power_down(struct dss_crtc *acrtc)
@@ -427,8 +428,6 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 
 	u32 isr_s1 = 0;
 	u32 isr_s2 = 0;
-	u32 isr_s2_dpp = 0;
-	u32 isr_s2_smmu = 0;
 	u32 mask = 0;
 
 	isr_s1 = inp32(dss_base + GLB_CPU_PDP_INTS);
@@ -632,7 +631,6 @@ static int dss_plane_atomic_check(struct drm_plane *plane,
 static void dss_plane_atomic_update(struct drm_plane *plane,
 				    struct drm_plane_state *old_state)
 {
-	struct drm_atomic_state *atomic_state;
 	hisi_fb_pan_display(plane);
 }
 
@@ -731,7 +729,6 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		DRM_ERROR ("failed to get dss base resource.\n");
 		return -ENXIO;
 	}
-	DRM_INFO("dss base =0x%x.\n", ctx->base);
 
 	ctx->peri_crg_base  = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
