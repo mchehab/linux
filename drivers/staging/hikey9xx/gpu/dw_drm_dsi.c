@@ -312,6 +312,7 @@ void dsi_set_output_client(struct drm_device *dev)
 }
 EXPORT_SYMBOL(dsi_set_output_client);
 
+#if defined (CONFIG_HISI_FB_970)
 static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 							struct mipi_phy_params *phy_ctrl)
 {
@@ -357,10 +358,8 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	bpp = mipi_dsi_pixel_format_to_bpp(dsi->client[id].format);
 	if (bpp < 0)
 		return;
-	if (mode->clock > 80000)
-	    dsi->client[id].lanes = 4;
-	else
-	    dsi->client[id].lanes = 3;
+
+	dsi->client[id].lanes = 4;
 
 	if (dsi->client[id].phy_clock)
 		dphy_req_kHz = dsi->client[id].phy_clock;
@@ -387,33 +386,7 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	m_n_int = lane_clock * vco_div * 1000000UL / DEFAULT_MIPI_CLK_RATE;
 	m_n_fract = ((lane_clock * vco_div * 1000000UL * 1000UL / DEFAULT_MIPI_CLK_RATE) % 1000) * 10 / 1000;
 
-	if (m_n_int % 2 == 0) {
-		if (m_n_fract * 6 >= 50) {
-			n_pll = 2;
-			m_pll = (m_n_int + 1) * n_pll;
-		} else if (m_n_fract * 6 >= 30) {
-			n_pll = 3;
-			m_pll = m_n_int * n_pll + 2;
-		} else {
-			n_pll = 1;
-			m_pll = m_n_int * n_pll;
-		}
-	} else {
-		if (m_n_fract * 6 >= 50) {
-			n_pll = 1;
-			m_pll = (m_n_int + 1) * n_pll;
-		} else if (m_n_fract * 6 >= 30) {
-			n_pll = 1;
-			m_pll = (m_n_int + 1) * n_pll;
-		} else if (m_n_fract * 6 >= 10) {
-			n_pll = 3;
-			m_pll = m_n_int * n_pll + 1;
-		} else {
-			n_pll = 2;
-			m_pll = m_n_int * n_pll;
-		}
-	}
-	//n_pll = 2;
+	n_pll = 2;
 
 	m_pll = (u32)(lane_clock * vco_div * n_pll * 1000000UL / DEFAULT_MIPI_CLK_RATE);
 
@@ -568,7 +541,7 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 		phy_ctrl->data_lane_hs2lp_time,
 		phy_ctrl->phy_stop_wait_time);
 }
-
+#else
 static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 							struct mipi_phy_params *phy_ctrl)
 {
@@ -887,7 +860,7 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 		phy_ctrl->data_t_hs_trial,
 		phy_ctrl->data_t_ta_go,
 		phy_ctrl->data_t_ta_get);
-	DRM_INFO("clk_lane_lp2hs_time=%u\n"
+	DRM_DEBUG("clk_lane_lp2hs_time=%u\n"
 		"clk_lane_hs2lp_time=%u\n"
 		"data_lane_lp2hs_time=%u\n"
 		"data_lane_hs2lp_time=%u\n"
@@ -898,6 +871,7 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 		phy_ctrl->data_lane_hs2lp_time,
 		phy_ctrl->phy_stop_wait_time);
 }
+#endif
 
 static void dw_dsi_set_mode(struct dw_dsi *dsi, enum dsi_work_mode mode)
 {
@@ -962,13 +936,11 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi, char __iomem 
 
 	lanes =  dsi->client[dsi->cur_client].lanes - 1;
 
-#if defined (CONFIG_HISI_FB_970)
-	for (i = 0; i <= lanes; i++) {
+	for (i = 0; i <= (lanes+1); i++) {
 		//Lane Transmission Property
 		addr = MIPIDSI_PHY_TST_LANE_TRANSMISSION_PROPERTY + (i << 5);
 		dsi_phy_tst_set(mipi_dsi_base, addr, 0x43);
 	}
-#endif
 
 	//pre_delay of clock lane request setting
 	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_PRE_DELAY, DSS_REDUCE(dsi->phy.clk_pre_delay));
@@ -988,7 +960,7 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi, char __iomem 
 	//clock lane timing ctrl - t_hs_trial
 	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_TRAIL, DSS_REDUCE(dsi->phy.clk_t_hs_trial));
 
-	for (i = 0; i <= (lanes + 1); i++) {//lint !e850
+	for (i = 0; i <= (lanes + 1); i++) {
 		if (i == 2) {
 			i++;  //addr: lane0:0x60; lane1:0x80; lane2:0xC0; lane3:0xE0
 		}
@@ -1039,7 +1011,6 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	u32 hsa_time = 0;
 	u32 hbp_time = 0;
 	u64 pixel_clk = 0;
-	u32 i = 0;
 	u32 id = 0;
 	unsigned long dw_jiffies = 0;
 	u32 tmp = 0;
@@ -1161,7 +1132,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	/* clock lane timing ctrl - t_hs_trial*/
 	dsi_phy_tst_set(mipi_dsi_base, 0x25, dsi->phy.clk_t_hs_trial);
 
-	for (i = 0; i <= lanes; i++) {
+	for (int i = 0; i <= lanes; i++) {
 		/* data lane pre_delay*/
 		tmp = 0x30 + (i << 4);
 		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_pre_delay));
@@ -1391,8 +1362,9 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 {
 	WARN_ON(!mipi_dsi_base);
-	u64 pctrl_dphytx_stopcnt = 0;
+	u64 pctrl_dphytx_stopcnt;
 
+	pctrl_dphytx_stopcnt = 0;
 	/* switch to video mode */
 	set_reg(mipi_dsi_base + MIPIDSI_MODE_CFG_OFFSET, 0x0, 1, 0);
 
@@ -1938,7 +1910,6 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 		DRM_ERROR ("failed to get dsi base resource.\n");
 		return -ENXIO;
 	}
-	DRM_INFO("dsi base =0x%x.\n", ctx->base);
 
 	ctx->peri_crg_base = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {

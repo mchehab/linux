@@ -114,7 +114,7 @@ unsigned long kirin_alloc_fb_buffer(struct kirin_fbdev *fbdev, int size)
 	fbdev->ion_client = client;
 	fbdev->ion_handle = handle;
 
-	DRM_INFO("fbdev->smem_start = 0x%x, fbdev->screen_base = 0x%x\n",
+	DRM_INFO("fbdev->smem_start = 0x%lu, fbdev->screen_base = 0x%p\n",
 		fbdev->smem_start, fbdev->screen_base);
 
 	return buf_addr;
@@ -164,12 +164,12 @@ static int kirin_fbdev_mmap(struct fb_info *info, struct vm_area_struct * vma)
 	addr = vma->vm_start;
 	offset = vma->vm_pgoff * PAGE_SIZE;
 	size = vma->vm_end - vma->vm_start;
-	DRM_INFO("addr = 0x%x, offset = %d, size = %d!\n", addr, offset, size);
+	DRM_INFO("addr = 0x%lu, offset = 0x%lu, size = %lu!\n", addr, offset, size);
 	if (size > info->fix.smem_len) {
 		DRM_ERROR("size=%lu is out of range(%u)!\n", size, info->fix.smem_len);
 		return -EFAULT;
 	}
-	DRM_INFO("fbdev->smem_start = 0x%x, fbdev->screen_base = 0x%x\n",
+	DRM_INFO("fbdev->smem_start = 0x%lu, fbdev->screen_base = 0x%p\n",
 		fbdev->smem_start, fbdev->screen_base);
 
 	for_each_sg(table->sgl, sg, table->nents, i) {
@@ -194,12 +194,12 @@ static int kirin_fbdev_mmap(struct fb_info *info, struct vm_area_struct * vma)
 
 		addr += len;
 		if (addr >= vma->vm_end) {
-			DRM_INFO("addr = 0x%x!, vma->vm_end = 0x%x\n", addr, vma->vm_end);
+			DRM_INFO("addr = 0x%lu!, vma->vm_end = 0x%lu \n", addr, vma->vm_end);
 			return 0;
 		}
 	}
 
-	DRM_INFO("kirin_fbdev_mmap addr = 0x%x!\n", addr);
+	DRM_INFO("kirin_fbdev_mmap addr = 0x%lu!\n", addr);
 
 	return 0;
 }

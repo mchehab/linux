@@ -184,14 +184,9 @@ int vcc_cmds_tx(struct platform_device *pdev, struct vcc_desc *cmds, int cnt);
 int pinctrl_cmds_tx(struct platform_device *pdev, struct pinctrl_cmd_desc *cmds, int cnt);
 int gpio_cmds_tx(struct gpio_desc *cmds, int cnt);
 extern struct spi_device *g_spi_dev;
-int spi_cmds_tx(struct spi_device *spi, struct spi_cmd_desc *cmds, int cnt);
 int hisi_pwm_set_backlight(struct backlight_device *bl, uint32_t bl_level);
 
 int hisi_pwm_off(void);
 int hisi_pwm_on(void);
-
-int hisi_lcd_backlight_on(struct drm_panel *p);
-int hisi_lcd_backlight_off(struct drm_panel *p);
-
 
 #endif /* KIRIN_FB_PANEL_H */
