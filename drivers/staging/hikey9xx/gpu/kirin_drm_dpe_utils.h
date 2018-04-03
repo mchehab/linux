@@ -57,7 +57,7 @@ int dpe_irq_disable(struct dss_crtc *acrtc);
 
 int dpe_init(struct dss_crtc *acrtc);
 int dpe_deinit(struct dss_crtc *acrtc);
-void dpe_check_itf_status(acrtc);
+void dpe_check_itf_status(struct dss_crtc *acrtc);
 int dpe_set_clk_rate_on_pll0(struct dss_hw_ctx *ctx);
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx);
