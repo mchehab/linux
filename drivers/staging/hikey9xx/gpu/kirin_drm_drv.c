@@ -374,8 +374,6 @@ static int kirin_drm_platform_remove(struct platform_device *pdev)
 
 static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t state)
 {
-	struct device *dev = &pdev->dev;
-
 	DRM_INFO("+. pdev->name is %s, m_message is %d \n", pdev->name, state.event);
 	if (!dc_ops) {
 		DRM_ERROR("dc_ops is NULL\n");
@@ -383,22 +381,17 @@ static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t
 	}
 	dc_ops->suspend(pdev, state);
 
-	DRM_INFO("-. \n");
 	return 0;
 }
 
 static int kirin_drm_platform_resume(struct platform_device *pdev)
 {
-	struct device *dev = &pdev->dev;
-
-	DRM_INFO("+. pdev->name is %s \n", pdev->name);
 	if (!dc_ops) {
 		DRM_ERROR("dc_ops is NULL\n");
 		return -EINVAL;
 	}
 	dc_ops->resume(pdev);
 
-	DRM_INFO("-. \n");
 	return 0;
 }
 
