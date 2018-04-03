@@ -19,8 +19,6 @@ int g_debug_set_reg_val = 0;
 
 DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
 
-static int dss_regulator_refcount;
-
 extern u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX];
 
 mipi_ifbc_division_t g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
@@ -117,28 +115,6 @@ uint32_t set_bits32(uint32_t old_val, uint32_t val, uint8_t bw, uint8_t bs)
 	tmp &= ~(mask << bs);
 
 	return (tmp | ((val & mask) << bs));
-}
-
-struct dss_clk_rate *get_dss_clk_rate(struct dss_hw_ctx *ctx)
-{
-	struct dss_clk_rate *pdss_clk_rate = NULL;
-	uint64_t default_dss_pri_clk_rate;
-
-	if (ctx == NULL) {
-		DRM_ERROR("ctx is null.\n");
-		return pdss_clk_rate;
-	}
-
-	pdss_clk_rate = &(ctx->dss_clk);
-	default_dss_pri_clk_rate = DEFAULT_DSS_CORE_CLK_RATE_L1;
-
-	pdss_clk_rate->dss_pri_clk_rate = default_dss_pri_clk_rate;
-	pdss_clk_rate->dss_mmbuf_rate = DEFAULT_DSS_MMBUF_CLK_RATE_L1;
-	pdss_clk_rate->dss_pclk_dss_rate = DEFAULT_PCLK_DSS_RATE;
-	pdss_clk_rate->dss_pclk_pctrl_rate = DEFAULT_PCLK_PCTRL_RATE;
-
-
-	return pdss_clk_rate;
 }
 
 static int mipi_ifbc_get_rect(struct dss_rect *rect)
@@ -399,9 +375,11 @@ void init_dbuf(struct dss_crtc *acrtc)
 		"hsw=%d\n"
 		"hbp=%d\n"
 		"hfp=%d\n"
+		"htotal=%d\n"
 		"vfp = %d\n"
 		"vbp = %d\n"
 		"vsw = %d\n"
+		"vtotal=%d\n"
 		"mode->hdisplay=%d\n"
 		"mode->vdisplay=%d\n",
 		dfs_time,
@@ -409,9 +387,11 @@ void init_dbuf(struct dss_crtc *acrtc)
 		hsw,
 		hbp,
 		hfp,
+		mode->htotal,
 		vfp,
 		vbp,
 		vsw,
+		mode->vtotal,
 		mode->hdisplay,
 		mode->vdisplay);
 
@@ -758,72 +738,13 @@ void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
 	outp32(dss_base + DSS_DPP_DITHER_OFFSET + DITHER_MEM_CTRL, 0x00000008);
 }
 
-static void dss_normal_set_reg(char __iomem *dss_base)
-{
-	if (NULL == dss_base) {
-		DRM_ERROR("dss_base is null.\n");
-		return;
-	}
-	//core/axi/mmbuf
-	outp32(dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
-	outp32(dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);
-
-	outp32(dss_base + DSS_RCH_VG0_ARSR_OFFSET + ARSR2P_LB_MEM_CTRL, 0x00000008);
-
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
-
-	outp32(dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
-	outp32(dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
-
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
-	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
-	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
-
-	outp32(dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-
-	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
-	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x0000008);
-	outp32(dss_base + DSS_RCH_G0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_G0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
-
-	outp32(dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);
-	outp32(dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x0000008);
-	outp32(dss_base + DSS_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
-
-	outp32(dss_base + DSS_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);
-	outp32(dss_base + DSS_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_D2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_RCH_D3_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-
-	outp32(dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL, 0x00000888);
-	outp32(dss_base + DSS_WCH0_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL, 0x88888888);
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL_1, 0x00000088);
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);
-
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL, 0x00000088);
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_LB_MEM_CTRL, 0x00000088);
-	outp32(dss_base + GLB_DSS_MEM_CTRL, 0x02605550);
-
-}
-
 void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 {
 	char __iomem *dss_base;
 
 	if (NULL == ctx) {
 		DRM_ERROR("NULL Pointer!\n");
-		return -EINVAL;
+		return ;
 	}
 
 	dss_base = ctx->base;
@@ -921,23 +842,6 @@ int dpe_irq_disable(struct dss_crtc *acrtc)
 	/*disable_irq_nosync(ctx->irq);*/
 
 	return 0;
-}
-
-void mds_regulator_enable(struct dss_hw_ctx *ctx)
-{
-	int ret = 0;
-
-	if (NULL == ctx) {
-		DRM_ERROR("NULL ptr.\n");
-		return -EINVAL;
-	}
-
-	ret = regulator_bulk_enable(1, ctx->media_subsys_regulator);
-	if (ret) {
-		DRM_ERROR(" media subsys regulator_enable failed, error=%d!\n", ret);
-	}
-
-	return ret;
 }
 
 int dpe_common_clk_enable(struct dss_hw_ctx *ctx)
@@ -1073,7 +977,6 @@ int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
 
 int dpe_inner_clk_disable(struct dss_hw_ctx *ctx)
 {
-	int ret = 0;
 	struct clk *clk_tmp = NULL;
 
 	if (ctx == NULL) {
@@ -1151,9 +1054,7 @@ int dpe_regulator_disable(struct dss_hw_ctx *ctx)
 
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 {
-	struct dss_clk_rate *pdss_clk_rate = NULL;
-	uint64_t dss_pri_clk_rate;
-	uint64_t dss_mmbuf_rate;
+	uint64_t clk_rate;
 	int ret = 0;
 
 	if (NULL == ctx) {
@@ -1161,21 +1062,14 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-#if 0
-	pdss_clk_rate = get_dss_clk_rate(ctx);
-	if (NULL == pdss_clk_rate) {
-		DRM_ERROR("NULL Pointer!\n");
-		return -EINVAL;
-	}
-#endif
+	clk_rate = DEFAULT_DSS_CORE_CLK_RATE_L1;
 	ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_RATE_L1);
 	if (ret < 0) {
-		DRM_ERROR("dss_pri_clk clk_set_rate(%llu) failed, error=%d!\n",
-			dss_pri_clk_rate, ret);
+		DRM_ERROR("dss_pri_clk clk_set_rate failed, error=%d!\n", ret);
 		return -EINVAL;
 	}
 	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n",
-		dss_pri_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+		clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
 
 #if 0 /* it will be set on dss_ldi_set_mode func */
 	ret = clk_set_rate(ctx->dss_pxl0_clk, pinfo->pxl_clk_rate);
@@ -1191,24 +1085,21 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 			pinfo->pxl_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 #endif
 
+	clk_rate = DEFAULT_DSS_MMBUF_CLK_RATE_L1;
 	ret = clk_set_rate(ctx->dss_mmbuf_clk, DEFAULT_DSS_MMBUF_CLK_RATE_L1);
 	if (ret < 0) {
-		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n",
-			dss_mmbuf_rate, ret);
+		DRM_ERROR("dss_mmbuf clk_set_rate failed, error=%d!\n", ret);
 		return -EINVAL;
 	}
 
 	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n",
-		dss_mmbuf_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
+		clk_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
 
 	return ret;
 }
 
 int dpe_set_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 {
-	struct dss_clk_rate *pdss_clk_rate = NULL;
-	uint64_t dss_pri_clk_rate;
-	uint64_t dss_mmbuf_rate;
 	int ret;
 	uint64_t clk_rate;
 

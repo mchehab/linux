@@ -1356,7 +1356,6 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	struct iommu_domain_data *domain_data = NULL;
 	uint32_t phy_pgd_base = 0;
 	uint64_t fama_phy_pgd_base;
-	uint32_t fama_ptw_msb;
 
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
@@ -1448,7 +1447,6 @@ void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
 {
 	char __iomem *mctl_base = NULL;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
-	int mctl_idx;
 	int mctl_status;
 	int delay_count = 0;
 	bool is_timeout;
@@ -1546,7 +1544,6 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	u32 display_addr = 0;
 	u32 hal_fmt;
 	int chn_idx = DSS_RCHN_D2;
-	char filename[256] = {0};
 
 	int crtc_x = state->crtc_x;
 	int crtc_y = state->crtc_y;

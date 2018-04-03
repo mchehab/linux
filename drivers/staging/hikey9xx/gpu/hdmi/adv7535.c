@@ -380,7 +380,6 @@ static void adv7511_set_link_config(struct adv7511 *adv7511,
 
 static void adv7511_dsi_config_tgen(struct adv7511 *adv7511)
 {
-	struct mipi_dsi_device *dsi = adv7511->dsi;
 	struct drm_display_mode *mode = &adv7511->curr_mode;
 	u8 clock_div_by_lanes[] = { 6, 4, 3 }; /* 2, 3, 4 lanes */
 	unsigned int hsw, hfp, hbp, vsw, vfp, vbp;
@@ -401,10 +400,6 @@ static void adv7511_dsi_config_tgen(struct adv7511 *adv7511)
 	regmap_write(adv7511->regmap_cec, 0x16,
 			clock_div_by_lanes[adv7511->num_dsi_lanes - 2] << 3);
 #endif
-
-	/* set pixel clock divider mode */
-	/*regmap_write(adv7511->regmap_cec, 0x16,
-			clock_div_by_lanes[dsi->lanes - 2] << 3);*/
 
 	/* horizontal porch params */
 	regmap_write(adv7511->regmap_cec, 0x28, mode->htotal >> 4);
@@ -944,10 +939,14 @@ static void adv7511_mode_set(struct adv7511 *adv7511,
 		struct mipi_dsi_device *dsi = adv7511->dsi;
 		int lanes, ret;
 
+#if defined(CONFIG_HISI_FB_970)
+		lanes = 4;
+#else
 		if (adj_mode->clock > 80000)
 			lanes = 4;
 		else
 			lanes = 3;
+#endif
 
 		if (lanes != dsi->lanes) {
 			mipi_dsi_detach(dsi);
