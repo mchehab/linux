@@ -359,7 +359,10 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	if (bpp < 0)
 		return;
 
-	dsi->client[id].lanes = 4;
+	if (mode->clock > 80000)
+	    dsi->client[id].lanes = 4;
+	else
+	    dsi->client[id].lanes = 3;
 
 	if (dsi->client[id].phy_clock)
 		dphy_req_kHz = dsi->client[id].phy_clock;
@@ -935,8 +938,7 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi, char __iomem 
 	u32 lanes;
 
 	lanes =  dsi->client[dsi->cur_client].lanes - 1;
-
-	for (i = 0; i <= (lanes+1); i++) {
+	for (i = 0; i <= (lanes + 1); i++) {
 		//Lane Transmission Property
 		addr = MIPIDSI_PHY_TST_LANE_TRANSMISSION_PROPERTY + (i << 5);
 		dsi_phy_tst_set(mipi_dsi_base, addr, 0x43);
@@ -960,10 +962,12 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi, char __iomem 
 	//clock lane timing ctrl - t_hs_trial
 	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_TRAIL, DSS_REDUCE(dsi->phy.clk_t_hs_trial));
 
-	for (i = 0; i <= (lanes + 1); i++) {
-		if (i == 2) {
+	for (i = 0; i <= 4; i++) {
+		if (lanes == 2 && i == 1) /*init mipi dsi 3 lanes shoud skip lane3*/
+			i++;
+
+		if (i == 2) /* skip clock lane*/
 			i++;  //addr: lane0:0x60; lane1:0x80; lane2:0xC0; lane3:0xE0
-		}
 
 		//data lane pre_delay
 		addr = MIPIDSI_PHY_TST_DATA_PRE_DELAY + (i << 5);
@@ -1019,6 +1023,9 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	dss_rect_t rect;
 	u32 cmp_stopstate_val = 0;
 	u32 lanes;
+#if !defined (CONFIG_HISI_FB_970)
+	int i = 0;
+#endif
 
 	WARN_ON(!dsi);
 	WARN_ON(!mipi_dsi_base);
@@ -1132,7 +1139,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	/* clock lane timing ctrl - t_hs_trial*/
 	dsi_phy_tst_set(mipi_dsi_base, 0x25, dsi->phy.clk_t_hs_trial);
 
-	for (int i = 0; i <= lanes; i++) {
+	for (i = 0; i <= lanes; i++) {
 		/* data lane pre_delay*/
 		tmp = 0x30 + (i << 4);
 		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_pre_delay));
@@ -1361,10 +1368,9 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 
 static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 {
+	u64 pctrl_dphytx_stopcnt = 0;
 	WARN_ON(!mipi_dsi_base);
-	u64 pctrl_dphytx_stopcnt;
 
-	pctrl_dphytx_stopcnt = 0;
 	/* switch to video mode */
 	set_reg(mipi_dsi_base + MIPIDSI_MODE_CFG_OFFSET, 0x0, 1, 0);
 
