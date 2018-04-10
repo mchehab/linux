@@ -939,14 +939,10 @@ static void adv7511_mode_set(struct adv7511 *adv7511,
 		struct mipi_dsi_device *dsi = adv7511->dsi;
 		int lanes, ret;
 
-#if defined(CONFIG_HISI_FB_970)
-		lanes = 4;
-#else
 		if (adj_mode->clock > 80000)
 			lanes = 4;
 		else
 			lanes = 3;
-#endif
 
 		if (lanes != dsi->lanes) {
 			mipi_dsi_detach(dsi);
