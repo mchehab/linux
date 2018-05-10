@@ -50,6 +50,8 @@ int dpe_inner_clk_enable(struct dss_hw_ctx *ctx);
 int dpe_inner_clk_disable(struct dss_hw_ctx *ctx);
 int dpe_regulator_enable(struct dss_hw_ctx *ctx);
 int dpe_regulator_disable(struct dss_hw_ctx *ctx);
+int mediacrg_regulator_enable(struct dss_hw_ctx *ctx);
+int mediacrg_regulator_disable(struct dss_hw_ctx *ctx);
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx);
 
 int dpe_irq_enable(struct dss_crtc *acrtc);
@@ -59,6 +61,8 @@ int dpe_init(struct dss_crtc *acrtc);
 int dpe_deinit(struct dss_crtc *acrtc);
 void dpe_check_itf_status(struct dss_crtc *acrtc);
 int dpe_set_clk_rate_on_pll0(struct dss_hw_ctx *ctx);
+int dpe_set_common_clk_rate_on_pll0(struct dss_hw_ctx *ctx);
+int dpe_set_pixel_clk_rate_on_pll0(struct dss_hw_ctx *ctx);
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx);
 void hisi_dss_mctl_on(struct dss_hw_ctx *ctx);
