@@ -3073,8 +3073,8 @@ struct dss_hw_ctx {
 	struct dss_clk_rate *dss_clk;
 
 	struct regulator *dpe_regulator;
-	struct regulator_bulk_data *mmbuf_regulator;
-	struct regulator_bulk_data *media_subsys_regulator;
+	struct regulator *mmbuf_regulator;
+	struct regulator *mediacrg_regulator;
 
 	bool power_on;
 	int irq;
