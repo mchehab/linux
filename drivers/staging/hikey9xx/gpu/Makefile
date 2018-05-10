@@ -1,6 +1,5 @@
 EXTRA_CFLAGS += \
 		-Iinclude/drm
-
 kirin-drm-y := kirin_fbdev.o \
 		kirin_fb.o \
 		kirin_drm_drv.o \
