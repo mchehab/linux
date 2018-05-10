@@ -28,9 +28,6 @@
 #include "kirin_drm_dpe_utils.h"
 #include "kirin_drm_drv.h"
 
-
-#define DSS_CHN_MAX_DEFINE (DSS_COPYBIT_MAX)
-
 static int mid_array[DSS_CHN_MAX_DEFINE] = {0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x2, 0x1, 0x3, 0x0};
 
 #if defined (CONFIG_HISI_FB_970)

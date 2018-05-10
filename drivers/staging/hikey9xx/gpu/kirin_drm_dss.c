@@ -51,7 +51,6 @@
 #define DTS_COMP_DSS_NAME "hisilicon,hi3660-dpe"
 #endif
 
-#define PPLL7_USED_IN_DRV
 #define DSS_DEBUG	0
 
 static const struct dss_format dss_formats[] = {
@@ -101,7 +100,6 @@ u32 dss_get_format(u32 pixel_format)
 	return HISI_FB_PIXEL_FORMAT_UNSUPPORT;
 }
 
-#ifdef PPLL7_USED_IN_DRV
 /*******************************************************************************
 **
 */
@@ -247,7 +245,6 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, uint64_t pixel_clock)
 	}
 	return ret;
 }
-#endif
 
 /*******************************************************************************
  **
@@ -273,18 +270,8 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		else
 			clk_Hz = mode->clock * 1000UL;
 
-#ifdef PPLL7_USED_IN_DRV
+		DRM_INFO("HDMI real need clock = %llu \n", clk_Hz);
 		hdmi_pxl_ppll7_init(ctx, clk_Hz);
-#else
-		/*
-		 * Success should be guaranteed in mode_valid call back,
-		 * so failure shouldn't happen here
-		 */
-		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
-		if (ret) {
-			DRM_ERROR("failed to set pixel clk %llu Hz (%d)\n", clk_Hz, ret);
-		}
-#endif
 		adj_mode->clock = clk_Hz / 1000;
 	} else {
 		if (mode->clock == 148500)
@@ -320,6 +307,7 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	int ret = 0;
 
 #if defined (CONFIG_HISI_FB_970)
+	mediacrg_regulator_enable(ctx);
 	dpe_common_clk_enable(ctx);
 	dpe_inner_clk_enable(ctx);
 	#ifndef DSS_POWER_UP_ON_UEFI
@@ -384,14 +372,16 @@ static void dss_power_down(struct dss_crtc *acrtc)
 	dss_inner_clk_pdp_disable(ctx);
 
 	if (ctx->g_dss_version_tag & FB_ACCEL_KIRIN970 ) {
+		dpe_regulator_disable(ctx);
 		dpe_inner_clk_disable(ctx);
 		dpe_common_clk_disable(ctx);
-		dpe_regulator_disable(ctx);
+		mediacrg_regulator_disable(ctx);
 	} else {
 		dpe_regulator_disable(ctx);
 		dpe_inner_clk_disable(ctx);
 		dpe_common_clk_disable(ctx);
 	}
+
 	ctx->power_on = false;
 }
 
@@ -789,7 +779,13 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 #if defined (CONFIG_HISI_FB_970)
 	ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
 	if (!ctx->dpe_regulator) {
-		DRM_ERROR("failed to get regulator resource! ret=%d.\n", ret);
+		DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
+		return -ENXIO;
+	}
+
+	ctx->mediacrg_regulator = devm_regulator_get(dev, REGULATOR_MEDIA_NAME);
+	if (!ctx->mediacrg_regulator) {
+		DRM_ERROR("failed to get mediacrg_regulator resource! ret=%d.\n", ret);
 		return -ENXIO;
 	}
 #endif
@@ -946,10 +942,7 @@ static int  dss_drm_suspend(struct platform_device *pdev, pm_message_t state)
 	struct dss_data *dss = platform_get_drvdata(pdev);
 	struct drm_crtc *crtc = &dss->acrtc.base;
 
-	DRM_INFO("+. platform_device name is %s \n", pdev->name);
 	dss_crtc_disable(crtc);
-
-	DRM_INFO("-. \n");
 
 	return 0;
 }
@@ -959,12 +952,9 @@ static int  dss_drm_resume(struct platform_device *pdev)
 	struct dss_data *dss = platform_get_drvdata(pdev);
 	struct drm_crtc *crtc = &dss->acrtc.base;
 
-	DRM_INFO("+. platform_device name is %s \n", pdev->name);
-
 	dss_crtc_mode_set_nofb(crtc);
 	dss_crtc_enable(crtc);
 
-	DRM_INFO("-. \n");
 	return 0;
 }
 

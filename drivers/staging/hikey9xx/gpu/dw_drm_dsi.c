@@ -2046,11 +2046,8 @@ static int dsi_suspend(struct platform_device *pdev, pm_message_t state)
 	struct dsi_data *ddata = dev_get_drvdata(dev);
 	struct dw_dsi *dsi = &ddata->dsi;
 
-	DRM_INFO("+. pdev->name is %s, pm_message is %d \n", pdev->name, state.event);
-
 	dsi_encoder_disable(&dsi->encoder);
-
-	DRM_INFO("-. \n");
+	drm_bridge_post_disable(dsi->encoder.bridge);
 
 	return 0;
 }
@@ -2061,11 +2058,8 @@ static int dsi_resume(struct platform_device *pdev)
 	struct dsi_data *ddata = dev_get_drvdata(dev);
 	struct dw_dsi *dsi = &ddata->dsi;
 
-	DRM_INFO("+. pdev->name is %s \n", pdev->name);
-
+	drm_bridge_pre_enable(dsi->encoder.bridge);
 	dsi_encoder_enable(&dsi->encoder);
-
-	DRM_INFO("-. \n");
 
 	return 0;
 }
