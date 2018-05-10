@@ -43,6 +43,7 @@
 /* vcc name */
 #define REGULATOR_PDP_NAME	"regulator_dsssubsys"
 #define REGULATOR_MMBUF	"regulator_mmbuf"
+#define REGULATOR_MEDIA_NAME  "regulator_media_subsys"
 
 /*******************************************************************************
 **
@@ -220,8 +221,8 @@ typedef struct drm_dss_layer {
 
 /*dss clk power off */
 #define DEFAULT_DSS_CORE_CLK_RATE_POWER_OFF   	(277000000UL)
-#define DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF    	(277000000UL)
-#define DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF 	(238000000UL)
+#define DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF    	(238000000UL)
+#define DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF 	(208000000UL)
 #define DEFAULT_DSS_PXL1_CLK_RATE_POWER_OFF 	(238000000UL)
 
 #define DEFAULT_PCLK_DSS_RATE	(114000000UL)
@@ -4085,8 +4086,8 @@ struct dss_hw_ctx {
 	struct dss_clk_rate *dss_clk;
 
 	struct regulator *dpe_regulator;
-	struct regulator_bulk_data *mmbuf_regulator;
-	struct regulator_bulk_data *media_subsys_regulator;
+	struct regulator *mmbuf_regulator;
+	struct regulator *mediacrg_regulator;
 
 	bool power_on;
 	int irq;
