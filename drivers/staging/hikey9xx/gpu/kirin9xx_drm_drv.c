@@ -21,6 +21,7 @@
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_drv.h>
+#include <drm/drm_fb_helper.h>
 #include <drm/drm_fb_cma_helper.h>
 #include <drm/drm_gem_cma_helper.h>
 #include <drm/drm_gem_framebuffer_helper.h>
@@ -28,13 +29,6 @@
 #include <drm/drm_vblank.h>
 
 #include "kirin9xx_drm_drv.h"
-
-#ifdef CONFIG_DRM_FBDEV_EMULATION
-static bool fbdev = true;
-MODULE_PARM_DESC(fbdev, "Enable fbdev compat layer");
-module_param(fbdev, bool, 0600);
-#endif
-
 
 static struct kirin_dc_ops *dc_ops;
 
@@ -60,22 +54,7 @@ static void kirin_fbdev_output_poll_changed(struct drm_device *dev)
 
 	dsi_set_output_client(dev);
 
-#ifdef CMA_BUFFER_USED
-	if (priv->fbdev) {
-		DRM_INFO("hotplug_event!!!!!!\n");
-		drm_fbdev_cma_hotplug_event(priv->fbdev);
-	} else {
-		DRM_INFO("cma_init!!!!!!\n");
-		priv->fbdev = drm_fbdev_cma_init(dev, 32,
-				dev->mode_config.num_crtc,
-				dev->mode_config.num_connector);
-		if (IS_ERR(priv->fbdev))
-			priv->fbdev = NULL;
-	}
-#else
-	if (priv->fbdev)
-		drm_fb_helper_hotplug_event(priv->fbdev);
-#endif
+	drm_fb_helper_hotplug_event(priv->fbdev);
 }
 
 static const struct drm_mode_config_funcs kirin_drm_mode_config_funcs = {
@@ -98,7 +77,7 @@ static void kirin_drm_mode_config_init(struct drm_device *dev)
 
 static int kirin_drm_kms_init(struct drm_device *dev)
 {
-	struct kirin_drm_private *priv;
+	struct kirin_drm_private *priv = dev->dev_private;
 	int ret;
 
 	priv = devm_kzalloc(dev->dev, sizeof(*priv), GFP_KERNEL);
@@ -256,6 +235,7 @@ static int kirin_drm_bind(struct device *dev)
 {
 	struct drm_driver *driver = &kirin_drm_driver;
 	struct drm_device *drm_dev;
+	struct kirin_drm_private *priv;
 	int ret;
 
 	drm_dev = drm_dev_alloc(driver, dev);
@@ -269,6 +249,9 @@ static int kirin_drm_bind(struct device *dev)
 	ret = drm_dev_register(drm_dev, 0);
 	if (ret)
 		goto err_kms_cleanup;
+
+	drm_fbdev_generic_setup(drm_dev, 32);
+	priv = drm_dev->dev_private;
 
 	/* connectors should be registered after drm device register */
 	ret = kirin_drm_connectors_register(drm_dev);
@@ -340,6 +323,7 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct component_match *match = NULL;
 	struct device_node *remote;
+	int ret;
 
 	dc_ops = (struct kirin_dc_ops *)of_device_get_match_data(dev);
 	if (!dc_ops) {
@@ -356,9 +340,9 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 
 	component_match_add(dev, &match, compare_of, remote);
 
+	if (ret)
+		DRM_ERROR("cma device init failed!");
 	return component_master_add_with_match(dev, &kirin_drm_ops, match);
-
-	return 0;
 }
 
 static int kirin_drm_platform_remove(struct platform_device *pdev)
