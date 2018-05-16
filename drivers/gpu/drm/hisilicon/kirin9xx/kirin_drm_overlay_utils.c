@@ -1534,7 +1534,11 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 #endif
 
 	bool afbcd = false;
+#ifndef CMA_BUFFER_USED
 	bool mmu_enable = true;
+#else
+	bool mmu_enable = false;
+#endif
 	dss_rect_ltrb_t rect;
 	u32 bpp;
 	u32 stride;

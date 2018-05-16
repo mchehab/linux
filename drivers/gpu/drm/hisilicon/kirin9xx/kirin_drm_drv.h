@@ -22,7 +22,7 @@
 
 #define MAX_CRTC	2
 
-//#define CMA_BUFFER_USED
+#define CMA_BUFFER_USED
 #define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper)
 
 /* display controller init/cleanup ops */
@@ -35,7 +35,11 @@ struct kirin_dc_ops {
 
 struct kirin_drm_private {
 	struct drm_fb_helper *fb_helper;
+#ifdef CMA_BUFFER_USED
+	struct drm_fbdev_cma *fbdev;
+#else
 	struct drm_fb_helper *fbdev;
+#endif
 	struct drm_crtc *crtc[MAX_CRTC];
 };
 

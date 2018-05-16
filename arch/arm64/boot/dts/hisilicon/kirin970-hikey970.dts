@@ -73,6 +73,13 @@
 			no-map;
 		};
 
+		drm_dma_reserved: drm_dma_mem_region {
+			compatible = "shared-dma-pool";
+			reg = <0 0x32200000 0 0x8000000>;
+			alignment = <0x400000>;
+			no-map;
+		};
+
 		hifi-base {
 			reg = <0x0 0x8D500000 0x0 0xC00000>;
 			no-map;

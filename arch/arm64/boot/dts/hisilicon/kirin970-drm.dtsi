@@ -1,6 +1,7 @@
 /{
 		dpe: dpe@E8600000 {
 			compatible = "hisilicon,kirin970-dpe";
+			memory-region = <&drm_dma_reserved>;
 			status = "ok";
 			dss_version_tag = <0x40>;
 			// DSS, PERI_CRG, SCTRL, PCTRL, NOC_DSS_Service_Target, PMCTRL, MEDIA_CRG

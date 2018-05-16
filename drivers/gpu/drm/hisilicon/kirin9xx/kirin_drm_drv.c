@@ -25,9 +25,17 @@
 #include <drm/drm_crtc_helper.h>
 
 #include "kirin_drm_drv.h"
+#define CMA_POOL
+#ifdef CMA_POOL
+#include <linux/of_reserved_mem.h>
+#endif
 
 #ifdef CONFIG_DRM_FBDEV_EMULATION
+#ifdef CMA_POOL
+static bool fbdev;
+#else
 static bool fbdev = true;
+#endif
 MODULE_PARM_DESC(fbdev, "Enable fbdev compat layer");
 module_param(fbdev, bool, 0600);
 #endif
@@ -140,6 +148,8 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 
 	if (fbdev)
 		priv->fbdev = kirin_drm_fbdev_init(dev);
+	else
+		priv->fbdev = drm_fbdev_cma_init(dev, 32, 1, 1);
 
 	/* init kms poll for handling hpd */
 	drm_kms_helper_poll_init(dev);
@@ -344,7 +354,7 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct component_match *match = NULL;
 	struct device_node *remote;
-
+	int ret = 0;
 	dc_ops = (struct kirin_dc_ops *)of_device_get_match_data(dev);
 	if (!dc_ops) {
 		DRM_ERROR("failed to get dt id data\n");
@@ -359,14 +369,21 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 	DRM_INFO("the device remote node is %s\n", remote->name);
 
 	component_match_add(dev, &match, compare_of, remote);
+#ifdef CMA_POOL
+	ret = of_reserved_mem_device_init(dev);
 
+	if (ret)
+		DRM_ERROR("cma device init failed!");
+#endif
 	return component_master_add_with_match(dev, &kirin_drm_ops, match);
-
-	return 0;
 }
 
 static int kirin_drm_platform_remove(struct platform_device *pdev)
 {
+	struct device *dev = &pdev->dev;
+#ifdef CMA_POOL
+	of_reserved_mem_device_release(dev);
+#endif
 	component_master_del(&pdev->dev, &kirin_drm_ops);
 	dc_ops = NULL;
 	return 0;
