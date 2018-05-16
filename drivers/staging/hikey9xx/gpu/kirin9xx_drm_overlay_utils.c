@@ -1517,15 +1517,10 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	struct dss_crtc *acrtc = aplane->acrtc;
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
-#ifndef CMA_BUFFER_USED
-	struct kirin_drm_private *priv = plane->dev->dev_private;
-	struct kirin_fbdev *fbdev = to_kirin_fbdev(priv->fbdev);
-#else
 	struct drm_gem_cma_object *obj = drm_fb_cma_get_gem_obj(state->fb, 0);
-#endif
 
 	bool afbcd = false;
-	bool mmu_enable = true;
+	bool mmu_enable = false;
 	dss_rect_ltrb_t rect;
 	u32 bpp;
 	u32 stride;
@@ -1550,14 +1545,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	bpp = fb->format->cpp[0];
 	stride = fb->pitches[0];
 
-#ifndef CMA_BUFFER_USED
-	if (fbdev)
-		display_addr = (u32)fbdev->smem_start + src_y * stride;
-	else
-		DRM_ERROR("fbdev is null? \n");
-#else
 	display_addr = (u32)obj->paddr + src_y * stride;
-#endif
 
 	rect.left = 0;
 	rect.right = src_w - 1;
@@ -1609,7 +1597,7 @@ void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, dr
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
 	bool afbcd = false;
-	bool mmu_enable = true;
+	bool mmu_enable = false;
 	dss_rect_ltrb_t rect;
 	u32 bpp;
 	u32 stride;
