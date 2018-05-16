@@ -13,6 +13,7 @@
 
 #include <drm/drm_crtc.h>
 #include <drm/drm_drv.h>
+#include <drm/drm_fb_cma_helper.h>
 #include <drm/drm_fb_helper.h>
 #include <drm/drm_print.h>
 
@@ -20,8 +21,6 @@
 #include <linux/hisi/hisi-iommu.h>
 
 #define MAX_CRTC	2
-
-#define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper)
 
 /* display controller init/cleanup ops */
 struct kirin_dc_ops {
@@ -32,7 +31,6 @@ struct kirin_dc_ops {
 };
 
 struct kirin_drm_private {
-	struct drm_fb_helper *fb_helper;
 	struct drm_fb_helper *fbdev;
 	struct drm_crtc *crtc[MAX_CRTC];
 };
