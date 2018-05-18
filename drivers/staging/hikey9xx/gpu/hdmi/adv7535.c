@@ -28,7 +28,8 @@
 
 #include "adv7535.h"
 
-#define HPD_ENABLE	1
+//#define HPD_ENABLE	1
+#define HPD_ENABLE	0
 //#define TEST_COLORBAR_DISPLAY
 #ifdef CONFIG_HDMI_ADV7511_AUDIO
 extern int adv7511_audio_init(struct device *dev);
@@ -785,19 +786,25 @@ adv7511_detect(struct adv7511 *adv7511,
 {
 	enum drm_connector_status status;
 	unsigned int val;
+	unsigned int time = 0;
 #if HPD_ENABLE
 	bool hpd;
 #endif
 	int ret;
 
 	ret = regmap_read(adv7511->regmap, ADV7511_REG_STATUS, &val);
-	if (ret < 0)
+	if (ret < 0) {
+		DRM_ERROR("regmap_read fail, ret = %d \n", ret);
 		return connector_status_disconnected;
+	}
 
-	if (val & ADV7511_STATUS_HPD)
+	if (val & ADV7511_STATUS_HPD) {
+		DRM_INFO("connected : regmap_read val = 0x%x \n", val);
 		status = connector_status_connected;
-	else
+	} else {
+		DRM_INFO("disconnected : regmap_read val = 0x%x \n", val);
 		status = connector_status_disconnected;
+	}
 
 #if HPD_ENABLE
 	hpd = adv7511_hpd(adv7511);
@@ -820,7 +827,32 @@ adv7511_detect(struct adv7511 *adv7511,
 	}
 #endif
 
+	if (status == connector_status_disconnected) {
+		do {
+			ret = regmap_read(adv7511->regmap, ADV7511_REG_STATUS, &val);
+			if (ret < 0) {
+				DRM_ERROR("regmap_read fail, ret = %d \n", ret);
+				return connector_status_disconnected;
+			}
+
+			if (val & ADV7511_STATUS_HPD) {
+				DRM_INFO("connected : regmap_read val = 0x%x \n", val);
+				status = connector_status_connected;
+			} else {
+				DRM_INFO("disconnected : regmap_read val = 0x%x \n", val);
+				status = connector_status_disconnected;
+			}
+			time ++;
+			mdelay(20);
+		} while (status == connector_status_disconnected && time < 10);
+	}
+
+	if (time >= 10)
+		DRM_ERROR("Read connector status timout, time = %d \n", time);
+
 	adv7511->status = status;
+
+	DRM_INFO("hdmi connector status = %d \n", status);
 	return status;
 }
 
