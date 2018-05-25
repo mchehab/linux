@@ -270,6 +270,10 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		else
 			clk_Hz = mode->clock * 1000UL;
 
+		/* Adjust pixel clock for compatibility with 10.1 inch special displays. */
+		if (mode->clock == 148500 && mode->width_mm == 532 && mode->height_mm == 299)
+			clk_Hz = 152000 * 1000UL;
+
 		DRM_INFO("HDMI real need clock = %llu \n", clk_Hz);
 		hdmi_pxl_ppll7_init(ctx, clk_Hz);
 		adj_mode->clock = clk_Hz / 1000;
