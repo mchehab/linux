@@ -842,12 +842,7 @@ static void dpe_rdma_config(struct dpe_hw_ctx *ctx, const struct drm_rect *rect,
 	stretch_size_vrt = rdma_oft_y1 - rdma_oft_y0;
 
 	h_display = (rect->x2 - rect->x1) + 1;
-	if (h_display % 64) {
-		rdma_stride = DIV_ROUND_UP(h_display, 64) * 64 * bpp /
-			      DMA_ALIGN_BYTES;
-	} else {
-		rdma_stride = h_display * bpp / DMA_ALIGN_BYTES;
-	}
+	rdma_stride = (h_display * bpp) / DMA_ALIGN_BYTES;
 
 	dpe_set_reg(rdma_base + DMA_CH_REG_DEFAULT, 0x1, 32, 0);
 	dpe_set_reg(rdma_base + DMA_CH_REG_DEFAULT, 0x0, 32, 0);
