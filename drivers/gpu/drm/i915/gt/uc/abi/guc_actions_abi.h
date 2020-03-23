@@ -188,6 +188,9 @@ enum intel_guc_state_capture_event_status {
 #define INTEL_GUC_TLB_INVAL_FLUSH_CACHE (1 << 31)
 
 enum intel_guc_tlb_invalidation_type {
+	INTEL_GUC_TLB_INVAL_FULL = 0x0,
+	INTEL_GUC_TLB_INVAL_PAGE_SELECTIVE = 0x1,
+	INTEL_GUC_TLB_INVAL_PAGE_SELECTIVE_CTX = 0x2,
 	INTEL_GUC_TLB_INVAL_GUC = 0x3,
 };
 
