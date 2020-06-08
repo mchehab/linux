@@ -100,7 +100,7 @@ static void kirin_drm_mode_config_init(struct drm_device *dev)
 	dev->mode_config.min_width = 0;
 	dev->mode_config.min_height = 0;
 
-	dev->mode_config.max_width = 2048;
+	dev->mode_config.max_width = 4096;
 	dev->mode_config.max_height = 2048;
 
 	dev->mode_config.funcs = &kirin_drm_mode_config_funcs;
@@ -147,7 +147,7 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	drm_mode_config_reset(dev);
 
 	if (fbdev)
-		priv->fbdev = kirin_drm_fbdev_init(dev);
+		priv->fbdev = (typeof(priv->fbdev)) kirin_drm_fbdev_init(dev);
 	else
 		priv->fbdev = drm_fbdev_cma_init(dev, 32, 1, 1);
 

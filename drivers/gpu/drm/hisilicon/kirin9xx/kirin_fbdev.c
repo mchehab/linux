@@ -453,7 +453,7 @@ struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev)
 	if (ret)
 		goto fini;
 
-	priv->fbdev = helper;
+	priv->fbdev = (typeof(priv->fbdev)) helper;
 
 	return helper;
 
@@ -467,7 +467,7 @@ fail:
 void kirin_drm_fbdev_fini(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
-	struct drm_fb_helper *helper = priv->fbdev;
+	struct drm_fb_helper *helper = (struct drm_fb_helper *) priv->fbdev;
 	struct kirin_fbdev *fbdev;
 
 	drm_fb_helper_unregister_fbi(helper);
@@ -475,7 +475,7 @@ void kirin_drm_fbdev_fini(struct drm_device *dev)
 
 	drm_fb_helper_fini(helper);
 
-	fbdev = to_kirin_fbdev(priv->fbdev);
+	fbdev = (struct kirin_fbdev *)to_kirin_fbdev(((struct drm_fb_helper*)(priv->fbdev)));
 
 	/* this will free the backing object */
 	if (fbdev->fb) {
