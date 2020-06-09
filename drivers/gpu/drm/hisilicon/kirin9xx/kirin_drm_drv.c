@@ -25,13 +25,13 @@
 #include <drm/drm_crtc_helper.h>
 
 #include "kirin_drm_drv.h"
-#define CMA_POOL
-#ifdef CMA_POOL
+
+#ifdef CMA_BUFFER_USED
 #include <linux/of_reserved_mem.h>
 #endif
 
 #ifdef CONFIG_DRM_FBDEV_EMULATION
-#ifdef CMA_POOL
+#ifdef CMA_BUFFER_USED
 static bool fbdev;
 #else
 static bool fbdev = true;
@@ -369,7 +369,7 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 	DRM_INFO("the device remote node is %s\n", remote->name);
 
 	component_match_add(dev, &match, compare_of, remote);
-#ifdef CMA_POOL
+#ifdef CMA_BUFFER_USED
 	ret = of_reserved_mem_device_init(dev);
 
 	if (ret)
@@ -380,9 +380,8 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 
 static int kirin_drm_platform_remove(struct platform_device *pdev)
 {
-	struct device *dev = &pdev->dev;
-#ifdef CMA_POOL
-	of_reserved_mem_device_release(dev);
+#ifdef CMA_BUFFER_USED
+	of_reserved_mem_device_release(&pdev->dev);
 #endif
 	component_master_del(&pdev->dev, &kirin_drm_ops);
 	dc_ops = NULL;

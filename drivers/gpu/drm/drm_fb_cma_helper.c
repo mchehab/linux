@@ -36,16 +36,6 @@
 #define FBDEV_BUFFER_NUM 1
 #endif
 
-struct drm_fb_cma {
-	struct drm_framebuffer		fb;
-	struct drm_gem_cma_object	*obj[4];
-};
-
-struct drm_fbdev_cma {
-	struct drm_fb_helper	fb_helper;
-	struct drm_fb_cma	*fb;
-};
-
 /**
  * DOC: framebuffer cma helper functions
  *

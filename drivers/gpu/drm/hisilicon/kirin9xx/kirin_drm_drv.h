@@ -11,6 +11,8 @@
 #ifndef __KIRIN_DRM_DRV_H__
 #define __KIRIN_DRM_DRV_H__
 
+#define CMA_BUFFER_USED
+
 #include <drm/drmP.h>
 #include <linux/iommu.h>
 #include <linux/ion.h>
@@ -20,10 +22,14 @@
 #include "drm_crtc.h"
 #include "drm_fb_helper.h"
 
-#define MAX_CRTC	2
+#ifdef CMA_BUFFER_USED
+#  include "drm_fb_cma_helper.h"
+#  define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper.fb_helper)
+#else
+#  define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper)
+#endif
 
-#define CMA_BUFFER_USED
-#define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper)
+#define MAX_CRTC	2
 
 /* display controller init/cleanup ops */
 struct kirin_dc_ops {
@@ -34,17 +40,22 @@ struct kirin_dc_ops {
 };
 
 struct kirin_drm_private {
-	struct drm_fb_helper *fb_helper;
 #ifdef CMA_BUFFER_USED
+	struct drm_fbdev_cma *fb_helper;
 	struct drm_fbdev_cma *fbdev;
 #else
+	struct drm_fb_helper *fb_helper;
 	struct drm_fb_helper *fbdev;
 #endif
 	struct drm_crtc *crtc[MAX_CRTC];
 };
 
 struct kirin_fbdev {
+#ifdef CMA_BUFFER_USED
+	struct drm_fbdev_cma fb_helper;
+#else
 	struct drm_fb_helper fb_helper;
+#endif
 	struct drm_framebuffer *fb;
 
 	struct ion_client *ion_client;
@@ -61,7 +72,11 @@ extern void dsi_set_output_client(struct drm_device *dev);
 
 struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
 		struct drm_mode_fb_cmd2 *mode_cmd);
+#ifdef CMA_BUFFER_USED
+struct drm_fbdev_cma *kirin_drm_fbdev_init(struct drm_device *dev);
+#else
 struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev);
+#endif
 void kirin_drm_fbdev_fini(struct drm_device *dev);
 
 #endif /* __KIRIN_DRM_DRV_H__ */

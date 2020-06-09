@@ -417,7 +417,11 @@ static const struct drm_fb_helper_funcs kirin_fb_helper_funcs = {
 };
 
 /* initialize fbdev helper */
+#ifdef CMA_BUFFER_USED
+struct drm_fbdev_cma *kirin_drm_fbdev_init(struct drm_device *dev)
+#else
 struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev)
+#endif
 {
 	struct kirin_drm_private *priv = dev->dev_private;
 	struct kirin_fbdev *fbdev = NULL;
@@ -428,7 +432,13 @@ struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev)
 	if (!fbdev)
 		goto fail;
 
-	priv->fb_helper = helper = &fbdev->fb_helper;
+	priv->fb_helper = &fbdev->fb_helper;
+
+#ifdef CMA_BUFFER_USED
+	helper = &priv->fb_helper->fb_helper;
+#else
+	helper = priv->fb_helper;
+#endif
 
 	drm_fb_helper_prepare(dev, helper, &kirin_fb_helper_funcs);
 
@@ -453,9 +463,9 @@ struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev)
 	if (ret)
 		goto fini;
 
-	priv->fbdev = helper;
+	priv->fbdev = priv->fb_helper;
 
-	return helper;
+	return priv->fb_helper;
 
 fini:
 	drm_fb_helper_fini(helper);
@@ -467,7 +477,7 @@ fail:
 void kirin_drm_fbdev_fini(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
-	struct drm_fb_helper *helper = priv->fbdev;
+	struct drm_fb_helper *helper = &priv->fbdev->fb_helper;
 	struct kirin_fbdev *fbdev;
 
 	drm_fb_helper_unregister_fbi(helper);
@@ -475,7 +485,7 @@ void kirin_drm_fbdev_fini(struct drm_device *dev)
 
 	drm_fb_helper_fini(helper);
 
-	fbdev = to_kirin_fbdev(priv->fbdev);
+	fbdev = to_kirin_fbdev(helper);
 
 	/* this will free the backing object */
 	if (fbdev->fb) {
