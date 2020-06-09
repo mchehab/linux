@@ -100,7 +100,7 @@ static void kirin_drm_mode_config_init(struct drm_device *dev)
 	dev->mode_config.min_width = 0;
 	dev->mode_config.min_height = 0;
 
-	dev->mode_config.max_width = 2048;
+	dev->mode_config.max_width = 4096;
 	dev->mode_config.max_height = 2048;
 
 	dev->mode_config.funcs = &kirin_drm_mode_config_funcs;
