@@ -10,10 +10,10 @@
  * GNU General Public License for more details.
  *
  */
-#include <drm/drmP.h>
+#include <drm/drm_drv.h>
+#include <drm/drm_mipi_dsi.h>
 
-#include "drm_mipi_dsi.h"
-#include "kirin_drm_dpe_utils.h"
+#include "kirin9xx_drm_dpe_utils.h"
 
 int g_debug_set_reg_val = 0;
 
