@@ -1211,14 +1211,8 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 		set_reg(ovl0_base + OVL_SIZE, (xres - 1) |
 			((yres - 1) << 16), 32, 0);
 
-#ifdef CONFIG_HISI_FB_OV_BASE_USED
-		DRM_INFO("CONFIG_HISI_FB_OV_BASE_USED !!. \n");
-		set_reg(ovl0_base + OV_BG_COLOR_RGB, 0x3FF00000, 32, 0);
-		set_reg(ovl0_base + OV_BG_COLOR_A, 0x3FF, 32, 0);
-#else
 		set_reg(ovl0_base + OV_BG_COLOR_RGB, 0x00000000, 32, 0);
 		set_reg(ovl0_base + OV_BG_COLOR_A, 0x00000000, 32, 0);
-#endif
 		set_reg(ovl0_base + OV_DST_STARTPOS, 0x0, 32, 0);
 		set_reg(ovl0_base + OV_DST_ENDPOS, (xres - 1) |
 			((yres - 1) << 16), 32, 0);
@@ -1228,11 +1222,7 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 		set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x1, 32, 0);
 		set_reg(ovl0_base + OVL6_REG_DEFAULT, 0x0, 32, 0);
 		set_reg(ovl0_base + OVL_SIZE, (xres - 1) | ((yres - 1) << 16), 32, 0);
-#ifdef CONFIG_HISI_FB_OV_BASE_USED
-		set_reg(ovl0_base + OVL_BG_COLOR, 0xFFFF0000, 32, 0);
-#else
 		set_reg(ovl0_base + OVL_BG_COLOR, 0xFF000000, 32, 0);
-#endif
 		set_reg(ovl0_base + OVL_DST_STARTPOS, 0x0, 32, 0);
 		set_reg(ovl0_base + OVL_DST_ENDPOS, (xres - 1) | ((yres - 1) << 16), 32, 0);
 		set_reg(ovl0_base + OVL_GCFG, 0x10001, 32, 0);
@@ -1558,10 +1548,6 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 
 	bpp = fb->bits_per_pixel / 8;
 	stride = fb->pitches[0];
-
-#if defined(CONFIG_HISI_FB_LDI_COLORBAR_USED) || defined(CONFIG_HISI_FB_DPP_COLORBAR_USED) || defined(CONFIG_HISI_FB_OV_BASE_USED)
-	return;
-#endif
 
 #ifndef CMA_BUFFER_USED
 	if (fbdev)
