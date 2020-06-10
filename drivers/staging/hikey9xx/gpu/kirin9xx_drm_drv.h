@@ -11,18 +11,18 @@
 #ifndef __KIRIN_DRM_DRV_H__
 #define __KIRIN_DRM_DRV_H__
 
-#include <drm/drmP.h>
+#include <drm/drm_crtc.h>
+#include <drm/drm_drv.h>
+#include <drm/drm_fb_helper.h>
+#include <drm/drm_print.h>
+
 #include <linux/iommu.h>
 #include <linux/ion.h>
 #include <linux/hisi/hisi_ion.h>
 #include <linux/hisi/hisi-iommu.h>
 
-#include "drm_crtc.h"
-#include "drm_fb_helper.h"
-
 #define MAX_CRTC	2
 
-//#define CMA_BUFFER_USED
 #define to_kirin_fbdev(x) container_of(x, struct kirin_fbdev, fb_helper)
 
 /* display controller init/cleanup ops */

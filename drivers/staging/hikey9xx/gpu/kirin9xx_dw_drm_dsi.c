@@ -28,6 +28,8 @@
 #include <drm/drm_encoder_slave.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_panel.h>
+#include <drm/drm_probe_helper.h>
+
 
 #include "dw_dsi_reg.h"
 #if defined (CONFIG_HISI_FB_970)
