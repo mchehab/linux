@@ -21,10 +21,6 @@
 #endif
 #include "kirin_drm_drv.h"
 
-/*#define CONFIG_HISI_FB_OV_BASE_USED*/
-/*#define CONFIG_HISI_FB_DPP_COLORBAR_USED*/
-/*#define CONFIG_HISI_FB_LDI_COLORBAR_USED*/
-
 void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs);
 uint32_t set_bits32(uint32_t old_val, uint32_t val, uint8_t bw, uint8_t bs);
 
