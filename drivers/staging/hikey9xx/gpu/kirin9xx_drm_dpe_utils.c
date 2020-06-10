@@ -993,7 +993,7 @@ int dpe_regulator_disable(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	#if defined (CONFIG_HISI_FB_970)
+	#if defined (CONFIG_DRM_HISI_KIRIN970)
 		dpe_set_pixel_clk_rate_on_pll0(ctx);
 		dpe_set_common_clk_rate_on_pll0(ctx);
 	#endif
