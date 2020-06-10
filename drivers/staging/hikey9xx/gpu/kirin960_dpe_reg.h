@@ -24,6 +24,9 @@
 #include <linux/regulator/driver.h>
 #include <linux/regulator/machine.h>
 
+#include <drm/drm_plane.h>
+#include <drm/drm_crtc.h>
+
 #include <linux/ion.h>
 #include <linux/hisi/hisi_ion.h>
 

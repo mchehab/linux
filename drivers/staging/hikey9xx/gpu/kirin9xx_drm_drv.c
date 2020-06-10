@@ -18,13 +18,16 @@
 #include <linux/component.h>
 #include <linux/of_graph.h>
 
-#include <drm/drmP.h>
-#include <drm/drm_gem_cma_helper.h>
-#include <drm/drm_fb_cma_helper.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_crtc_helper.h>
+#include <drm/drm_drv.h>
+#include <drm/drm_fb_cma_helper.h>
+#include <drm/drm_gem_cma_helper.h>
+#include <drm/drm_gem_framebuffer_helper.h>
+#include <drm/drm_probe_helper.h>
+#include <drm/drm_vblank.h>
 
-#include "kirin_drm_drv.h"
+#include "kirin9xx_drm_drv.h"
 
 #ifdef CONFIG_DRM_FBDEV_EMULATION
 static bool fbdev = true;

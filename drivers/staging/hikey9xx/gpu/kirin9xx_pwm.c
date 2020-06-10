@@ -10,18 +10,20 @@
 * GNU General Public License for more details.
 *
 */
-#include <drm/drmP.h>
+#include <drm/drm_drv.h>
+#include <drm/drm_mipi_dsi.h>
+
 #include <linux/clk.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/of_address.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
+#include <linux/pinctrl/consumer.h>
 
-#include "drm_mipi_dsi.h"
-#include "kirin_drm_dpe_utils.h"
-#include "kirin_fb_panel.h"
-#include "dw_dsi_reg.h"
+#include "kirin9xx_drm_dpe_utils.h"
+#include "kirin9xx_fb_panel.h"
+#include "kirin9xx_dw_dsi_reg.h"
 
 /* default pwm clk */
 #define DEFAULT_PWM_CLK_RATE	(80 * 1000000L)

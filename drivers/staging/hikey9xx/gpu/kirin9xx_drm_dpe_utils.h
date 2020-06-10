@@ -17,9 +17,9 @@
 #if defined (CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
-#include "kirin_dpe_reg.h"
+#include "kirin960_dpe_reg.h"
 #endif
-#include "kirin_drm_drv.h"
+#include "kirin9xx_drm_drv.h"
 
 void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs);
 uint32_t set_bits32(uint32_t old_val, uint32_t val, uint8_t bw, uint8_t bs);
