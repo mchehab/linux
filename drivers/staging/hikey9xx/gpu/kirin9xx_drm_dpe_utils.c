@@ -275,17 +275,8 @@ void init_ldi(struct dss_crtc *acrtc)
 
 	/*ldi_data_gate(ctx, true);*/
 
-#ifdef CONFIG_HISI_FB_LDI_COLORBAR_USED
-	/* colorbar width*/
-	set_reg(ldi_base + LDI_CTRL, DSS_WIDTH(0x3c), 7, 6);
-	/* colorbar ort*/
-	set_reg(ldi_base + LDI_WORK_MODE, 0x0, 1, 1);
-	/* colorbar enable*/
-	set_reg(ldi_base + LDI_WORK_MODE, 0x0, 1, 0);
-#else
 	/* normal*/
 	set_reg(ldi_base + LDI_WORK_MODE, 0x1, 1, 0);
-#endif
 
 	/* ldi disable*/
 	set_reg(ldi_base + LDI_CTRL, 0x0, 1, 0);
@@ -493,33 +484,6 @@ void init_dpp(struct dss_crtc *acrtc)
 		(DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
 	outp32(dpp_base + DPP_IMG_SIZE_AFT_SR,
 		(DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
-
-#ifdef CONFIG_HISI_FB_DPP_COLORBAR_USED
-	#if defined (CONFIG_HISI_FB_970)
-	outp32(dpp_base + DPP_CLRBAR_CTRL, (0x30 << 24) | (0 << 1) | 0x1);
-	set_reg(dpp_base + DPP_CLRBAR_1ST_CLR, 0x3FF00000, 30, 0); //Red
-	set_reg(dpp_base + DPP_CLRBAR_2ND_CLR, 0x000FFC00, 30, 0); //Green
-	set_reg(dpp_base + DPP_CLRBAR_3RD_CLR, 0x000003FF, 30, 0); //Blue
-	#else
-	void __iomem *mctl_base;
-	outp32(dpp_base + DPP_CLRBAR_CTRL, (0x30 << 24) | (0 << 1) | 0x1);
-	set_reg(dpp_base + DPP_CLRBAR_1ST_CLR, 0xFF, 8, 16);
-	set_reg(dpp_base + DPP_CLRBAR_2ND_CLR, 0xFF, 8, 8);
-	set_reg(dpp_base + DPP_CLRBAR_3RD_CLR, 0xFF, 8, 0);
-
-	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
-
-	set_reg(mctl_base + MCTL_CTL_MUTEX, 0x1, 1, 0);
-	set_reg(mctl_base + MCTL_CTL_EN, 0x1, 32, 0);
-	set_reg(mctl_base + MCTL_CTL_TOP, 0x2, 32, 0); /*auto mode*/
-	set_reg(mctl_base + MCTL_CTL_DBG, 0xB13A00, 32, 0);
-
-	set_reg(mctl_base + MCTL_CTL_MUTEX_ITF, 0x1, 2, 0);
-	set_reg(mctl_sys_base + MCTL_OV0_FLUSH_EN, 0x8, 4, 0);
-	set_reg(mctl_base + MCTL_CTL_MUTEX, 0x0, 1, 0);
-	#endif
-#endif
 }
 
 void enable_ldi(struct dss_crtc *acrtc)
