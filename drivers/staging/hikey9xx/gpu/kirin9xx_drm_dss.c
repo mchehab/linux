@@ -37,7 +37,7 @@
 #include "kirin_drm_drv.h"
 
 #include "kirin_drm_dpe_utils.h"
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
 #include "kirin_dpe_reg.h"
@@ -45,7 +45,7 @@
 
 //#define DSS_POWER_UP_ON_UEFI
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 #define DTS_COMP_DSS_NAME "hisilicon,kirin970-dpe"
 #else
 #define DTS_COMP_DSS_NAME "hisilicon,hi3660-dpe"
@@ -310,7 +310,7 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 	int ret = 0;
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	mediacrg_regulator_enable(ctx);
 	dpe_common_clk_enable(ctx);
 	dpe_inner_clk_enable(ctx);
@@ -706,7 +706,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		return -ENXIO;
 	}
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	ret = of_property_read_u32(np, "dss_version_tag", &dss_version_tag);
 	if (ret) {
 		DRM_ERROR("failed to get dss_version_tag.\n");
@@ -756,7 +756,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		return -ENXIO;
 	}
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	ctx->pmctrl_base = of_iomap(np, 5);
 	if (!(ctx->pmctrl_base)) {
 		DRM_ERROR ("failed to get dss pmctrl_base resource.\n");
@@ -780,7 +780,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	DRM_INFO("dss irq = %d. \n", ctx->irq);
 
 #ifndef DSS_POWER_UP_ON_UEFI
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
 	if (!ctx->dpe_regulator) {
 		DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
