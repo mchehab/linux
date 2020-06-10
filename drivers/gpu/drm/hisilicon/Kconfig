@@ -3,5 +3,17 @@
 # hisilicon drm device configuration.
 # Please keep this list sorted alphabetically
 
+config DRM_HISI_KIRIN
+	bool "DRM Support for Hisilicon SoCs Platform"
+	depends on DRM && OF && ARM64
+	select DRM_KMS_HELPER
+	select DRM_GEM_CMA_HELPER
+	select DRM_KMS_CMA_HELPER
+	select HISI_KIRIN_DW_DSI
+	help
+	  Choose this option if you have a Hisilicon chipset.
+
+if DRM_HISI_KIRIN
 source "drivers/gpu/drm/hisilicon/hibmc/Kconfig"
 source "drivers/gpu/drm/hisilicon/kirin/Kconfig"
+endif
