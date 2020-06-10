@@ -25,22 +25,24 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 
-#include <drm/drmP.h>
-#include <drm/drm_crtc.h>
-#include <drm/drm_crtc_helper.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_atomic_helper.h>
-#include <drm/drm_plane_helper.h>
-#include <drm/drm_gem_cma_helper.h>
+#include <drm/drm_crtc.h>
+#include <drm/drm_crtc_helper.h>
+#include <drm/drm_drv.h>
 #include <drm/drm_fb_cma_helper.h>
+#include <drm/drm_fourcc.h>
+#include <drm/drm_gem_cma_helper.h>
+#include <drm/drm_plane_helper.h>
+#include <drm/drm_vblank.h>
+#include <drm/drm_modeset_helper_vtables.h>
 
-#include "kirin_drm_drv.h"
-
-#include "kirin_drm_dpe_utils.h"
+#include "kirin9xx_drm_drv.h"
+#include "kirin9xx_drm_dpe_utils.h"
 #if defined (CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
-#include "kirin_dpe_reg.h"
+#include "kirin960_dpe_reg.h"
 #endif
 
 //#define DSS_POWER_UP_ON_UEFI
