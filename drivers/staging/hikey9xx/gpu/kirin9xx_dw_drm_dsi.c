@@ -31,19 +31,19 @@
 #include <drm/drm_probe_helper.h>
 
 
-#include "dw_dsi_reg.h"
-#if defined (CONFIG_HISI_FB_970)
+#include "kirin9xx_dw_dsi_reg.h"
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
-#include "kirin_dpe_reg.h"
+#include "kirin960_dpe_reg.h"
 #endif
-#include "kirin_drm_dpe_utils.h"
-#include "kirin_drm_drv.h"
+#include "kirin9xx_drm_dpe_utils.h"
+#include "kirin9xx_drm_drv.h"
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 #define DTS_COMP_DSI_NAME "hisilicon,kirin970-dsi"
 #else
-#define DTS_COMP_DSI_NAME "hisilicon,hi3660-dsi"
+#define DTS_COMP_DSI_NAME "hisilicon,kirin960-dsi"
 #endif
 
 #define ROUND(x, y)		((x) / (y) + \
@@ -272,8 +272,9 @@ static const struct dsi_phy_range dphy_range_info[] = {
 
 void dsi_set_output_client(struct drm_device *dev)
 {
-	enum dsi_output_client client;
+	struct drm_connector_list_iter conn_iter;
 	struct drm_connector *connector;
+	enum dsi_output_client client;
 	struct drm_encoder *encoder;
 	struct dw_dsi *dsi;
 
@@ -286,7 +287,8 @@ void dsi_set_output_client(struct drm_device *dev)
 	dsi = encoder_to_dsi(encoder);
 
 	/* find HDMI connector */
-	drm_for_each_connector(connector, dev)
+	drm_connector_list_iter_begin(dev, &conn_iter);
+	drm_for_each_connector_iter(connector, &conn_iter)
 		if (connector->connector_type == DRM_MODE_CONNECTOR_HDMIA)
 			break;
 
@@ -295,17 +297,13 @@ void dsi_set_output_client(struct drm_device *dev)
 	 */
 	client = connector->status == connector_status_connected ?
 		OUT_HDMI : OUT_PANEL;
-	if (client != dsi->cur_client) {
-		/* associate bridge and dsi encoder */
-		if (client == OUT_HDMI)
-			encoder->bridge = dsi->bridge;
-		else
-			encoder->bridge = NULL;
 
+	if (client != dsi->cur_client) {
 		gpiod_set_value_cansleep(dsi->gpio_mux, client);
 		dsi->cur_client = client;
-		/* let the userspace know panel connector status has changed */
-		drm_sysfs_hotplug_event(dev);
+
+		msleep(20);
+
 		DRM_INFO("client change to %s\n", client == OUT_HDMI ?
 				 "HDMI" : "panel");
 	}
@@ -314,7 +312,7 @@ void dsi_set_output_client(struct drm_device *dev)
 }
 EXPORT_SYMBOL(dsi_set_output_client);
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 							struct mipi_phy_params *phy_ctrl)
 {
@@ -1025,7 +1023,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	dss_rect_t rect;
 	u32 cmp_stopstate_val = 0;
 	u32 lanes;
-#if !defined (CONFIG_HISI_FB_970)
+#if !defined (CONFIG_DRM_HISI_KIRIN970)
 	int i = 0;
 #endif
 
@@ -1042,7 +1040,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 
 	memset(&dsi->phy, 0, sizeof(struct mipi_phy_params));
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	get_dsi_dphy_ctrl(dsi, &dsi->phy);
 #else
 	get_dsi_phy_ctrl(dsi, &dsi->phy);
@@ -1065,7 +1063,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000001);
 	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000000);
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	dsi_phy_tst_set(mipi_dsi_base, 0x0042, 0x21);
 	//PLL configuration I
 	dsi_phy_tst_set(mipi_dsi_base, 0x0046, dsi->phy.rg_cp + (dsi->phy.rg_lpf_r << 4));
@@ -1304,7 +1302,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET, dsi->phy.data_lane_lp2hs_time, 10, 0);
 	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET, dsi->phy.data_lane_hs2lp_time, 10, 16);
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	//16~19bit:pclk_en, pclk_sel, dpipclk_en, dpipclk_sel
 	set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, 0x5, 4, 16);
 	//0:dphy
@@ -1351,7 +1349,7 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	dsi_mipi_init(dsi, mipi_dsi_base);
 
 	/* dsi memory init */
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	outp32(mipi_dsi_base + DSI_MEM_CTRL, 0x02600008);
 #endif
 
@@ -1382,7 +1380,7 @@ static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	/* enable generate High Speed clock, continue clock */
 	set_reg(mipi_dsi_base + MIPIDSI_LPCLK_CTRL_OFFSET, 0x1, 2, 0);
 
-#if defined(CONFIG_HISI_FB_970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	// init: wait DPHY 4 data lane stopstate
 	pctrl_dphytx_stopcnt = (u64)(dsi->ldi.h_back_porch +
 		dsi->ldi.h_front_porch + dsi->ldi.h_pulse_width + dsi->cur_mode.hdisplay + 5) *
@@ -1671,9 +1669,7 @@ static int dsi_bridge_init(struct drm_device *dev, struct dw_dsi *dsi)
 	int ret;
 
 	/* associate the bridge to dsi encoder */
-	bridge->encoder = encoder;
-
-	ret = drm_bridge_attach(dev, bridge);
+	ret = drm_bridge_attach(encoder, bridge, NULL, 0);
 	if (ret) {
 		DRM_ERROR("failed to attach external bridge\n");
 		return ret;
@@ -1686,7 +1682,7 @@ static int dsi_connector_get_modes(struct drm_connector *connector)
 {
 	struct dw_dsi *dsi = connector_to_dsi(connector);
 
-	return drm_panel_get_modes(dsi->panel);
+	return drm_panel_get_modes(dsi->panel, connector);
 }
 
 static enum drm_mode_status
@@ -1731,7 +1727,6 @@ static void dsi_connector_destroy(struct drm_connector *connector)
 }
 
 static struct drm_connector_funcs dsi_atomic_connector_funcs = {
-	.dpms = drm_atomic_helper_connector_dpms,
 	.fill_modes = drm_helper_probe_single_connector_modes,
 	.detect = dsi_connector_detect,
 	.destroy = dsi_connector_destroy,
@@ -1756,7 +1751,7 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 	if (ret)
 		return ret;
 
-	ret = drm_mode_connector_attach_encoder(connector, encoder);
+	ret = drm_connector_attach_encoder(connector, encoder);
 	if (ret)
 		return ret;
 
@@ -1925,7 +1920,7 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 		return -ENXIO;
 	}
 
-#if defined (CONFIG_HISI_FB_970)
+#if defined (CONFIG_DRM_HISI_KIRIN970)
 	ctx->pctrl_base = of_iomap(np, 2);
 	if (!(ctx->pctrl_base)) {
 		DRM_ERROR ("failed to get dss pctrl_base resource.\n");
@@ -2042,33 +2037,8 @@ static int dsi_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static int dsi_suspend(struct platform_device *pdev, pm_message_t state)
-{
-	struct device *dev = &pdev->dev;
-	struct dsi_data *ddata = dev_get_drvdata(dev);
-	struct dw_dsi *dsi = &ddata->dsi;
-
-	dsi_encoder_disable(&dsi->encoder);
-	drm_bridge_post_disable(dsi->encoder.bridge);
-
-	return 0;
-}
-
-static int dsi_resume(struct platform_device *pdev)
-{
-	struct device *dev = &pdev->dev;
-	struct dsi_data *ddata = dev_get_drvdata(dev);
-	struct dw_dsi *dsi = &ddata->dsi;
-
-	drm_bridge_pre_enable(dsi->encoder.bridge);
-	dsi_encoder_enable(&dsi->encoder);
-
-	return 0;
-}
-
 static const struct of_device_id dsi_of_match[] = {
-	{.compatible = "hisilicon,hi3660-dsi"},
-	{.compatible = "hisilicon,kirin970-dsi"},
+	{.compatible = DTS_COMP_DSI_NAME},
 	{ }
 };
 MODULE_DEVICE_TABLE(of, dsi_of_match);
@@ -2076,8 +2046,6 @@ MODULE_DEVICE_TABLE(of, dsi_of_match);
 static struct platform_driver dsi_driver = {
 	.probe = dsi_probe,
 	.remove = dsi_remove,
-	.suspend = dsi_suspend,
-	.resume = dsi_resume,
 	.driver = {
 		.name = "dw-dsi",
 		.of_match_table = dsi_of_match,
