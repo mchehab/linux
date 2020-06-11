@@ -1,15 +1,8 @@
-EXTRA_CFLAGS += \
-		-Iinclude/drm
-kirin-drm-y := kirin_fbdev.o \
-		kirin_fb.o \
-		kirin_drm_drv.o \
-		kirin_drm_dss.o \
-		kirin_drm_dpe_utils.o \
-		kirin_drm_overlay_utils.o \
-		kirin_pwm.o \
-		hdmi/adv7535.o \
+# SPDX-License-Identifier: GPL-2.0-only
+kirin9xx-drm-y := kirin9xx_drm_drv.o \
+		  kirin9xx_drm_dss.o \
+		  kirin9xx_drm_dpe_utils.o \
+		  kirin9xx_drm_overlay_utils.o
 
-
-obj-$(CONFIG_HDMI_ADV7511_AUDIO) += hdmi/adv7535_audio.o
-obj-$(CONFIG_DRM_KIRIN_960) += kirin-drm.o
-obj-$(CONFIG_HISI_KIRIN_DW_DSI) += dw_drm_dsi.o
+obj-$(CONFIG_DRM_HISI_KIRIN9XX) += kirin9xx-drm.o kirin9xx_pwm.o
+obj-$(CONFIG_DRM_HISI_KIRIN9XX_DSI) += kirin9xx_dw_drm_dsi.o
