@@ -10,7 +10,30 @@ config DRM_HISI_KIRIN6220
 	  Choose this option if you have a hisilicon Kirin chipsets(hi6220).
 	  If M is selected the module will be called kirin-drm.
 
+config DRM_HISI_KIRIN9XX
+	tristate "DRM Support for Hisilicon Kirin9xx series SoCs Platform"
+	depends on DRM && OF && ARM64
+	select DRM_KMS_HELPER
+	select DRM_GEM_CMA_HELPER
+	select DRM_KMS_CMA_HELPER
+	select DRM_MIPI_DSI
+	help
+	  Choose this option if you have a hisilicon Kirin960 or Kirin970.
+	  If M is selected the module will be called kirin9xx-drm.
+
+config DRM_HISI_KIRIN970
+	bool "Enable support for Hisilicon Kirin970"
+	depends on DRM_MIPI_DSI
+	depends on DRM_HISI_KIRIN9XX
+	help
+	  Choose this option if you have a hisilicon Kirin chipsets(kirin970).
+
 config DRM_HISI_KIRIN_DSI
 	tristate
 	depends on DRM_HISI_KIRIN6220
+	default y
+
+config DRM_HISI_KIRIN9XX_DSI
+	tristate
+	depends on DRM_HISI_KIRIN9XX
 	default y
