@@ -46,7 +46,6 @@ static int kirin_drm_kms_cleanup(struct drm_device *dev)
 		priv->fbdev = NULL;
 
 	drm_kms_helper_poll_fini(dev);
-	drm_vblank_cleanup(dev);
 	dc_ops->cleanup(dev);
 	drm_mode_config_cleanup(dev);
 	devm_kfree(dev->dev, priv);
@@ -80,7 +79,7 @@ static void kirin_fbdev_output_poll_changed(struct drm_device *dev)
 }
 
 static const struct drm_mode_config_funcs kirin_drm_mode_config_funcs = {
-	.fb_create = drm_fb_cma_create,
+	.fb_create = drm_gem_fb_create,
 	.output_poll_changed = kirin_fbdev_output_poll_changed,
 	.atomic_check = drm_atomic_helper_check,
 	.atomic_commit = drm_atomic_helper_commit,
@@ -182,12 +181,14 @@ static int kirin_gem_cma_dumb_create(struct drm_file *file,
 
 static int kirin_drm_connectors_register(struct drm_device *dev)
 {
-	struct drm_connector *connector;
+	struct drm_connector_list_iter conn_iter;
 	struct drm_connector *failed_connector;
+	struct drm_connector *connector;
 	int ret;
 
 	mutex_lock(&dev->mode_config.mutex);
-	drm_for_each_connector(connector, dev) {
+	drm_connector_list_iter_begin(dev, &conn_iter);
+	drm_for_each_connector_iter(connector, &conn_iter) {
 		ret = drm_connector_register(connector);
 		if (ret) {
 			failed_connector = connector;
@@ -199,7 +200,8 @@ static int kirin_drm_connectors_register(struct drm_device *dev)
 	return 0;
 
 err:
-	drm_for_each_connector(connector, dev) {
+	drm_connector_list_iter_begin(dev, &conn_iter);
+	drm_for_each_connector_iter(connector, &conn_iter) {
 		if (failed_connector == connector)
 			break;
 		drm_connector_unregister(connector);
@@ -210,15 +212,13 @@ err:
 }
 
 static struct drm_driver kirin_drm_driver = {
-	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME |
+	.driver_features	= DRIVER_GEM | DRIVER_MODESET |
 				  DRIVER_ATOMIC | DRIVER_RENDER,
 	.fops				= &kirin_drm_fops,
 
 	.gem_free_object	= drm_gem_cma_free_object,
 	.gem_vm_ops		= &drm_gem_cma_vm_ops,
 	.dumb_create		= kirin_gem_cma_dumb_create,
-	.dumb_map_offset	= drm_gem_cma_dumb_map_offset,
-	.dumb_destroy		= drm_gem_dumb_destroy,
 
 	.prime_handle_to_fd	= drm_gem_prime_handle_to_fd,
 	.prime_fd_to_handle	= drm_gem_prime_fd_to_handle,
@@ -258,13 +258,9 @@ static int kirin_drm_bind(struct device *dev)
 	struct drm_device *drm_dev;
 	int ret;
 
-	//drm_platform_init(&kirin_drm_driver, to_platform_device(dev));
-
 	drm_dev = drm_dev_alloc(driver, dev);
 	if (!drm_dev)
 		return -ENOMEM;
-
-	drm_dev->platformdev = to_platform_device(dev);
 
 	ret = kirin_drm_kms_init(drm_dev);
 	if (ret)
@@ -290,14 +286,18 @@ err_drm_dev_unregister:
 err_kms_cleanup:
 	kirin_drm_kms_cleanup(drm_dev);
 err_drm_dev_unref:
-	drm_dev_unref(drm_dev);
+	drm_dev_put(drm_dev);
 
 	return ret;
 }
 
 static void kirin_drm_unbind(struct device *dev)
 {
-	drm_put_dev(dev_get_drvdata(dev));
+	struct drm_device *drm_dev = dev_get_drvdata(dev);
+
+	drm_dev_unregister(drm_dev);
+	kirin_drm_kms_cleanup(drm_dev);
+	drm_dev_put(drm_dev);
 }
 
 static const struct component_master_ops kirin_drm_ops = {
