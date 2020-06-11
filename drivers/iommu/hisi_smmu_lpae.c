@@ -346,7 +346,8 @@ out_unlock:
 static int hisi_smmu_map_lpae(struct iommu_domain *domain,
 			      unsigned long iova,
 			      phys_addr_t paddr, size_t size,
-			      int prot)
+			      int prot,
+			      gfp_t gfp)
 {
 	unsigned long max_iova;
 	struct iommu_domain_data *data;
@@ -437,7 +438,8 @@ unsigned int hisi_smmu_handle_unmapping_lpae(struct iommu_domain *domain,
 }
 
 static size_t hisi_smmu_unmap_lpae(struct iommu_domain *domain,
-		unsigned long iova, size_t size)
+		unsigned long iova, size_t size,
+		struct iommu_iotlb_gather *iotlb_gather)
 {
 	unsigned long max_iova;
 	unsigned int ret;
@@ -593,7 +595,7 @@ static size_t hisi_map_tile_row_lpae(struct iommu_domain *domain, unsigned long
 		/*get the start physical address*/
 		phys_addr = (unsigned long)get_phys_addr_lpae(sg) + sg_offset;
 		ret = hisi_smmu_map_lpae(domain,
-				iova + mapped_size, phys_addr, map_size, prot);
+				iova + mapped_size, phys_addr, map_size, prot, GFP_KERNEL);
 		if (ret) {
 			dbg("[%s] hisi_smmu_map failed!\n", __func__);
 			break;
@@ -719,8 +721,7 @@ error:
 static size_t hisi_smmu_unmap_tile_lpae(struct iommu_domain *domain,
 		unsigned long iova, size_t size)
 {
-	return hisi_smmu_unmap_lpae(domain, iova, size);
-
+	return hisi_smmu_unmap_lpae(domain, iova, size, NULL);
 }
 
 static struct iommu_ops hisi_smmu_ops = {
