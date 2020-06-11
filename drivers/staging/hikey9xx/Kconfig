@@ -36,3 +36,6 @@ config REGULATOR_HI6421V600
 	  This driver provides support for the voltage regulators on
 	  HiSilicon Hi6421v600 PMU / Codec IC.
 	  This is used on Kirin 3670 boards, like HiKey 970.
+
+# DRM/KMS driver
+source "drivers/staging/hikey9xx/gpu/Kconfig"
