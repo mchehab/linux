@@ -720,48 +720,7 @@ static size_t hisi_smmu_unmap_tile_lpae(struct iommu_domain *domain,
 		unsigned long iova, size_t size)
 {
 	return hisi_smmu_unmap_lpae(domain, iova, size);
-}
 
-size_t hisi_iommu_map_sg_lpae(struct iommu_domain *domain, unsigned long iova,
-			 struct scatterlist *sg, unsigned int nents, int prot)
-{
-	struct scatterlist *s;
-	size_t mapped = 0;
-	unsigned int i, min_pagesz;
-	int ret;
-
-	if (domain->ops->pgsize_bitmap == 0UL)
-		return 0;
-
-	min_pagesz = (unsigned int)1 << __ffs(domain->ops->pgsize_bitmap);
-
-	for_each_sg(sg, s, nents, i) {
-		phys_addr_t phys = page_to_phys(sg_page(s)) + s->offset;
-
-		/*
-		 * We are mapping on IOMMU page boundaries, so offset within
-		 * the page must be 0. However, the IOMMU may support pages
-		 * smaller than PAGE_SIZE, so s->offset may still represent
-		 * an offset of that boundary within the CPU page.
-		 */
-		if (!IS_ALIGNED(s->offset, min_pagesz))
-			goto out_err;
-
-		ret = hisi_smmu_map_lpae(domain, iova + mapped, phys,
-					(size_t)s->length, prot);
-		if (ret)
-			goto out_err;
-
-		mapped += s->length;
-	}
-
-	return mapped;
-
-out_err:
-	/* undo mappings already done */
-	hisi_smmu_unmap_lpae(domain, iova, mapped);
-
-	return 0;
 }
 
 static struct iommu_ops hisi_smmu_ops = {
@@ -769,7 +728,6 @@ static struct iommu_ops hisi_smmu_ops = {
 	.domain_free	= hisi_smmu_domain_free_lpae,
 	.map		= hisi_smmu_map_lpae,
 	.unmap		= hisi_smmu_unmap_lpae,
-	.map_sg     = hisi_iommu_map_sg_lpae,
 	.attach_dev = hisi_attach_dev_lpae,
 	.detach_dev = hisi_detach_dev_lpae,
 	.iova_to_phys	= hisi_smmu_iova_to_phys_lpae,
