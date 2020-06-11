@@ -1547,7 +1547,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	mode = &acrtc->base.state->mode;
 	adj_mode = &acrtc->base.state->adjusted_mode;
 
-	bpp = fb->bits_per_pixel / 8;
+	bpp = fb->format->cpp[0];
 	stride = fb->pitches[0];
 
 #ifndef CMA_BUFFER_USED
@@ -1566,12 +1566,12 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	hal_fmt = HISI_FB_PIXEL_FORMAT_BGRA_8888;//dss_get_format(fb->pixel_format);
 
 	DRM_DEBUG_DRIVER("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),"
-		"fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d, bits_per_pixel=%d.\n",
+		"fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
 		chn_idx, src_x, src_y, src_w, src_h,
 		crtc_x, crtc_y, crtc_w, crtc_h,
 		rect.left, rect.top, rect.right, rect.bottom,
 		fb->width, fb->height, hal_fmt,
-		stride, display_addr, bpp, fb->bits_per_pixel);
+		stride, display_addr, bpp);
 
 	hfp = mode->hsync_start - mode->hdisplay;
 	hbp = mode->htotal - mode->hsync_end;
