@@ -409,6 +409,7 @@
 
 &dwmmc2 { /* WIFI */
 	bus-width = <0x4>;
+	ti,non-removable;
 	non-removable;
 	broken-cd;
 	cap-power-off-card;
@@ -416,8 +417,12 @@
 	pinctrl-0 = <&sdio_pmx_func
 		     &sdio_clk_cfg_func
 		     &sdio_cfg_func>;
+	status = "ok";
+
 	/* WL_EN */
 	vmmc-supply = <&wlan_en>;
+	#address-cells = <0x1>;
+	#size-cells = <0x0>;
 	status = "ok";
 
 	wlcore: wlcore@2 {
