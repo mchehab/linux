@@ -25,19 +25,21 @@
 #include <drm/drm_fb_cma_helper.h>
 #include <drm/drm_gem_cma_helper.h>
 #include <drm/drm_gem_framebuffer_helper.h>
+#include <drm/drm_of.h>
 #include <drm/drm_probe_helper.h>
 #include <drm/drm_vblank.h>
 
 #include "kirin9xx_drm_drv.h"
 
-static struct kirin_dc_ops *dc_ops;
-
 static int kirin_drm_kms_cleanup(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
+	static struct kirin_dc_ops const *dc_ops;
 
 	if (priv->fbdev)
 		priv->fbdev = NULL;
+
+	dc_ops = of_device_get_match_data(dev->dev);
 
 	drm_kms_helper_poll_fini(dev);
 	dc_ops->cleanup(dev);
@@ -78,6 +80,7 @@ static void kirin_drm_mode_config_init(struct drm_device *dev)
 static int kirin_drm_kms_init(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
+	static struct kirin_dc_ops const *dc_ops;
 	int ret;
 
 	priv = devm_kzalloc(dev->dev, sizeof(*priv), GFP_KERNEL);
@@ -92,6 +95,7 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	kirin_drm_mode_config_init(dev);
 
 	/* display controller init */
+	dc_ops = of_device_get_match_data(dev->dev);
 	ret = dc_ops->init(dev);
 	if (ret)
 		goto err_mode_config_cleanup;
@@ -209,27 +213,17 @@ static struct drm_driver kirin_drm_driver = {
 	.gem_prime_vunmap	= drm_gem_cma_prime_vunmap,
 	.gem_prime_mmap		= drm_gem_cma_prime_mmap,
 
-	.name			= "kirin",
-	.desc			= "Hisilicon Kirin SoCs' DRM Driver",
+	.name			= "kirin9xx",
+	.desc			= "Hisilicon Kirin9xx SoCs' DRM Driver",
 	.date			= "20170309",
 	.major			= 1,
 	.minor			= 0,
 };
 
-#ifdef CONFIG_OF
-/* NOTE: the CONFIG_OF case duplicates the same code as exynos or imx
- * (or probably any other).. so probably some room for some helpers
- */
 static int compare_of(struct device *dev, void *data)
 {
 	return dev->of_node == data;
 }
-#else
-static int compare_dev(struct device *dev, void *data)
-{
-	return dev == data;
-}
-#endif
 
 static int kirin_drm_bind(struct device *dev)
 {
@@ -288,57 +282,30 @@ static const struct component_master_ops kirin_drm_ops = {
 	.unbind = kirin_drm_unbind,
 };
 
-static struct device_node *kirin_get_remote_node(struct device_node *np)
-{
-	struct device_node *endpoint, *remote;
-
-	/* get the first endpoint, in our case only one remote node
-	 * is connected to display controller.
-	 */
-	endpoint = of_graph_get_next_endpoint(np, NULL);
-	if (!endpoint) {
-		DRM_ERROR("no valid endpoint node\n");
-		return ERR_PTR(-ENODEV);
-	}
-	of_node_put(endpoint);
-
-	remote = of_graph_get_remote_port_parent(endpoint);
-	if (!remote) {
-		DRM_ERROR("no valid remote node\n");
-		return ERR_PTR(-ENODEV);
-	}
-	of_node_put(remote);
-
-	if (!of_device_is_available(remote)) {
-		DRM_ERROR("not available for remote node\n");
-		return ERR_PTR(-ENODEV);
-	}
-
-	return remote;
-}
-
 static int kirin_drm_platform_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
 	struct component_match *match = NULL;
 	struct device_node *remote;
+	static struct kirin_dc_ops const *dc_ops;
 	int ret;
 
-	dc_ops = (struct kirin_dc_ops *)of_device_get_match_data(dev);
+	dc_ops = of_device_get_match_data(dev);
 	if (!dc_ops) {
 		DRM_ERROR("failed to get dt id data\n");
 		return -EINVAL;
 	}
 
 	DRM_INFO("the device node is %s\n", np->name);
-	remote = kirin_get_remote_node(np);
-	if (IS_ERR(remote))
-		return PTR_ERR(remote);
+	remote = of_graph_get_remote_node(np, 0, 0);
+	if (!remote)
+		return -ENODEV;
 
 	DRM_INFO("the device remote node is %s\n", remote->name);
 
-	component_match_add(dev, &match, compare_of, remote);
+	drm_of_component_match_add(dev, &match, compare_of, remote);
+	of_node_put(remote);
 
 	if (ret)
 		DRM_ERROR("cma device init failed!");
@@ -347,13 +314,20 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 
 static int kirin_drm_platform_remove(struct platform_device *pdev)
 {
+	static struct kirin_dc_ops const *dc_ops;
+
+	dc_ops = of_device_get_match_data(&pdev->dev);
 	component_master_del(&pdev->dev, &kirin_drm_ops);
-	dc_ops = NULL;
 	return 0;
 }
 
 static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t state)
 {
+	static struct kirin_dc_ops const *dc_ops;
+	struct device *dev = &pdev->dev;
+
+	dc_ops = of_device_get_match_data(dev);
+
 	DRM_INFO("+. pdev->name is %s, m_message is %d \n", pdev->name, state.event);
 	if (!dc_ops) {
 		DRM_ERROR("dc_ops is NULL\n");
@@ -366,6 +340,11 @@ static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t
 
 static int kirin_drm_platform_resume(struct platform_device *pdev)
 {
+	static struct kirin_dc_ops const *dc_ops;
+	struct device *dev = &pdev->dev;
+
+	dc_ops = of_device_get_match_data(dev);
+
 	if (!dc_ops) {
 		DRM_ERROR("dc_ops is NULL\n");
 		return -EINVAL;
@@ -376,7 +355,7 @@ static int kirin_drm_platform_resume(struct platform_device *pdev)
 }
 
 static const struct of_device_id kirin_drm_dt_ids[] = {
-	{ .compatible = "hisilicon,hi3660-dpe",
+	{ .compatible = "hisilicon,kirin960-dpe",
 	  .data = &dss_dc_ops,
 	},
 	{ .compatible = "hisilicon,kirin970-dpe",
@@ -392,7 +371,7 @@ static struct platform_driver kirin_drm_platform_driver = {
 	.suspend = kirin_drm_platform_suspend,
 	.resume = kirin_drm_platform_resume,
 	.driver = {
-		.name = "kirin-drm",
+		.name = "kirin9xx-drm",
 		.of_match_table = kirin_drm_dt_ids,
 	},
 };
