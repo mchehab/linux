@@ -27,9 +27,6 @@
 #include <drm/drm_plane.h>
 #include <drm/drm_crtc.h>
 
-#include <linux/ion.h>
-#include <linux/hisi/hisi_ion.h>
-
 #define FB_ACCEL_HI62xx 	0x1
 #define FB_ACCEL_HI363x 	0x2
 #define FB_ACCEL_HI365x 	0x4
