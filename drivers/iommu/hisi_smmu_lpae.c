@@ -476,6 +476,15 @@ static phys_addr_t hisi_smmu_iova_to_phys_lpae(struct iommu_domain *domain,
 	if (!pgdp)
 		return 0;
 
+	/*
+	 * The DRM driver needs to know the physical address of the
+	 * start of the memory-mapped region, in order to set it on some
+	 * registers. Add support for it, by returning the base of the
+	 * memory mapped domain, when iova is zero.
+	 */
+	if (!iova)
+		return virt_to_phys(hisi_smmu_dev->smmu_pgd);
+
 	pgd = *(pgdp + smmu_pgd_index(iova));
 	if (smmu_pgd_none_lpae(pgd))
 		return 0;

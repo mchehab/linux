@@ -1341,7 +1341,6 @@ static void hisi_dss_mif_on(struct dss_hw_ctx *ctx)
 void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 {
 	void __iomem *smmu_base;
-	struct iommu_domain_data *domain_data = NULL;
 	uint32_t phy_pgd_base = 0;
 	uint64_t fama_phy_pgd_base;
 
@@ -1374,10 +1373,15 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	set_reg(smmu_base + SMMU_SMRx_NS + 38 * 0x4, 0x1, 32, 0); /*cmd sec stream id*/
 
 	/*TTBR0*/
-	domain_data = (struct iommu_domain_data *)(ctx->mmu_domain->priv);
-	fama_phy_pgd_base = domain_data->phy_pgd_base;
-	phy_pgd_base = (uint32_t)(domain_data->phy_pgd_base);
-	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x \n", fama_phy_pgd_base, phy_pgd_base);
+	fama_phy_pgd_base = iommu_iova_to_phys(ctx->mmu_domain, 0);
+	phy_pgd_base = (uint32_t)fama_phy_pgd_base;
+
+	if (!phy_pgd_base) {
+		DRM_ERROR("phy_pdg_base is NULL! probably smmu_lpae is missing at DT\n");
+		WARN_ON(1);
+		return;
+	}
+
 	set_reg(smmu_base + SMMU_CB_TTBR0, phy_pgd_base, 32, 0);
 }
 
