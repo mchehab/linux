@@ -17,8 +17,6 @@
 #include <drm/drm_print.h>
 
 #include <linux/iommu.h>
-#include <linux/ion.h>
-#include <linux/hisi/hisi_ion.h>
 #include <linux/hisi/hisi-iommu.h>
 
 #define MAX_CRTC	2
