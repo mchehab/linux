@@ -89,6 +89,8 @@ struct hisi_smmu_device_lpae {
 	unsigned long      va_pgtable_addr;
 	phys_addr_t        smmu_phy_pgtable_addr;
 	smmu_pgd_t         *smmu_pgd;
+
+	struct iommu_device iommu;
 };
 
 struct hisi_map_tile_position_lpae {

@@ -724,30 +724,73 @@ static size_t hisi_smmu_unmap_tile_lpae(struct iommu_domain *domain,
 	return hisi_smmu_unmap_lpae(domain, iova, size, NULL);
 }
 
+static bool hisi_smmu_capable(enum iommu_cap cap)
+{
+	return false;
+}
+
+static int hisi_smmu_add_device(struct device *dev)
+{
+	struct hisi_smmu_device_lpae *iommu = hisi_smmu_dev;
+	struct iommu_group *group;
+
+	if (iommu)
+		iommu_device_link(&iommu->iommu, dev);
+	else
+		return -ENODEV;
+
+	group = iommu_group_get_for_dev(dev);
+	if (IS_ERR(group))
+		return PTR_ERR(group);
+
+	iommu_group_put(group);
+
+	return 0;
+}
+
+static void hisi_smmu_remove_device(struct device *dev)
+{
+	struct hisi_smmu_device_lpae *iommu = hisi_smmu_dev;
+
+	if (iommu)
+		iommu_device_unlink(&iommu->iommu, dev);
+
+	iommu_group_remove_device(dev);
+}
+
 static struct iommu_ops hisi_smmu_ops = {
+	.capable	= hisi_smmu_capable,
 	.domain_alloc	= hisi_smmu_domain_alloc_lpae,
 	.domain_free	= hisi_smmu_domain_free_lpae,
+	.attach_dev	= hisi_attach_dev_lpae,
+	.detach_dev	= hisi_detach_dev_lpae,
 	.map		= hisi_smmu_map_lpae,
 	.unmap		= hisi_smmu_unmap_lpae,
-	.attach_dev = hisi_attach_dev_lpae,
-	.detach_dev = hisi_detach_dev_lpae,
 	.iova_to_phys	= hisi_smmu_iova_to_phys_lpae,
+	.add_device	= hisi_smmu_add_device,
+	.remove_device	= hisi_smmu_remove_device,
+	.device_group	= generic_device_group,
 	.pgsize_bitmap	= SMMU_PAGE_SIZE,
-	.map_tile = hisi_smmu_map_tile_lpae,
-	.unmap_tile = hisi_smmu_unmap_tile_lpae,
+	.map_tile	= hisi_smmu_map_tile_lpae,
+	.unmap_tile	= hisi_smmu_unmap_tile_lpae,
 };
 
 static int hisi_smmu_probe_lpae(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	int ret;
 
 	dbg("enter %s\n", __func__);
 	hisi_smmu_dev = devm_kzalloc(dev,
 			sizeof(struct hisi_smmu_device_lpae), GFP_KERNEL);
 
-	hisi_smmu_dev->smmu_pgd = devm_kzalloc(dev, SZ_64, GFP_KERNEL | __GFP_DMA);
-	if (!hisi_smmu_dev)
+	hisi_smmu_dev->smmu_pgd = devm_kzalloc(dev, SZ_64,
+					       GFP_KERNEL | __GFP_DMA);
+	if (!hisi_smmu_dev) {
+		ret = -ENOMEM;
 		goto smmu_device_error;
+	}
+
 	hisi_smmu_dev->dev = dev;
 	INIT_LIST_HEAD(&hisi_smmu_dev->domain_list);
 	spin_lock_init(&hisi_smmu_dev->lock);
@@ -756,18 +799,39 @@ static int hisi_smmu_probe_lpae(struct platform_device *pdev)
 
 	hisi_smmu_dev->smmu_phy_pgtable_addr =
 		virt_to_phys(hisi_smmu_dev->smmu_pgd);
-	printk(KERN_ERR "%s, smmu_phy_pgtable_addr is = %llx\n", __func__, hisi_smmu_dev->smmu_phy_pgtable_addr);
+	dev_info(&pdev->dev, "%s, smmu_phy_pgtable_addr is = 0x%llx\n",
+		 __func__, hisi_smmu_dev->smmu_phy_pgtable_addr);
 
 	hisi_smmu_dev->va_pgtable_addr = (unsigned long)(hisi_smmu_dev->smmu_pgd);
+
+	ret = iommu_device_sysfs_add(&hisi_smmu_dev->iommu, NULL, NULL,
+				    "hisi-iommu");
+	if (ret)
+		goto fail_register;
+
+	iommu_device_set_ops(&hisi_smmu_dev->iommu, &hisi_smmu_ops);
+
+	ret = iommu_device_register(&hisi_smmu_dev->iommu);
+	if (ret) {
+		dev_info(&pdev->dev, "Could not register hisi-smmu\n");
+		goto fail_register;
+	}
+
 	bus_set_iommu(&platform_bus_type, &hisi_smmu_ops);
 	return 0;
 
+fail_register:
+	iommu_device_sysfs_remove(&hisi_smmu_dev->iommu);
+
 smmu_device_error:
-	return -ENOMEM;
+	return ret;
 }
 
 static int hisi_smmu_remove_lpae(struct platform_device *pdev)
 {
+	iommu_device_unregister(&hisi_smmu_dev->iommu);
+	iommu_device_sysfs_remove(&hisi_smmu_dev->iommu);
+
 	return 0;
 }
 
@@ -779,7 +843,6 @@ MODULE_DEVICE_TABLE(of, hisi_smmu_of_match_lpae);
 
 static struct platform_driver hisi_smmu_driver_lpae = {
 	.driver	= {
-		.owner		= THIS_MODULE,
 		.name		= "hisi-smmu-lpae",
 		.of_match_table	= of_match_ptr(hisi_smmu_of_match_lpae),
 	},
