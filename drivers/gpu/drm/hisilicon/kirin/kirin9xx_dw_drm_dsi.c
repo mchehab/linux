@@ -25,7 +25,8 @@
 #include <drm/drm_of.h>
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_mipi_dsi.h>
-#include <drm/drm_encoder_slave.h>
+#include <drm/drm_encoder.h>
+#include <drm/drm_device.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_panel.h>
 #include <drm/drm_probe_helper.h>
@@ -1483,17 +1484,31 @@ static const struct drm_encoder_funcs dw_encoder_funcs = {
 
 static int dw_drm_encoder_init(struct device *dev,
 			       struct drm_device *drm_dev,
-			       struct drm_encoder *encoder)
+			       struct drm_encoder *encoder,
+			       struct drm_bridge *bridge)
 {
 	int ret;
-	u32 crtc_mask = drm_of_find_possible_crtcs(drm_dev, dev->of_node);
+	u32 crtc_mask;
 
+	dev_info(dev, "%s:\n", __func__);
+
+	/* Link drm_bridge to encoder */
+	if (!bridge) {
+		DRM_INFO("no dsi bridge to attach the encoder\n");
+		return 0;
+	}
+
+	crtc_mask = drm_of_find_possible_crtcs(drm_dev, dev->of_node);
 	if (!crtc_mask) {
 		DRM_ERROR("failed to find crtc mask\n");
 		return -EINVAL;
 	}
 
+	dev_info(dev, "Initializing CRTC encoder: %d\n",
+		 crtc_mask);
+
 	encoder->possible_crtcs = crtc_mask;
+	encoder->possible_clones = 0;
 	ret = drm_encoder_init(drm_dev, encoder, &dw_encoder_funcs,
 			       DRM_MODE_ENCODER_DSI, NULL);
 	if (ret) {
@@ -1503,7 +1518,14 @@ static int dw_drm_encoder_init(struct device *dev,
 
 	drm_encoder_helper_add(encoder, &dw_encoder_helper_funcs);
 
-	return 0;
+	/* associate the bridge to dsi encoder */
+	ret = drm_bridge_attach(encoder, bridge, NULL, 0);
+	if (ret) {
+		DRM_ERROR("failed to attach external bridge\n");
+		drm_encoder_cleanup(encoder);
+	}
+
+	return ret;
 }
 
 static int dsi_host_attach(struct mipi_dsi_host *host,
@@ -1677,22 +1699,6 @@ static int dsi_host_init(struct device *dev, struct dw_dsi *dsi)
 	return 0;
 }
 
-static int dsi_bridge_init(struct drm_device *dev, struct dw_dsi *dsi)
-{
-	struct drm_encoder *encoder = &dsi->encoder;
-	struct drm_bridge *bridge = dsi->bridge;
-	int ret;
-
-	/* associate the bridge to dsi encoder */
-	ret = drm_bridge_attach(encoder, bridge, NULL, 0);
-	if (ret) {
-		DRM_ERROR("failed to attach external bridge\n");
-		return ret;
-	}
-
-	return 0;
-}
-
 static int dsi_connector_get_modes(struct drm_connector *connector)
 {
 	struct dw_dsi *dsi = connector_to_dsi(connector);
@@ -1766,6 +1772,7 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 	if (ret)
 		return ret;
 
+	dev_info(dev->dev, "Attaching CRTC encoder\n");
 	ret = drm_connector_attach_encoder(connector, encoder);
 	if (ret)
 		return ret;
@@ -1784,15 +1791,12 @@ static int dsi_bind(struct device *dev, struct device *master, void *data)
 	struct drm_device *drm_dev = data;
 	int ret;
 
-	ret = dw_drm_encoder_init(dev, drm_dev, &dsi->encoder);
+	DRM_INFO("dsi_bind\n");
+
+	ret = dw_drm_encoder_init(dev, drm_dev, &dsi->encoder,
+				  dsi->bridge);
 	if (ret)
 		return ret;
-
-	if (dsi->bridge) {
-		ret = dsi_bridge_init(drm_dev, dsi);
-		if (ret)
-			return ret;
-	}
 
 	if (dsi->panel) {
 		ret = dsi_connector_init(drm_dev, dsi);
