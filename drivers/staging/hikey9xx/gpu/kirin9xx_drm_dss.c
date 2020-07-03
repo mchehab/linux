@@ -391,24 +391,26 @@ static void dss_power_down(struct dss_crtc *acrtc)
 	ctx->power_on = false;
 }
 
-static int dss_enable_vblank(struct drm_device *dev, unsigned int pipe)
+static int dss_enable_vblank(struct drm_crtc *crtc)
 {
-	struct kirin_drm_private *priv = dev->dev_private;
-	struct dss_crtc *acrtc = to_dss_crtc(priv->crtc[pipe]);
+	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
-	if (!ctx->power_on)
+	DRM_INFO("%s\n", __func__);
+	if (!ctx->power_on) {
+		DRM_INFO("Enabling vblank\n");
 		(void)dss_power_up(acrtc);
+	}
 
 	return 0;
 }
 
-static void dss_disable_vblank(struct drm_device *dev, unsigned int pipe)
+static void dss_disable_vblank(struct drm_crtc *crtc)
 {
-	struct kirin_drm_private *priv = dev->dev_private;
-	struct dss_crtc *acrtc = to_dss_crtc(priv->crtc[pipe]);
+	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
+	DRM_INFO("%s\n", __func__);
 	if (!ctx->power_on) {
 		DRM_ERROR("power is down! vblank disable fail\n");
 		return;
@@ -545,6 +547,8 @@ static const struct drm_crtc_funcs dss_crtc_funcs = {
 	.reset		= drm_atomic_helper_crtc_reset,
 	.atomic_duplicate_state	= drm_atomic_helper_crtc_duplicate_state,
 	.atomic_destroy_state	= drm_atomic_helper_crtc_destroy_state,
+	.enable_vblank = dss_enable_vblank,
+	.disable_vblank = dss_disable_vblank,
 };
 
 static int dss_crtc_init(struct drm_device *dev, struct drm_crtc *crtc,
@@ -927,9 +931,6 @@ static int dss_drm_init(struct drm_device *dev)
 	}
 
 	disable_irq(ctx->irq);
-
-	dev->driver->enable_vblank = dss_enable_vblank;
-	dev->driver->disable_vblank = dss_disable_vblank;
 
 	return 0;
 }
