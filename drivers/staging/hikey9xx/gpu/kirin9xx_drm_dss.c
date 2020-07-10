@@ -638,7 +638,14 @@ static void dss_plane_atomic_update(struct drm_plane *plane,
 static void dss_plane_atomic_disable(struct drm_plane *plane,
 				     struct drm_plane_state *old_state)
 {
-	//struct dss_plane *aplane = to_dss_plane(plane);
+	// FIXME: Maybe this?
+#if 0
+	struct dss_plane *aplane = to_dss_plane(plane);
+	struct dss_crtc *acrtc = aplane->acrtc;
+
+	disable_ldi(acrtc);
+	hisifb_mctl_sw_clr(acrtc);
+#endif
 }
 
 static const struct drm_plane_helper_funcs dss_plane_helper_funcs = {
