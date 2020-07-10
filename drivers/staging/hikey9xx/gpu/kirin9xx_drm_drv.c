@@ -39,10 +39,8 @@ static int kirin_drm_kms_cleanup(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
 
-	if (priv->fbdev) {
-		kirin_drm_fbdev_fini(dev);
+	if (priv->fbdev)
 		priv->fbdev = NULL;
-	}
 
 	drm_kms_helper_poll_fini(dev);
 	drm_vblank_cleanup(dev);
@@ -75,8 +73,6 @@ static void kirin_fbdev_output_poll_changed(struct drm_device *dev)
 #else
 	if (priv->fbdev)
 		drm_fb_helper_hotplug_event(priv->fbdev);
-	else
-		priv->fbdev = kirin_drm_fbdev_init(dev);
 #endif
 }
 
@@ -137,9 +133,6 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 
 	/* reset all the states of crtc/plane/encoder/connector */
 	drm_mode_config_reset(dev);
-
-	if (fbdev)
-		priv->fbdev = kirin_drm_fbdev_init(dev);
 
 	/* init kms poll for handling hpd */
 	drm_kms_helper_poll_init(dev);
