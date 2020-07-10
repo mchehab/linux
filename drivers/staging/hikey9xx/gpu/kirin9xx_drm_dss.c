@@ -103,8 +103,9 @@ u32 dss_get_format(u32 pixel_format)
 }
 
 /*******************************************************************************
-**
-*/
+ **
+ */
+
 int hdmi_ceil(uint64_t a, uint64_t b)
 {
 	if (b == 0)
@@ -117,99 +118,108 @@ int hdmi_ceil(uint64_t a, uint64_t b)
 	}
 }
 
-int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, uint64_t pixel_clock)
+int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 {
-	uint64_t refdiv, fbdiv, frac, postdiv1, postdiv2;
-	uint64_t vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUPUT;
-	uint64_t sys_clock_fref = KIRIN970_SYS_19M2;
-	uint64_t ppll7_freq_divider;
-	uint64_t vco_freq_output;
-	uint64_t frac_range = 0x1000000;/*2^24*/
-	uint64_t pixel_clock_ori;
-	uint64_t pixel_clock_cur;
-	uint32_t ppll7ctrl0;
-	uint32_t ppll7ctrl1;
-	uint32_t ppll7ctrl0_val;
-	uint32_t ppll7ctrl1_val;
-	int i, ret;
+	u64 vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUPUT;
+	u64 refdiv, fbdiv, frac, postdiv1 = 0, postdiv2 = 0;
+	u64 dss_pxl0_clk = 7 * 144000000UL;
+	u64 sys_clock_fref = KIRIN970_SYS_19M2;
+	u64 ppll7_freq_divider;
+	u64 vco_freq_output;
+	u64 frac_range = 0x1000000;/*2^24*/
+	u64 pixel_clock_ori;
+	u64 pixel_clock_cur;
+	u32 ppll7ctrl0;
+	u32 ppll7ctrl1;
+	u32 ppll7ctrl0_val;
+	u32 ppll7ctrl1_val;
 	int ceil_temp;
-	int freq_divider_list[22] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-			12, 14, 15, 16, 20, 21, 24,
-			25, 30, 36, 42, 49};
-
-	int postdiv1_list[22] = {1, 2, 3, 4, 5, 6, 7, 4, 3, 5,
-		   4, 7, 5, 4, 5, 7, 6, 5, 6, 6,
-			7, 7};
-
-	int postdiv2_list[22] = {1, 1, 1, 1, 1, 1, 1, 2, 3, 2,
+	int i, ret;
+	const int freq_divider_list[22] = {
+		1,  2,  3,  4,  5,  6,  7,  8,
+		9, 10, 12, 14, 15, 16, 20, 21,
+		24, 25, 30, 36, 42, 49
+	};
+	const int postdiv1_list[22] = {
+		1, 2, 3, 4, 5, 6, 7, 4, 3, 5,
+		4, 7, 5, 4, 5, 7, 6, 5, 6, 6,
+		7, 7
+	};
+	const int postdiv2_list[22] = {
+		1, 1, 1, 1, 1, 1, 1, 2, 3, 2,
 		3, 2, 3, 4, 4, 3, 4, 5, 5, 6,
-			6, 7};
-	ret = 0;
-	postdiv1 = 0;
-	postdiv2 = 0;
-	if (pixel_clock == 0)
-		return -EINVAL;
+		6, 7
+	};
 
-	if (ctx == NULL) {
-		DRM_ERROR("NULL Pointer\n");
+	if (!pixel_clock) {
+		DRM_ERROR("Pixel clock can't be zero!\n");
 		return -EINVAL;
 	}
 
 	pixel_clock_ori = pixel_clock;
+	pixel_clock_cur = pixel_clock_ori;
 
-	if (pixel_clock_ori <= 255000000)
-		pixel_clock_cur = pixel_clock * 7;
-	else if (pixel_clock_ori <= 415000000)
-		pixel_clock_cur = pixel_clock * 5;
-	else if (pixel_clock_ori <= 594000000)
-		pixel_clock_cur = pixel_clock * 3;
-	else {
-		DRM_ERROR("Clock don't support!!\n");
+	if (pixel_clock_ori <= 255000000) {
+		pixel_clock_cur *= 7;
+		dss_pxl0_clk /= 7;
+	} else if (pixel_clock_ori <= 415000000) {
+		pixel_clock_cur *= 5;
+		dss_pxl0_clk /= 5;
+	} else if (pixel_clock_ori <= 594000000) {
+		pixel_clock_cur *= 3;
+		dss_pxl0_clk /= 3;
+	} else {
+		DRM_ERROR("Clock not supported!\n");
 		return -EINVAL;
 	}
 
 	pixel_clock_cur = pixel_clock_cur / 1000;
 	ceil_temp = hdmi_ceil(vco_min_freq_output, pixel_clock_cur);
 
-	if (ceil_temp < 0)
+	if (ceil_temp < 0) {
+		DRM_ERROR("pixel_clock_cur can't be zero!\n");
 		return -EINVAL;
+	}
 
-	ppll7_freq_divider = (uint64_t)ceil_temp;
+	ppll7_freq_divider = (u64)ceil_temp;
 
-	for (i = 0; i < 22; i++) {
+	for (i = 0; i < ARRAY_SIZE(freq_divider_list); i++) {
 		if (freq_divider_list[i] >= ppll7_freq_divider) {
 			ppll7_freq_divider = freq_divider_list[i];
 			postdiv1 = postdiv1_list[i];
 			postdiv2 = postdiv2_list[i];
-			DRM_INFO("postdiv1=0x%llx, POSTDIV2=0x%llx\n", postdiv1, postdiv2);
 			break;
 		}
 	}
 
-	vco_freq_output = ppll7_freq_divider * pixel_clock_cur;
-	if (vco_freq_output == 0)
+	if (i == ARRAY_SIZE(freq_divider_list)) {
+		DRM_ERROR("Can't find a valid setting for PLL7!\n");
 		return -EINVAL;
+	}
+
+	vco_freq_output = ppll7_freq_divider * pixel_clock_cur;
+	if (!vco_freq_output) {
+		DRM_ERROR("Can't find a valid setting for VCO_FREQ!\n");
+		return -EINVAL;
+	}
 
 	ceil_temp = hdmi_ceil(400000, vco_freq_output);
-
-	if (ceil_temp < 0)
+	if (ceil_temp < 0) {
+		DRM_ERROR("Can't find a valid setting for PLL7!\n");
 		return -EINVAL;
+	}
 
 	refdiv = ((vco_freq_output * ceil_temp) >= 494000) ? 1 : 2;
-	DRM_DEBUG("refdiv=0x%llx\n", refdiv);
-
 	fbdiv = (vco_freq_output * ceil_temp) * refdiv / sys_clock_fref;
-	DRM_DEBUG("fbdiv=0x%llx\n", fbdiv);
 
-	frac = (uint64_t)(ceil_temp * vco_freq_output - sys_clock_fref / refdiv * fbdiv) * refdiv * frac_range;
-	frac = (uint64_t)frac / sys_clock_fref;
-	DRM_DEBUG("frac=0x%llx\n", frac);
+	frac = (u64)(ceil_temp * vco_freq_output - sys_clock_fref / refdiv * fbdiv) * refdiv * frac_range;
+	frac = (u64)frac / sys_clock_fref;
 
 	ppll7ctrl0 = inp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
 	ppll7ctrl0 &= ~MIDIA_PPLL7_FREQ_DEVIDER_MASK;
 
 	ppll7ctrl0_val = 0x0;
-	ppll7ctrl0_val |= (uint32_t)(postdiv2 << 23 | postdiv1 << 20 | fbdiv << 8 | refdiv << 2);
+	ppll7ctrl0_val |= (u32)(postdiv2 << 23 | postdiv1 << 20 | fbdiv << 8 | refdiv << 2);
 	ppll7ctrl0_val &= MIDIA_PPLL7_FREQ_DEVIDER_MASK;
 	ppll7ctrl0 |= ppll7ctrl0_val;
 
@@ -219,47 +229,30 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, uint64_t pixel_clock)
 	ppll7ctrl1 &= ~MIDIA_PPLL7_FRAC_MODE_MASK;
 
 	ppll7ctrl1_val = 0x0;
-	ppll7ctrl1_val |= (uint32_t)(1 << 25 | 0 << 24 | frac);
+	ppll7ctrl1_val |= (u32)(1 << 25 | 0 << 24 | frac);
 	ppll7ctrl1_val &= MIDIA_PPLL7_FRAC_MODE_MASK;
 	ppll7ctrl1 |= ppll7ctrl1_val;
 
 	outp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1, ppll7ctrl1);
 
-#if 1
-	ret = clk_set_rate(ctx->dss_pxl0_clk, 144000000UL);
-#else
-	/*comfirm ldi1 switch ppll7*/
-	if (pixel_clock_ori <= 255000000)
-		ret = clk_set_rate(ctx->dss_pxl0_clk, DEFAULT_MIDIA_PPLL7_CLOCK_FREQ/7);
-	else if (pixel_clock_ori <= 415000000)
-		ret = clk_set_rate(ctx->dss_pxl0_clk, DEFAULT_MIDIA_PPLL7_CLOCK_FREQ/5);
-	else if (pixel_clock_ori <= 594000000)
-		ret = clk_set_rate(ctx->dss_pxl0_clk, DEFAULT_MIDIA_PPLL7_CLOCK_FREQ/3);
-	else {
-		DRM_ERROR("Clock don't support!!\n");
-		return -EINVAL;
-	}
-#endif
+	DRM_INFO("PLL7 set to (0x%0x, 0x%0x)\n", ppll7ctrl0, ppll7ctrl1);
 
-	if (ret < 0) {
-		DRM_ERROR("dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
-			pixel_clock_cur, ret);
-	}
+	ret = clk_set_rate(ctx->dss_pxl0_clk, dss_pxl0_clk);
+	if (ret < 0)
+		DRM_ERROR("%s: clk_set_rate(dss_pxl0_clk, %llu) failed: %d!\n",
+			  __func__, dss_pxl0_clk, ret);
+	else
+		DRM_INFO("dss_pxl0_clk:[%llu]->[%lu].\n",
+			 dss_pxl0_clk, clk_get_rate(ctx->dss_pxl0_clk));
+
 	return ret;
 }
 
-/*******************************************************************************
- **
- */
-static void dss_ldi_set_mode(struct dss_crtc *acrtc)
+static u64 dss_calculate_clock(struct dss_crtc *acrtc,
+			       const struct drm_display_mode *mode)
 {
-	int ret;
-	uint64_t clk_Hz;
-	struct dss_hw_ctx *ctx = acrtc->ctx;
-	struct drm_display_mode *mode = &acrtc->base.state->mode;
-	struct drm_display_mode *adj_mode = &acrtc->base.state->adjusted_mode;
+	u64 clk_Hz;
 
-	DRM_INFO("mode->clock(org) = %u\n", mode->clock);
 	if (acrtc->ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		if (mode->clock == 148500)
 			clk_Hz = 144000 * 1000UL;
@@ -275,10 +268,6 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		/* Adjust pixel clock for compatibility with 10.1 inch special displays. */
 		if (mode->clock == 148500 && mode->width_mm == 532 && mode->height_mm == 299)
 			clk_Hz = 152000 * 1000UL;
-
-		DRM_INFO("HDMI real need clock = %llu \n", clk_Hz);
-		hdmi_pxl_ppll7_init(ctx, clk_Hz);
-		adj_mode->clock = clk_Hz / 1000;
 	} else {
 		if (mode->clock == 148500)
 			clk_Hz = 144000 * 1000UL;
@@ -290,19 +279,40 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 			clk_Hz = 72000 * 1000UL;
 		else
 			clk_Hz = mode->clock * 1000UL;
-
-		/*
-		 * Success should be guaranteed in mode_valid call back,
-		 * so failure shouldn't happen here
-		 */
-		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
-		if (ret) {
-			DRM_ERROR("failed to set pixel clk %llu Hz (%d)\n", clk_Hz, ret);
-		}
-		adj_mode->clock = clk_get_rate(ctx->dss_pxl0_clk) / 1000;
 	}
 
-	DRM_INFO("dss_pxl0_clk [%llu]->[%lu] \n", clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
+	return clk_Hz;
+}
+
+static void dss_ldi_set_mode(struct dss_crtc *acrtc)
+{
+	struct drm_display_mode *adj_mode = &acrtc->base.state->adjusted_mode;
+	struct drm_display_mode *mode = &acrtc->base.state->mode;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
+	u32 clock = mode->clock;
+	u64 clk_Hz;
+	int ret;
+
+	clk_Hz = dss_calculate_clock(acrtc, mode);
+
+	DRM_INFO("Requested clock %u kHz, setting to %llu kHz\n",
+		 clock, clk_Hz / 1000);
+
+	if (acrtc->ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		ret = hdmi_pxl_ppll7_init(ctx, clk_Hz);
+	} else {
+		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
+		if (!ret) {
+			clk_Hz = clk_get_rate(ctx->dss_pxl0_clk);
+			DRM_INFO("dss_pxl0_clk:[%llu]->[%lu].\n",
+				 clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
+		}
+	}
+
+	if (ret)
+		DRM_ERROR("failed to set pixel clock\n");
+	else
+		adj_mode->clock = clk_Hz / 1000;
 
 	dpe_init(acrtc);
 }
@@ -460,6 +470,75 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+static bool dss_crtc_mode_fixup(struct drm_crtc *crtc,
+				const struct drm_display_mode *mode,
+				struct drm_display_mode *adj_mode)
+{
+	struct dss_crtc *acrtc = to_dss_crtc(crtc);
+	struct dss_hw_ctx *ctx = acrtc->ctx;
+	u64 clk_Hz;
+
+	/* Check if clock is too high */
+	if (mode->clock > 594000)
+		return false;
+	/*
+	 * FIXME: the code should, instead, do some calculus instead of
+	 * hardcoding the modes. Clearly, there's something missing at
+	 * dss_calculate_clock()
+	 */
+
+#if 0
+	/*
+	 * HACK: reports at Hikey 970 mailing lists with the downstream
+	 * Official Linaro 4.9 driver seem to indicate that some monitor
+	 * modes aren't properly set. There, this hack was added.
+	 *
+	 * On my monitors, this wasn't needed, but better to keep this
+	 * code here, together with this notice, just in case.
+	 */
+	if ((mode->hdisplay    == 1920 && mode->vdisplay == 1080 && mode->clock == 148500)
+	    || (mode->hdisplay == 1920 && mode->vdisplay == 1080 && mode->clock == 148352)
+	    || (mode->hdisplay == 1920 && mode->vdisplay == 1080 && mode->clock ==  80192)
+	    || (mode->hdisplay == 1920 && mode->vdisplay == 1080 && mode->clock ==  74250)
+	    || (mode->hdisplay == 1920 && mode->vdisplay == 1080 && mode->clock ==  61855)
+	    || (mode->hdisplay == 1680 && mode->vdisplay == 1050 && mode->clock == 147116)
+	    || (mode->hdisplay == 1680 && mode->vdisplay == 1050 && mode->clock == 146250)
+	    || (mode->hdisplay == 1680 && mode->vdisplay == 1050 && mode->clock == 144589)
+	    || (mode->hdisplay == 1600 && mode->vdisplay == 1200 && mode->clock == 160961)
+	    || (mode->hdisplay == 1600 && mode->vdisplay == 900  && mode->clock == 118963)
+	    || (mode->hdisplay == 1440 && mode->vdisplay == 900  && mode->clock == 126991)
+	    || (mode->hdisplay == 1280 && mode->vdisplay == 1024 && mode->clock == 128946)
+	    || (mode->hdisplay == 1280 && mode->vdisplay == 1024 && mode->clock ==  98619)
+	    || (mode->hdisplay == 1280 && mode->vdisplay == 960  && mode->clock == 102081)
+	    || (mode->hdisplay == 1280 && mode->vdisplay == 800  && mode->clock ==  83496)
+	    || (mode->hdisplay == 1280 && mode->vdisplay == 720  && mode->clock ==  74440)
+	    || (mode->hdisplay == 1280 && mode->vdisplay == 720  && mode->clock ==  74250)
+	    || (mode->hdisplay == 1024 && mode->vdisplay == 768  && mode->clock ==  78800)
+	    || (mode->hdisplay == 1024 && mode->vdisplay == 768  && mode->clock ==  75000)
+	    || (mode->hdisplay == 1024 && mode->vdisplay == 768  && mode->clock ==  81833)
+	    || (mode->hdisplay == 800  && mode->vdisplay == 600  && mode->clock ==  48907)
+	    || (mode->hdisplay == 800  && mode->vdisplay == 600  && mode->clock ==  40000)
+	    || (mode->hdisplay == 800  && mode->vdisplay == 480  && mode->clock ==  32000)
+	   )
+#endif
+	{
+		clk_Hz = dss_calculate_clock(acrtc, mode);
+
+		/*
+		 * On Kirin970, PXL0 clock is set to a const value,
+		 * independently of the pixel clock.
+		 */
+		if (acrtc->ctx->g_dss_version_tag != FB_ACCEL_KIRIN970)
+			clk_Hz = clk_round_rate(ctx->dss_pxl0_clk, mode->clock * 1000);
+
+		adj_mode->clock = clk_Hz / 1000;
+
+		return true;
+	}
+
+	return false;
+}
+
 static void dss_crtc_enable(struct drm_crtc *crtc,
 			    struct drm_crtc_state *old_state)
 {
@@ -533,6 +612,7 @@ static void dss_crtc_atomic_flush(struct drm_crtc *crtc,
 }
 
 static const struct drm_crtc_helper_funcs dss_crtc_helper_funcs = {
+	.mode_fixup	= dss_crtc_mode_fixup,
 	.atomic_enable	= dss_crtc_enable,
 	.atomic_disable	= dss_crtc_disable,
 	.mode_set_nofb	= dss_crtc_mode_set_nofb,
