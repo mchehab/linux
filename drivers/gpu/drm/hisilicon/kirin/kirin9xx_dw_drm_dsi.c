@@ -241,7 +241,7 @@ struct dw_dsi {
 	unsigned long mode_flags;
 	struct gpio_desc *gpio_mux;
 	struct dw_dsi_client client[OUT_MAX];
-	enum dsi_output_client cur_client;
+	enum dsi_output_client cur_client, attached_client;
 	bool enable;
 };
 
@@ -330,13 +330,12 @@ EXPORT_SYMBOL(dsi_set_output_client);
 
 #if defined (CONFIG_DRM_HISI_KIRIN970)
 static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
-							struct mipi_phy_params *phy_ctrl)
+			      struct mipi_phy_params *phy_ctrl, u32 id)
 {
 	struct mipi_panel_info *mipi = NULL;
 	struct drm_display_mode *mode = NULL;
 	u32 dphy_req_kHz;
 	int bpp;
-	u32 id = 0;
 	u32 ui = 0;
 	u32 m_pll = 0;
 	u32 n_pll = 0;
@@ -364,7 +363,6 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	WARN_ON(!phy_ctrl);
 	WARN_ON(!dsi);
 
-	id = dsi->cur_client;
 	mode = &dsi->cur_mode;
 	mipi = &dsi->mipi;
 
@@ -562,13 +560,12 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 }
 #else
 static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
-							struct mipi_phy_params *phy_ctrl)
+			     struct mipi_phy_params *phy_ctrl, u32 id)
 {
 	struct mipi_panel_info *mipi = NULL;
 	struct drm_display_mode *mode = NULL;
 	u32 dphy_req_kHz;
 	int bpp;
-	u32 id = 0;
 	u32 ui = 0;
 	u32 m_pll = 0;
 	u32 n_pll = 0;
@@ -602,7 +599,6 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	WARN_ON(!phy_ctrl);
 	WARN_ON(!dsi);
 
-	id = dsi->cur_client;
 	mode = &dsi->cur_mode;
 	mipi = &dsi->mipi;
 
@@ -949,13 +945,15 @@ static void dsi_phy_tst_set(void __iomem *base, u32 reg, u32 val)
 	writel(0x00, base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 }
 
-static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
+static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi,
+					       char __iomem *mipi_dsi_base,
+					       u32 id)
 {
 	uint32_t i;
 	uint32_t addr = 0;
 	u32 lanes;
 
-	lanes =  dsi->client[dsi->cur_client].lanes - 1;
+	lanes =  dsi->client[id].lanes - 1;
 	for (i = 0; i <= (lanes + 1); i++) {
 		//Lane Transmission Property
 		addr = MIPIDSI_PHY_TST_LANE_TRANSMISSION_PROPERTY + (i << 5);
@@ -1027,13 +1025,13 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi, char __iomem 
 	}
 }
 
-static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
+static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
+			  u32 id)
 {
 	u32 hline_time = 0;
 	u32 hsa_time = 0;
 	u32 hbp_time = 0;
 	u64 pixel_clk = 0;
-	u32 id = 0;
 	unsigned long dw_jiffies = 0;
 	u32 tmp = 0;
 	bool is_ready = false;
@@ -1048,8 +1046,6 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	WARN_ON(!dsi);
 	WARN_ON(!mipi_dsi_base);
 
-	id = dsi->cur_client;
-
 	DRM_INFO("dsi_mipi_init, id=%d\n", id);
 
 
@@ -1063,9 +1059,9 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	memset(&dsi->phy, 0, sizeof(struct mipi_phy_params));
 
 #if defined (CONFIG_DRM_HISI_KIRIN970)
-	get_dsi_dphy_ctrl(dsi, &dsi->phy);
+	get_dsi_dphy_ctrl(dsi, &dsi->phy, id);
 #else
-	get_dsi_phy_ctrl(dsi, &dsi->phy);
+	get_dsi_phy_ctrl(dsi, &dsi->phy, id);
 #endif
 
 	rect.x = 0;
@@ -1113,7 +1109,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	dsi_phy_tst_set(mipi_dsi_base, 0x004B, 0x1);
 
 	//set dphy spec parameter
-	mipi_config_dphy_spec1v2_parameter(dsi, mipi_dsi_base);
+	mipi_config_dphy_spec1v2_parameter(dsi, mipi_dsi_base, id);
 #else
 	/* physical configuration PLL I*/
 	dsi_phy_tst_set(mipi_dsi_base, 0x14,
@@ -1363,12 +1359,13 @@ static void dsi_encoder_disable(struct drm_encoder *encoder)
 	dsi->enable = false;
 }
 
-static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
+static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
+			    u32 id)
 {
 	WARN_ON(!mipi_dsi_base);
 
 	/* mipi init */
-	dsi_mipi_init(dsi, mipi_dsi_base);
+	dsi_mipi_init(dsi, mipi_dsi_base, id);
 
 	/* dsi memory init */
 #if defined (CONFIG_DRM_HISI_KIRIN970)
@@ -1443,7 +1440,7 @@ static void dsi_encoder_enable(struct drm_encoder *encoder)
 		return;
 	}
 
-	mipi_dsi_on_sub1(dsi, ctx->base);
+	mipi_dsi_on_sub1(dsi, ctx->base, dsi->attached_client);
 
 	mipi_dsi_on_sub2(dsi, ctx->base);
 
@@ -1549,6 +1546,8 @@ static int dsi_host_attach(struct mipi_dsi_host *host,
 	dsi->client[id].format = mdsi->format;
 	dsi->client[id].mode_flags = mdsi->mode_flags;
 	dsi->client[id].phy_clock = 0;
+
+	dsi->attached_client = id;
 
 	DRM_INFO("host attach, client name=[%s], id=%d\n", mdsi->name, id);
 
@@ -1959,6 +1958,7 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 
 	/* set dsi default output to panel */
 	dsi->cur_client = OUT_PANEL;
+	dsi->attached_client = dsi->cur_client;
 
 	DRM_INFO("dsi  cur_client is %d  <0->hdmi;1->panel> \n", dsi->cur_client);
 	/*dis-reset*/
