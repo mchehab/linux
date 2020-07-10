@@ -122,11 +122,6 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	/* init kms poll for handling hpd */
 	drm_kms_helper_poll_init(dev);
 
-#if 1
-	/* force detection after connectors init */
-	(void)drm_helper_hpd_irq_event(dev);
-#endif
-
 	return 0;
 
 err_unbind_all:
