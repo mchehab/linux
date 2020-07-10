@@ -902,26 +902,28 @@ static void dw_dsi_set_mode(struct dw_dsi *dsi, enum dsi_work_mode mode)
 	writel(POWERUP, base + PWR_UP);
 }
 
-static void dsi_set_burst_mode(void __iomem *base, unsigned long flags)
+static void dsi_set_burst_mode(void __iomem *base, unsigned long burst_flags)
 {
+	unsigned long flags;
 	u32 val;
-	u32 mode_mask = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-		MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
-	u32 non_burst_sync_pulse = MIPI_DSI_MODE_VIDEO |
-		MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
-	u32 non_burst_sync_event = MIPI_DSI_MODE_VIDEO;
 
-	/*
-	 * choose video mode type
-	 */
-	if ((flags & mode_mask) == non_burst_sync_pulse)
+	flags = burst_flags;
+	flags &= MIPI_DSI_MODE_VIDEO |
+		 MIPI_DSI_MODE_VIDEO_BURST |
+		 MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
+
+	if (!(flags & MIPI_DSI_MODE_VIDEO)) {
+		DRM_WARN("MIPI_DSI_MODE_VIDEO was not set! Using DSI_NON_BURST_SYNC_PULSES");
 		val = DSI_NON_BURST_SYNC_PULSES;
-	else if ((flags & mode_mask) == non_burst_sync_event)
-		val = DSI_NON_BURST_SYNC_EVENTS;
-	else
+	} else if (flags & MIPI_DSI_MODE_VIDEO_BURST) {
 		val = DSI_BURST_SYNC_PULSES_1;
+	} else if (flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE) {
+		val = DSI_NON_BURST_SYNC_PULSES;
+	} else {
+		val = DSI_NON_BURST_SYNC_EVENTS;
+	}
 
-	DRM_INFO("burst_mode = 0x%x (DSI_NON_BURST_SYNC_PULSES => 0)", val);
+	DRM_INFO("burst_mode = 0x%x (flags: 0x%04lx)", val, burst_flags);
 	set_reg(base + MIPIDSI_VID_MODE_CFG_OFFSET, val, 2, 0);
 }
 
@@ -1047,6 +1049,10 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	WARN_ON(!mipi_dsi_base);
 
 	id = dsi->cur_client;
+
+	DRM_INFO("dsi_mipi_init, id=%d\n", id);
+
+
 	mipi = &dsi->mipi;
 
 	if (mipi->max_tx_esc_clk == 0) {
