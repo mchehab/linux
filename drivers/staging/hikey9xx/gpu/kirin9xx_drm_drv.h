@@ -57,7 +57,5 @@ extern void dsi_set_output_client(struct drm_device *dev);
 
 struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
 		struct drm_mode_fb_cmd2 *mode_cmd);
-struct drm_fb_helper *kirin_drm_fbdev_init(struct drm_device *dev);
-void kirin_drm_fbdev_fini(struct drm_device *dev);
 
 #endif /* __KIRIN_DRM_DRV_H__ */
