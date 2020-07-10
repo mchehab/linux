@@ -1457,6 +1457,39 @@ static void dsi_encoder_enable(struct drm_encoder *encoder)
 	dsi->enable = true;
 }
 
+static enum drm_mode_status dsi_encoder_mode_valid(struct drm_encoder *encoder,
+					const struct drm_display_mode *mode)
+
+{
+	const struct drm_crtc_helper_funcs *crtc_funcs;
+	struct drm_display_mode adj_mode;
+	int clock = mode->clock;
+	struct drm_crtc *crtc;
+
+	drm_for_each_crtc(crtc, encoder->dev) {
+		drm_mode_copy(&adj_mode, mode);
+
+		crtc_funcs = crtc->helper_private;
+		if (crtc_funcs && crtc_funcs->mode_fixup) {
+			if (!crtc_funcs->mode_fixup(crtc, mode, &adj_mode)) {
+				DRM_INFO("Discarded mode: %ix%i@%i, clock: %i (adjusted to %i)",
+					 mode->hdisplay, mode->vdisplay,
+					 drm_mode_vrefresh(mode),
+					 mode->clock, clock);
+
+				return MODE_BAD;
+			}
+			clock = adj_mode.clock;
+		}
+	}
+
+	DRM_INFO("Valid mode: %ix%i@%i, clock %i (adjusted to %i)",
+		 mode->hdisplay, mode->vdisplay, drm_mode_vrefresh(mode),
+		 mode->clock, clock);
+
+	return MODE_OK;
+}
+
 static void dsi_encoder_mode_set(struct drm_encoder *encoder,
 				 struct drm_display_mode *mode,
 				 struct drm_display_mode *adj_mode)
@@ -1476,6 +1509,7 @@ static int dsi_encoder_atomic_check(struct drm_encoder *encoder,
 
 static const struct drm_encoder_helper_funcs dw_encoder_helper_funcs = {
 	.atomic_check	= dsi_encoder_atomic_check,
+	.mode_valid	= dsi_encoder_mode_valid,
 	.mode_set	= dsi_encoder_mode_set,
 	.enable		= dsi_encoder_enable,
 	.disable	= dsi_encoder_disable
