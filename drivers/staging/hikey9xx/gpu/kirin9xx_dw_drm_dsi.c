@@ -1786,6 +1786,8 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 	if (ret)
 		return ret;
 
+	drm_connector_register(&dsi->connector);
+
 	DRM_INFO("connector init\n");
 	return 0;
 }
