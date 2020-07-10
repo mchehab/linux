@@ -2074,7 +2074,7 @@ static struct platform_driver dsi_driver = {
 	.probe = dsi_probe,
 	.remove = dsi_remove,
 	.driver = {
-		.name = "dw-dsi",
+		.name = "kirin9xx-dw-dsi",
 		.of_match_table = dsi_of_match,
 	},
 };
