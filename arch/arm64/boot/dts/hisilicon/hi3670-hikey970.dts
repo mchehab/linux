@@ -14,6 +14,7 @@
 #include "hikey970-pinctrl.dtsi"
 #include "hikey970-pmic.dtsi"
 #include "hikey970-drm.dtsi"
+#include "hikey970-gpu.dtsi"
 
 / {
 	model = "HiKey970";

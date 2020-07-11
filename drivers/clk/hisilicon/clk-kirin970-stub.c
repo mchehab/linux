@@ -203,7 +203,7 @@ static struct clk *hisi_register_stub_clk(struct device *dev,
 
 static const struct of_device_id hisi_stub_clk_of_match[] = {
 	{
-		.compatible = "hisilicon,kirin970-stub-clk",
+		.compatible = "hisilicon,hi3670-stub-clk",
 		.data = &kirin970_stub_clk_data,
 	},
 	{}
@@ -274,7 +274,7 @@ static int hisi_stub_clk_probe(struct platform_device *pdev)
 
 static struct platform_driver hisi_stub_clk_driver = {
 	.driver = {
-		.name = "kirin970-stub-clk",
+		.name = "hi3670-stub-clk",
 		.of_match_table = hisi_stub_clk_of_match,
 	},
 	.probe = hisi_stub_clk_probe,
@@ -285,3 +285,7 @@ static int __init hisi_stub_clk_init(void)
 	return platform_driver_register(&hisi_stub_clk_driver);
 }
 subsys_initcall(hisi_stub_clk_init);
+
+MODULE_DEVICE_TABLE(of, hisi_stub_clk_of_match);
+MODULE_DESCRIPTION("HiSilicon 3670 stub clock driver");
+MODULE_LICENSE("GPL v2");

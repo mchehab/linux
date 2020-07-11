@@ -1,0 +1,12 @@
+/ {
+	mali: gpu@E82C0000 {
+		compatible = "arm,mali-t720";
+		reg = <0x0 0xE82C0000 0x0 0x4000>;
+		interrupts = <0 258 IRQ_TYPE_LEVEL_HIGH>,
+			     <0 259 IRQ_TYPE_LEVEL_HIGH>,
+			    <0 260 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "job", "mmu", "gpu";
+		clocks = <&stub_clock HI3670_CLK_STUB_GPU>;
+		clock-names = "clk_mali";
+	};
+};
