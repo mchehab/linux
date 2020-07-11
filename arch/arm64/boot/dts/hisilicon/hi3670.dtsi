@@ -152,6 +152,13 @@
 			#clock-cells = <1>;
 		};
 
+		stub_clock: stub_clock {
+			compatible = "hisilicon,hi3670-stub-clk";
+			reg = <0x0 0xe896b500 0x0 0x0100>,
+			      <0x0 0xfff31000 0x0 0x1000>;
+			#clock-cells = <1>;
+		};
+
 		crg_rst: crg_rst_controller {
 			compatible = "hisilicon,hi3670-reset",
 				     "hisilicon,hi3660-reset";
