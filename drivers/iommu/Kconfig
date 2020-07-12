@@ -516,6 +516,13 @@ config HYPERV_IOMMU
 	  Stub IOMMU driver to handle IRQs as to allow Hyper-V Linux
 	  guests to run with x2APIC mode enabled.
 
+config HISI_IOMMU_LPAE
+	bool "Hisilicon IOMMU LPAE Support"
+	select IOMMU_API
+	select IODOMAIN_API
+	help
+	  Hisilicon IOMMU Support.
+
 config VIRTIO_IOMMU
 	tristate "Virtio IOMMU driver"
 	depends on VIRTIO
