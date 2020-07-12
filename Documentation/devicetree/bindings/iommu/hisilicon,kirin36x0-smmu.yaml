@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iommu/hisilicon,kirin36x0-smmu.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon support for HI3660/HI3670 SMMU
+
+maintainers:
+  - Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+
+description: |+
+  Huawei's Hisilicon Kirin 3660/3670 contains a System MMU that enables
+  scattered physical memory chunks visible as a contiguous region to
+  DMA-capable peripheral devices like GPU and ISP.
+
+  The IOMMU domains are described via iommu_info settings.
+
+properties:
+  compatible:
+    const: hisilicon,hisi-smmu-lpae
+
+  iommu_info:
+    type: object
+
+    properties:
+      start-addr:
+        maxItems: 1
+        description: Memory start address (32 bits)
+
+      size:
+        maxItems: 1
+        description: size of the I/O MMU block (32 bits)
+
+      iova-align:
+        minItems: 2
+        maxItems: 2
+        description: DMA address alignment of the mapped memory (64 bits)
+
+required:
+  - compatible
+
+additionalProperties: false
+
+examples:
+  - |
+    smmu_lpae {
+      compatible = "hisilicon,smmu-lpae";
+
+      iommu_info {
+        start-addr = <0x40000>;
+        size = <0xbffc0000>;
+        iova-align = <0x0 0x8000>;
+      };
+    };
