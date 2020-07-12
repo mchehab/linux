@@ -94,7 +94,7 @@ struct hisi_smmu_device_lpae {
 	struct iommu_device iommu;
 };
 
-struct iommu_domain_data {
+struct hisi_smmu_domain_data {
 	unsigned int     iova_start;
 	unsigned int     iova_size;
 	phys_addr_t      phy_pgd_base;
@@ -102,12 +102,23 @@ struct iommu_domain_data {
 	struct list_head list;
 };
 
+struct hisi_smmu_domain {
+	struct iommu_domain		domain;
+	struct hisi_smmu_domain_data	*iommu_info;
+};
+
+static struct  hisi_smmu_domain_data *to_smmu(struct iommu_domain *dom)
+{
+	struct hisi_smmu_domain *hisi_dom;
+
+	hisi_dom = container_of(dom, struct hisi_smmu_domain, domain);
+	return hisi_dom->iommu_info;
+}
+
 struct hisi_map_tile_position_lpae {
 	struct scatterlist *sg;
 	unsigned long offset;
 };
-
-extern struct hisi_smmu_device_lpae *hisi_smmu_dev;
 
 static inline unsigned int smmu_pgd_none_lpae(smmu_pgd_t pgd)
 {

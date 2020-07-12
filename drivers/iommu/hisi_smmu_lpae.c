@@ -28,7 +28,7 @@
 #include <linux/bitops.h>
 #include "hisi_smmu.h"
 
-struct hisi_smmu_device_lpae *hisi_smmu_dev;
+static struct hisi_smmu_device_lpae *hisi_smmu_dev;
 
 /* transfer 64bit pte table pointer to struct page */
 static pgtable_t smmu_pgd_to_pte_lpae(unsigned int ppte_table)
@@ -57,7 +57,7 @@ static pgtable_t smmu_pmd_to_pte_lpae(unsigned long ppte_table)
 }
 
 static int get_domain_data_lpae(struct device_node *np,
-				struct iommu_domain_data *data)
+				struct hisi_smmu_domain_data *data)
 {
 	unsigned long long align;
 	struct device_node *node = NULL;
@@ -103,14 +103,16 @@ read_error:
 static struct iommu_domain
 *hisi_smmu_domain_alloc_lpae(unsigned int iommu_domain_type)
 {
-	struct iommu_domain *domain;
+	struct hisi_smmu_domain *hisi_dom;
 
 	if (iommu_domain_type != IOMMU_DOMAIN_UNMANAGED)
 		return NULL;
 
-	domain = kzalloc(sizeof(*domain), GFP_KERNEL);
+	hisi_dom = kzalloc(sizeof(*hisi_dom), GFP_KERNEL);
 
-	return domain;
+	pr_debug("%s: domain allocated\n", __func__);
+
+	return &hisi_dom->domain;
 }
 
 static void hisi_smmu_flush_pgtable_lpae(void *addr, size_t size)
@@ -336,13 +338,13 @@ static int hisi_smmu_map_lpae(struct iommu_domain *domain,
 			      gfp_t gfp)
 {
 	unsigned long max_iova;
-	struct iommu_domain_data *data;
+	struct hisi_smmu_domain_data *data;
 
 	if (!domain) {
 		dbg("domain is null\n");
 		return -ENODEV;
 	}
-	data = domain->priv;
+	data = to_smmu(domain);
 	max_iova = data->iova_start + data->iova_size;
 	if (iova < data->iova_start) {
 		dbg("iova failed: iova = 0x%lx, start = 0x%8x\n",
@@ -429,13 +431,13 @@ static size_t hisi_smmu_unmap_lpae(struct iommu_domain *domain,
 {
 	unsigned long max_iova;
 	unsigned int ret;
-	struct iommu_domain_data *data;
+	struct hisi_smmu_domain_data *data;
 
 	if (!domain) {
 		dbg("domain is null\n");
 		return -ENODEV;
 	}
-	data = domain->priv;
+	data = to_smmu(domain);
 	/*calculate the max io virtual address */
 	max_iova = data->iova_start + data->iova_size;
 	/*check the iova */
@@ -490,28 +492,32 @@ static int hisi_attach_dev_lpae(struct iommu_domain *domain, struct device *dev)
 {
 	struct device_node *np = dev->of_node;
 	int ret = 0;
-	struct iommu_domain_data *iommu_info = NULL;
+	struct hisi_smmu_domain_data *iommu_info = NULL;
+	struct hisi_smmu_domain *hisi_dom;
 
 	iommu_info = kzalloc(sizeof(*iommu_info), GFP_KERNEL);
 	if (!iommu_info) {
-		dbg("alloc iommu_domain_data fail\n");
+		dbg("alloc hisi_smmu_domain_data fail\n");
 		return -EINVAL;
 	}
 	list_add(&iommu_info->list, &hisi_smmu_dev->domain_list);
-	domain->priv = iommu_info;
-	ret = get_domain_data_lpae(np, domain->priv);
+
+	hisi_dom = container_of(domain, struct hisi_smmu_domain, domain);
+	hisi_dom->iommu_info = iommu_info;
+	dev_iommu_priv_set(dev, iommu_info);
+	ret = get_domain_data_lpae(np, iommu_info);
 	return ret;
 }
 
 static void hisi_detach_dev_lpae(struct iommu_domain *domain,
 				 struct device *dev)
 {
-	struct iommu_domain_data *data;
+	struct hisi_smmu_domain_data *data;
 
-	data = (struct iommu_domain_data *)domain->priv;
+	data = dev_iommu_priv_get(dev);
 	if (data) {
 		list_del(&data->list);
-		domain->priv = NULL;
+		dev_iommu_priv_set(dev, NULL);
 		kfree(data);
 	} else {
 		dbg("%s:error! data entry has been delected\n", __func__);
