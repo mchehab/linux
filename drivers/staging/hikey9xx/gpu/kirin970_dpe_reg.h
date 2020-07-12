@@ -4100,7 +4100,6 @@ struct dss_hw_ctx {
 	struct iommu_domain *mmu_domain;
 	struct ion_client *ion_client;
 	struct ion_handle *ion_handle;
-	struct iommu_map_format iommu_format;
 	char __iomem *screen_base;
 	unsigned long smem_start;
 	unsigned long screen_size;

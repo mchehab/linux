@@ -18,7 +18,6 @@
 #include <drm/drm_print.h>
 
 #include <linux/iommu.h>
-#include <linux/hisi/hisi-iommu.h>
 
 #define MAX_CRTC	2
 
@@ -41,7 +40,6 @@ struct kirin_fbdev {
 
 	struct ion_client *ion_client;
 	struct ion_handle *ion_handle;
-	struct iommu_map_format iommu_format;
 	void *screen_base;
 	unsigned long smem_start;
 	unsigned long screen_size;
