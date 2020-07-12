@@ -205,9 +205,6 @@ static int hisi_smmu_alloc_init_pte_lpae(smmu_pmd_t *ppmd,
 	}
 
 pte_ready:
-	if (prot & IOMMU_SEC)
-		*ppmd &= (~SMMU_PMD_NS);
-
 	start = (smmu_pte_t *)smmu_pte_page_vaddr_lpae(ppmd)
 		+ smmu_pte_index(addr);
 	pte = start;
@@ -215,30 +212,24 @@ pte_ready:
 		pteval |= SMMU_PROT_NORMAL;
 		pteval |= SMMU_PTE_NS;
 	} else {
-		if (prot & IOMMU_DEVICE) {
-			pteval |= SMMU_PROT_DEVICE_nGnRE;
-		} else {
-			if (prot & IOMMU_CACHE)
-				pteval |= SMMU_PROT_NORMAL_CACHE;
-			else
-				pteval |= SMMU_PROT_NORMAL_NC;
-
-			if ((prot & IOMMU_READ) && (prot & IOMMU_WRITE))
-				pteval |= SMMU_PAGE_READWRITE;
-			else if ((prot & IOMMU_READ) && !(prot & IOMMU_WRITE))
-				pteval |= SMMU_PAGE_READONLY;
-			else
-				WARN_ON("you do not set read attribute!");
-
-			if (prot & IOMMU_EXEC) {
-				pteval |= SMMU_PAGE_READONLY_EXEC;
-				pteval &= ~(SMMU_PTE_PXN | SMMU_PTE_UXN);
-			}
-		}
-		if (prot & IOMMU_SEC)
-			pteval &= (~SMMU_PTE_NS);
+		if (prot & IOMMU_CACHE)
+			pteval |= SMMU_PROT_NORMAL_CACHE;
 		else
-			pteval |= SMMU_PTE_NS;
+			pteval |= SMMU_PROT_NORMAL_NC;
+
+		if ((prot & IOMMU_READ) && (prot & IOMMU_WRITE))
+			pteval |= SMMU_PAGE_READWRITE;
+		else if ((prot & IOMMU_READ) && !(prot & IOMMU_WRITE))
+			pteval |= SMMU_PAGE_READONLY;
+		else
+			WARN_ON("you do not set read attribute!");
+
+		if (!(prot & IOMMU_NOEXEC)) {
+			pteval |= SMMU_PAGE_READONLY_EXEC;
+			pteval &= ~(SMMU_PTE_PXN | SMMU_PTE_UXN);
+		}
+
+		pteval |= SMMU_PTE_NS;
 	}
 
 	do {
@@ -287,8 +278,6 @@ static int hisi_smmu_alloc_init_pmd_lpae(smmu_pgd_t *ppgd,
 	}
 
 pmd_ready:
-	if (prot & IOMMU_SEC)
-		*ppgd &= (~SMMU_PGD_NS);
 	start = (smmu_pmd_t *)smmu_pmd_page_vaddr_lpae(ppgd)
 		+ smmu_pmd_index(addr);
 	ppmd = start;
