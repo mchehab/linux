@@ -93,6 +93,14 @@ struct hisi_smmu_device_lpae {
 	struct iommu_device iommu;
 };
 
+struct iommu_domain_data {
+	unsigned int     iova_start;
+	unsigned int     iova_size;
+	phys_addr_t      phy_pgd_base;
+	unsigned long    iova_align;
+	struct list_head list;
+};
+
 struct hisi_map_tile_position_lpae {
 	struct scatterlist *sg ;
 	unsigned long offset;

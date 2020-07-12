@@ -24,7 +24,6 @@
 #include <linux/spinlock.h>
 #include <asm/pgalloc.h>
 #include <linux/debugfs.h>
-#include <linux/hisi/hisi-iommu.h>
 #include <linux/uaccess.h>
 #include <linux/bitops.h>
 #include "hisi_smmu.h"
