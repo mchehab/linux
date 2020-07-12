@@ -1,9 +1,11 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+
 #ifndef HISI_SMMU_H
 #define HISI_SMMU_H
 
 /*#define IOMMU_DEBUG*/
 #ifdef IOMMU_DEBUG
-#define dbg(format, arg...)  printk(KERN_ERR "[iommu]"format, ##arg);
+#define dbg(format, arg...)  printk(KERN_ERR "[iommu]" format, ##arg)
 #else
 #define dbg(format, arg...)
 #endif
@@ -18,15 +20,15 @@
 #define PAGE_TABLE_ADDR_MASK  (UL(0xFFFFFFF) << SMMU_PAGE_SHIFT)
 
 #define SMMU_PAGE_SIZE        BIT(SMMU_PAGE_SHIFT)
-#define SMMU_PAGE_MASK	      (~(SMMU_PAGE_SIZE-1))
+#define SMMU_PAGE_MASK	      (~(SMMU_PAGE_SIZE - 1))
 
 #define SMMU_PGDIR_SHIFT	  (30)
 #define SMMU_PGDIR_SIZE		  BIT(SMMU_PGDIR_SHIFT)
-#define SMMU_PGDIR_MASK		  (~(SMMU_PGDIR_SIZE-1))
+#define SMMU_PGDIR_MASK		  (~(SMMU_PGDIR_SIZE - 1))
 
 #define SMMU_PMDIR_SHIFT      (21)
 #define SMMU_PMDIR_SIZE        BIT(SMMU_PMDIR_SHIFT)
-#define SMMU_PMDIR_MASK       (~(SMMU_PMDIR_SIZE-1))
+#define SMMU_PMDIR_MASK       (~(SMMU_PMDIR_SIZE - 1))
 #define SMMU_PGD_TYPE         (BIT(0) | BIT(1))
 #define SMMU_PMD_TYPE         (BIT(0) | BIT(1))
 #define SMMU_PTE_TYPE         (BIT(0) | BIT(1))
@@ -41,7 +43,7 @@
 #define SMMU_PTE_RDONLY       BIT(7)                /* AP[2] */
 #define SMMU_PTE_SHARED       (BIT(8) | BIT(9))      /* SH[1:0], inner shareable */
 #define SMMU_PTE_AF           BIT(10)               /* Access Flag */
-#define SMMU_PTE_NG	          BIT(11)               /* nG */
+#define SMMU_PTE_NG		  BIT(11)               /* nG */
 #define SMMU_PTE_ATTRINDX(t)  ((t) << 2)
 /*
  * Memory types available.
@@ -51,7 +53,6 @@
 #define HISI_MT_NORMAL_CACHE     4
 #define HISI_MT_NORMAL_NC        5
 #define HISI_MT_DEVICE_nGnRE     6
-
 
 #define SMMU_PAGE_DEFAULT        (SMMU_PTE_TYPE | SMMU_PTE_AF | SMMU_PTE_SHARED)
 
@@ -82,7 +83,7 @@ typedef u64 smmu_pte_t;
 
 /*smmu device object*/
 struct hisi_smmu_device_lpae {
-	struct device      *dev ;
+	struct device      *dev;
 	struct list_head   domain_list;
 	unsigned int       ref_count;
 	spinlock_t         lock;
@@ -102,26 +103,30 @@ struct iommu_domain_data {
 };
 
 struct hisi_map_tile_position_lpae {
-	struct scatterlist *sg ;
+	struct scatterlist *sg;
 	unsigned long offset;
 };
 
 extern struct hisi_smmu_device_lpae *hisi_smmu_dev;
 
-static inline unsigned int smmu_pgd_none_lpae(smmu_pgd_t pgd) {
+static inline unsigned int smmu_pgd_none_lpae(smmu_pgd_t pgd)
+{
 	return !(pgd ? pgd : 0);
 }
 
-static inline unsigned int smmu_pmd_none_lpae(smmu_pmd_t pmd) {
+static inline unsigned int smmu_pmd_none_lpae(smmu_pmd_t pmd)
+{
 	return !(pmd ? pmd : 0);
 }
 
-static inline unsigned int smmu_pte_none_lpae(smmu_pte_t pte) {
+static inline unsigned int smmu_pte_none_lpae(smmu_pte_t pte)
+{
 	return !(pte ? pte : 0);
 }
 
-static inline unsigned int pte_is_valid_lpae(smmu_pte_t *ptep) {
-	return (unsigned int)((*(ptep)&SMMU_PTE_TYPE) ? 1 : 0);
+static inline unsigned int pte_is_valid_lpae(smmu_pte_t *ptep)
+{
+	return (unsigned int)((*(ptep) & SMMU_PTE_TYPE) ? 1 : 0);
 }
 
 /* Find an entry in the second-level page table.. */
@@ -136,7 +141,6 @@ static inline void *smmu_pte_page_vaddr_lpae(smmu_pmd_t *pmd)
 	return phys_to_virt(*pmd & PAGE_TABLE_ADDR_MASK);
 }
 
-
 /*fill the pgd entry, pgd value must be 64bit */
 static inline void smmu_set_pgd_lpae(smmu_pgd_t *pgdp, u64 pgd)
 {
@@ -148,7 +152,7 @@ static inline void smmu_set_pgd_lpae(smmu_pgd_t *pgdp, u64 pgd)
 /*fill the pmd entry, pgd value must be 64bit */
 static inline void smmu_set_pmd_lpae(smmu_pgd_t *pmdp, u64 pmd)
 {
-	dbg("smmu_set_pmd_lpae: pmd = 0x%lx \n", pmd);
+	dbg("smmu_set_pmd_lpae: pmd = 0x%lx\n", pmd);
 	*pmdp = pmd;
 	dsb(ishst);
 	isb();
@@ -179,10 +183,10 @@ static inline unsigned long  smmu_pmd_addr_end_lpae(unsigned long addr, unsigned
 }
 
 int hisi_smmu_handle_mapping_lpae(struct iommu_domain *domain,
-		unsigned long iova, phys_addr_t paddr,
-		size_t size, int prot);
+				  unsigned long iova, phys_addr_t paddr,
+				  size_t size, int prot);
 
 unsigned int hisi_smmu_handle_unmapping_lpae(struct iommu_domain *domain,
-		unsigned long iova, size_t size);
+					     unsigned long iova, size_t size);
 
 #endif
