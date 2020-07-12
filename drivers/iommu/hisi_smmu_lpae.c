@@ -616,7 +616,7 @@ static int hisi_smmu_remove_lpae(struct platform_device *pdev)
 }
 
 static const struct of_device_id hisi_smmu_of_match_lpae[] = {
-	{ .compatible = "hisi,hisi-smmu-lpae"},
+	{ .compatible = "hisilicon,smmu-lpae"},
 	{ },
 };
 MODULE_DEVICE_TABLE(of, hisi_smmu_of_match_lpae);
