@@ -52,10 +52,7 @@
 /*define the first group interrupt register number*/
 #define HISI_PMIC_FIRST_GROUP_INT_NUM        2
 
-static struct bit_info g_pmic_vbus = {0};
-static struct hisi_pmic *g_pmic;
-static unsigned int g_extinterrupt_flag  = 0;
-static struct of_device_id of_hisi_pmic_match_tbl[] = {
+static const struct of_device_id of_hisi_pmic_match_tbl[] = {
 	{
 		.compatible = "hisilicon-hisi-pmic-spmi",
 	},
@@ -73,12 +70,7 @@ u32 hisi_pmic_read(struct hisi_pmic *pmic, int reg)
 	u8 read_value = 0;
 	struct spmi_device *pdev;
 
-	if (!g_pmic) {
-		pr_err("%s: g_pmic is NULL\n", __func__);
-		return 0;
-	}
-
-	pdev = to_spmi_device(g_pmic->dev);
+	pdev = to_spmi_device(pmic->dev);
 	if (!pdev) {
 		pr_err("%s: pdev get failed!\n", __func__);
 		return 0;
@@ -98,12 +90,7 @@ void hisi_pmic_write(struct hisi_pmic *pmic, int reg, u32 val)
 	u32 ret;
 	struct spmi_device *pdev;
 
-	if (!g_pmic) {
-		pr_err("%s: g_pmic is NULL\n", __func__);
-		return;
-	}
-
-	pdev = to_spmi_device(g_pmic->dev);
+	pdev = to_spmi_device(pmic->dev);
 	if (!pdev) {
 		pr_err("%s: pdev get failed!\n", __func__);
 		return;
@@ -122,16 +109,11 @@ void hisi_pmic_rmw(struct hisi_pmic *pmic, int reg, u32 mask, u32 bits)
 	u32 data;
 	unsigned long flags;
 
-	if (!g_pmic) {
-		pr_err("%s: g_pmic is NULL\n", __func__);
-		return;
-	}
-
-	spin_lock_irqsave(&g_pmic->lock, flags);
+	spin_lock_irqsave(&pmic->lock, flags);
 	data = hisi_pmic_read(pmic, reg) & ~mask;
 	data |= mask & bits;
 	hisi_pmic_write(pmic, reg, data);
-	spin_unlock_irqrestore(&g_pmic->lock, flags);
+	spin_unlock_irqrestore(&pmic->lock, flags);
 }
 EXPORT_SYMBOL(hisi_pmic_rmw);
 
@@ -142,13 +124,13 @@ static irqreturn_t hisi_irq_handler(int irq, void *data)
 	int i, offset;
 
 	for (i = 0; i < pmic->irqarray; i++) {
-		pending = hisi_pmic_read(g_pmic, (i + pmic->irq_addr.start_addr));
+		pending = hisi_pmic_read(pmic, (i + pmic->irq_addr.start_addr));
 		pending &= HISI_MASK_FIELD;
 		if (pending != 0) {
 			pr_info("pending[%d]=0x%lx\n\r", i, pending);
 		}
 
-		hisi_pmic_write(g_pmic, (i + pmic->irq_addr.start_addr), pending);
+		hisi_pmic_write(pmic, (i + pmic->irq_addr.start_addr), pending);
 
 		/*solve powerkey order*/
 		if ((HISI_IRQ_KEY_NUM == i) && ((pending & HISI_IRQ_KEY_VALUE) == HISI_IRQ_KEY_VALUE)) {
@@ -164,15 +146,15 @@ static irqreturn_t hisi_irq_handler(int irq, void *data)
 	}
 
 	/*Handle the second group irq if analysis the second group irq from dtsi*/
-	if (1 == g_extinterrupt_flag){
+	if (pmic->g_extinterrupt_flag == 1) {
 		for (i = 0; i < pmic->irqarray1; i++) {
-			pending = hisi_pmic_read(g_pmic, (i + pmic->irq_addr1.start_addr));
+			pending = hisi_pmic_read(pmic, (i + pmic->irq_addr1.start_addr));
 			pending &= HISI_MASK_FIELD;
 			if (pending != 0) {
 				pr_info("pending[%d]=0x%lx\n\r", i, pending);
 			}
 
-			hisi_pmic_write(g_pmic, (i + pmic->irq_addr1.start_addr), pending);
+			hisi_pmic_write(pmic, (i + pmic->irq_addr1.start_addr), pending);
 
 			if (pending) {
 				for_each_set_bit(offset, &pending, HISI_BITS)
@@ -190,25 +172,20 @@ static void hisi_irq_mask(struct irq_data *d)
 	u32 data, offset;
 	unsigned long flags;
 
-	if (NULL == g_pmic) {
-		pr_err(" g_pmic  is NULL\n");
-		return;
-	}
-
 	offset = (irqd_to_hwirq(d) >> 3);
-	if (1==g_extinterrupt_flag){
-		if ( offset < HISI_PMIC_FIRST_GROUP_INT_NUM)
+	if (pmic->g_extinterrupt_flag == 1) {
+		if (offset < HISI_PMIC_FIRST_GROUP_INT_NUM)
 			offset += pmic->irq_mask_addr.start_addr;
 		else/*Change addr when irq num larger than 16 because interrupt addr is nonsequence*/
 			offset = offset+(pmic->irq_mask_addr1.start_addr)-HISI_PMIC_FIRST_GROUP_INT_NUM;
 	}else{
 		offset += pmic->irq_mask_addr.start_addr;
 	}
-	spin_lock_irqsave(&g_pmic->lock, flags);
-	data = hisi_pmic_read(g_pmic, offset);
+	spin_lock_irqsave(&pmic->lock, flags);
+	data = hisi_pmic_read(pmic, offset);
 	data |= (1 << (irqd_to_hwirq(d) & 0x07));
-	hisi_pmic_write(g_pmic, offset, data);
-	spin_unlock_irqrestore(&g_pmic->lock, flags);
+	hisi_pmic_write(pmic, offset, data);
+	spin_unlock_irqrestore(&pmic->lock, flags);
 }
 
 static void hisi_irq_unmask(struct irq_data *d)
@@ -217,25 +194,20 @@ static void hisi_irq_unmask(struct irq_data *d)
 	u32 data, offset;
 	unsigned long flags;
 
-	if (NULL == g_pmic) {
-		pr_err(" g_pmic  is NULL\n");
-		return;
-	}
-
 	offset = (irqd_to_hwirq(d) >> 3);
-	if (1==g_extinterrupt_flag){
-		if ( offset < HISI_PMIC_FIRST_GROUP_INT_NUM)
+	if (pmic->g_extinterrupt_flag == 1) {
+		if (offset < HISI_PMIC_FIRST_GROUP_INT_NUM)
 			offset += pmic->irq_mask_addr.start_addr;
 		else
 			offset = offset+(pmic->irq_mask_addr1.start_addr)-HISI_PMIC_FIRST_GROUP_INT_NUM;
 	}else{
 		offset += pmic->irq_mask_addr.start_addr;
 	}
-	spin_lock_irqsave(&g_pmic->lock, flags);
-	data = hisi_pmic_read(g_pmic, offset);
+	spin_lock_irqsave(&pmic->lock, flags);
+	data = hisi_pmic_read(pmic, offset);
 	data &= ~(1 << (irqd_to_hwirq(d) & 0x07));
-	hisi_pmic_write(g_pmic, offset, data);
-	spin_unlock_irqrestore(&g_pmic->lock, flags);
+	hisi_pmic_write(pmic, offset, data);
+	spin_unlock_irqrestore(&pmic->lock, flags);
 }
 
 static struct irq_chip hisi_pmu_irqchip = {
@@ -305,14 +277,6 @@ static int get_pmic_device_tree_data(struct device_node *np, struct hisi_pmic *p
 		return ret;
 	}
 
-	ret = of_property_read_u32_array(np, "hisilicon,hisi-pmic-vbus",
-						(u32 *)&g_pmic_vbus, 2);
-	if (ret) {
-		pr_err("no hisilicon,hisi-pmic-vbus property\n");
-		ret = -ENODEV;
-		return ret;
-	}
-
 	/*pmic lock*/
 	ret = of_property_read_u32_array(np, "hisilicon,hisi-pmic-lock",
 						(int *)&pmic->normal_lock, 2);
@@ -377,7 +341,7 @@ static int get_pmic_device_tree_data1(struct device_node *np, struct hisi_pmic *
 		return ret;
 	}
 
-	g_extinterrupt_flag = 1;
+	pmic->g_extinterrupt_flag = 1;
 	return ret;
 }/*lint -restore*/
 
@@ -399,13 +363,14 @@ static void hisi_pmic_irq_prc(struct hisi_pmic *pmic)
 static void hisi_pmic_irq1_prc(struct hisi_pmic *pmic)
 {
 	int i;
-	if(1 == g_extinterrupt_flag){
-		for (i = 0 ; i < pmic->irq_mask_addr1.array; i++) {
+	unsigned int pending1;
+
+	if (pmic->g_extinterrupt_flag == 1) {
+		for (i = 0 ; i < pmic->irq_mask_addr1.array; i++)
 			hisi_pmic_write(pmic, pmic->irq_mask_addr1.start_addr + i, HISI_MASK_STATE);
-		}
 
 		for (i = 0 ; i < pmic->irq_addr1.array; i++) {
-			unsigned int pending1 = hisi_pmic_read(pmic, pmic->irq_addr1.start_addr + i);
+			pending1 = hisi_pmic_read(pmic, pmic->irq_addr1.start_addr + i);
 			pr_debug("PMU IRQ address1 value:irq[0x%x] = 0x%x\n", pmic->irq_addr1.start_addr + i, pending1);
 			hisi_pmic_write(pmic, pmic->irq_addr1.start_addr + i, HISI_MASK_STATE);
 		}
@@ -446,11 +411,11 @@ static int hisi_pmic_probe(struct spmi_device *pdev)
 	spin_lock_init(&pmic->lock);
 
 	pmic->dev = dev;
-	g_pmic = pmic;
-	ret = of_property_read_u32_array(np, "hisilicon,pmic_fpga_flag", &fpga_flag, 1);
-	if (ret) {
+	ret = of_property_read_u32_array(np, "hisilicon,pmic_fpga_flag",
+					 &fpga_flag, 1);
+	if (ret)
 		pr_err("no hisilicon,pmic_fpga_flag property set\n");
-	}
+
 	if (PMIC_FPGA_FLAG == fpga_flag) {
 		goto after_irq_register;
 	}
@@ -521,7 +486,6 @@ irq_create_mapping:
 irq_domain:
 irq_malloc:
 	gpio_free(pmic->gpio);
-	g_pmic = NULL;
 	return ret;
 }
 

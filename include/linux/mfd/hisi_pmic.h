@@ -71,6 +71,8 @@ struct hisi_pmic {
 	struct irq_info irq_addr1;
 	struct write_lock normal_lock;
 	struct write_lock debug_lock;
+
+	unsigned int g_extinterrupt_flag;
 };
 
 u32 hisi_pmic_read(struct hisi_pmic *pmic, int reg);
