@@ -3,13 +3,6 @@
 #ifndef HISI_SMMU_H
 #define HISI_SMMU_H
 
-/*#define IOMMU_DEBUG*/
-#ifdef IOMMU_DEBUG
-#define dbg(format, arg...)  printk(KERN_ERR "[iommu]" format, ##arg)
-#else
-#define dbg(format, arg...)
-#endif
-
 #define SMMU_PHY_PTRS_PER_PTE (256)
 /*#define SMMU_PHY_PTRS_PER_PGD (4096)*/
 #define SMMU_PTRS_PER_PGD     (4)
@@ -163,7 +156,7 @@ static inline void smmu_set_pgd_lpae(smmu_pgd_t *pgdp, u64 pgd)
 /*fill the pmd entry, pgd value must be 64bit */
 static inline void smmu_set_pmd_lpae(smmu_pgd_t *pmdp, u64 pmd)
 {
-	dbg("smmu_set_pmd_lpae: pmd = 0x%lx\n", pmd);
+	pr_debug("smmu_set_pmd_lpae: pmd = 0x%llx\n", pmd);
 	*pmdp = pmd;
 	dsb(ishst);
 	isb();
