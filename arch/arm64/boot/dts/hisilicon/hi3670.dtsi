@@ -276,6 +276,20 @@
 			status = "disabled";
 		};
 
+		dma0: dma@fdf30000 {
+			compatible = "hisilicon,hisi-dma64-1.0";
+			reg = <0x0 0xfdf30000 0x0 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			dma-requests = <32>;
+			dma-min-chan = <1>;
+			interrupts = <0 143 4>;
+			clocks = <&crg_ctrl HI3670_CLK_GATE_DMAC>,
+				 <&crg_ctrl HI3670_PCLK>;
+			clock-names = "clk_dmac", "apb_pclk";
+			status = "ok";
+		};
+
 		gpio0: gpio@e8a0b000 {
 			compatible = "arm,pl061", "arm,primecell";
 			reg = <0x0 0xe8a0b000 0x0 0x1000>;
