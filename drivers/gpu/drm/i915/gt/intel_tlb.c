@@ -10,6 +10,7 @@
 #include "intel_gt_pm.h"
 #include "intel_gt_regs.h"
 #include "intel_tlb.h"
+#include "uc/intel_guc.h"
 
 struct reg_and_bit {
 	i915_reg_t reg;
@@ -159,16 +160,91 @@ void intel_gt_invalidate_tlb_full(struct intel_gt *gt, u32 seqno)
 		return;
 
 	with_intel_gt_pm_if_awake(gt, wakeref) {
+		struct intel_guc *guc = &gt->uc.guc;
+
 		mutex_lock(&gt->tlb.invalidate_lock);
 		if (tlb_seqno_passed(gt, seqno))
 			goto unlock;
 
-		mmio_invalidate_full(gt);
+		if (INTEL_GUC_SUPPORTS_TLB_INVALIDATION(guc))
+			intel_guc_invalidate_tlb_full(guc, INTEL_GUC_TLB_INVAL_MODE_HEAVY);
+		else
+			mmio_invalidate_full(gt);
 
 		write_seqcount_invalidate(&gt->tlb.seqno);
 unlock:
 		mutex_unlock(&gt->tlb.invalidate_lock);
 	}
+}
+
+static bool mmio_invalidate_range(struct intel_gt *gt, u64 start, u64 length)
+{
+	u32 address_mask = (ilog2(length) - ilog2(I915_GTT_PAGE_SIZE_4K));
+	u64 vm_total = BIT_ULL(INTEL_INFO(gt->i915)->ppgtt_size);
+	intel_wakeref_t wakeref;
+	u32 dw0, dw1;
+	int err;
+
+	GEM_BUG_ON(!IS_ALIGNED(start, I915_GTT_PAGE_SIZE_4K));
+	GEM_BUG_ON(!IS_ALIGNED(length, I915_GTT_PAGE_SIZE_4K));
+	GEM_BUG_ON(range_overflows(start, length, vm_total));
+
+	dw0 = FIELD_PREP(XEHP_TLB_INV_DESC0_ADDR_LO, (lower_32_bits(start) >> 12)) |
+		FIELD_PREP(XEHP_TLB_INV_DESC0_ADDR_MASK, address_mask) |
+		FIELD_PREP(XEHP_TLB_INV_DESC0_G, 0x3) |
+		FIELD_PREP(XEHP_TLB_INV_DESC0_VALID, 0x1);
+	dw1 = upper_32_bits(start);
+
+	err = 0;
+	with_intel_gt_pm_if_awake(gt, wakeref) {
+		struct intel_uncore *uncore = gt->uncore;
+
+		intel_uncore_forcewake_get(uncore, FORCEWAKE_ALL);
+
+		mutex_lock(&gt->tlb.invalidate_lock);
+		intel_uncore_write_fw(uncore, XEHP_TLB_INV_DESC1, dw1);
+		intel_uncore_write_fw(uncore, XEHP_TLB_INV_DESC0, dw0);
+		err = __intel_wait_for_register_fw(uncore,
+						   XEHP_TLB_INV_DESC0,
+						   XEHP_TLB_INV_DESC0_VALID,
+						   0, 100, 10, NULL);
+		mutex_unlock(&gt->tlb.invalidate_lock);
+
+		intel_uncore_forcewake_put_delayed(uncore, FORCEWAKE_ALL);
+	}
+
+	if (err)
+		drm_err_ratelimited(&gt->i915->drm,
+				    "TLB invalidation response timed out\n");
+
+	return err == 0;
+}
+
+bool intel_gt_invalidate_tlb_range(struct intel_gt *gt,
+				   u64 start, u64 length)
+{
+	struct intel_guc *guc = &gt->uc.guc;
+	intel_wakeref_t wakeref;
+
+	if (intel_gt_is_wedged(gt))
+		return true;
+
+	if (!INTEL_GUC_SUPPORTS_TLB_INVALIDATION_SELECTIVE(guc))
+		return false;
+
+	/*XXX: We are seeing timeouts on guc based tlb invalidations on XEHPSDV.
+	 * Until we have a fix, use mmio
+	 */
+	if (IS_XEHPSDV(gt->i915))
+		return mmio_invalidate_range(gt, start, length);
+
+	with_intel_gt_pm_if_awake(gt, wakeref) {
+		intel_guc_invalidate_tlb_page_selective(guc,
+							INTEL_GUC_TLB_INVAL_MODE_HEAVY,
+							start, length);
+	}
+
+	return true;
 }
 
 void intel_gt_init_tlb(struct intel_gt *gt)
