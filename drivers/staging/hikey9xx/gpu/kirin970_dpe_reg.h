@@ -41,9 +41,7 @@
 #define FB_ACCEL_PLATFORM_TYPE_ASIC     0x20000000   //ASIC
 
 /* vcc name */
-#define REGULATOR_PDP_NAME	"regulator_dsssubsys"
-#define REGULATOR_MMBUF	"regulator_mmbuf"
-#define REGULATOR_MEDIA_NAME  "regulator_media_subsys"
+#define REGULATOR_PDP_NAME	"ldo3"
 
 /*******************************************************************************
 **
