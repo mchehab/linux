@@ -873,20 +873,12 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 
 	DRM_INFO("dss irq = %d. \n", ctx->irq);
 
-#ifndef DSS_POWER_UP_ON_UEFI
 #if defined (CONFIG_DRM_HISI_KIRIN970)
 	ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
 	if (!ctx->dpe_regulator) {
 		DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
 		return -ENXIO;
 	}
-
-	ctx->mediacrg_regulator = devm_regulator_get(dev, REGULATOR_MEDIA_NAME);
-	if (!ctx->mediacrg_regulator) {
-		DRM_ERROR("failed to get mediacrg_regulator resource! ret=%d.\n", ret);
-		return -ENXIO;
-	}
-#endif
 #endif
 
 	ctx->dss_mmbuf_clk = devm_clk_get(dev, "clk_dss_axi_mm");
