@@ -967,13 +967,13 @@ int dpe_regulator_enable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
 
-	DRM_INFO("+. \n");
+	DRM_INFO("enabling DPE regulator\n");
 	if (NULL == ctx) {
 		DRM_ERROR("NULL ptr.\n");
 		return -EINVAL;
 	}
 
-	//ret = regulator_enable(ctx->dpe_regulator);
+	ret = regulator_enable(ctx->dpe_regulator);
 	if (ret) {
 		DRM_ERROR(" dpe regulator_enable failed, error=%d!\n", ret);
 		return -EINVAL;
@@ -998,7 +998,7 @@ int dpe_regulator_disable(struct dss_hw_ctx *ctx)
 		dpe_set_common_clk_rate_on_pll0(ctx);
 	#endif
 
-	//ret = regulator_disable(ctx->dpe_regulator);
+	ret = regulator_disable(ctx->dpe_regulator);
 	if (ret != 0) {
 		DRM_ERROR("dpe regulator_disable failed, error=%d!\n", ret);
 		return -EINVAL;
