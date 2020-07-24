@@ -38,9 +38,7 @@
 #define DEV_NAME_LCD_BKL		"lcd_backlight0"
 
 /* vcc name */
-#define REGULATOR_PDP_NAME	"regulator_dsssubsys"
-#define REGULATOR_MMBUF	"regulator_mmbuf"
-#define REGULATOR_MEDIA_NAME  "regulator_media_subsys"
+#define REGULATOR_PDP_NAME	"ldo3"
 
 
 /* irq name */
