@@ -6,7 +6,7 @@
  */
 
  / {
-	spmi: spmi@FFF24000 {
+	spmi: spmi@fff24000 {
 		compatible = "hisilicon,spmi-controller";
 		#address-cells = <2>;
 		#size-cells = <0>;
@@ -22,10 +22,10 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			gpios = <&gpio28 0 0>;
-			hisilicon,hisi-pmic-irq-num = <16>;/*hisi irq number*/
-			hisilicon,hisi-pmic-irq-array = <2>;/*hisi irq array*/
-			hisilicon,hisi-pmic-irq-mask-addr = <0x202 2>;/*hisi irq mask addr*/
-			hisilicon,hisi-pmic-irq-addr = <0x212 2>;/*hisi irq addr*/
+			irq-num = <16>;
+			irq-array = <2>;
+			irq-mask-addr = <0x202 2>;
+			irq-addr = <0x212 2>;
 
 			regulators {
 				#address-cells = <1>;
@@ -99,7 +99,7 @@
 
 				ldo15: ldo15@21 { /* UFS */
 					reg = <0x21>;
-					vsel-reg = <0x5C>;
+					vsel-reg = <0x5c>;
 
 					regulator-name = "ldo15";
 					regulator-min-microvolt = <1800000>;
@@ -120,7 +120,7 @@
 
 				ldo16: ldo16@22 { /* SD */
 					reg = <0x22>;
-					vsel-reg = <0x5D>;
+					vsel-reg = <0x5d>;
 
 					regulator-name = "ldo16";
 					regulator-min-microvolt = <1800000>;
@@ -141,7 +141,7 @@
 
 				ldo17: ldo17@23 {
 					reg = <0x23>;
-					vsel-reg = <0x5E>;
+					vsel-reg = <0x5e>;
 
 					regulator-name = "ldo17";
 					regulator-min-microvolt = <2500000>;
@@ -161,7 +161,7 @@
 
 				ldo33: ldo33@32 { /* PEX8606 */
 					reg = <0x32>;
-					vsel-reg = <0x6D>;
+					vsel-reg = <0x6d>;
 					regulator-name = "ldo33";
 					regulator-min-microvolt = <2500000>;
 					regulator-max-microvolt = <3300000>;
@@ -179,7 +179,7 @@
 
 				ldo34: ldo34@33 { /* GPS AUX IN VDD */
 					reg = <0x33>;
-					vsel-reg = <0x6E>;
+					vsel-reg = <0x6e>;
 
 					regulator-name = "ldo34";
 					regulator-min-microvolt = <2600000>;
