@@ -312,7 +312,7 @@ static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t
 
 	dc_ops = of_device_get_match_data(dev);
 
-	DRM_INFO("+. pdev->name is %s, m_message is %d \n", pdev->name, state.event);
+	DRM_INFO("+. pdev->name is %s, m_message is %d\n", pdev->name, state.event);
 	if (!dc_ops) {
 		DRM_ERROR("dc_ops is NULL\n");
 		return -EINVAL;

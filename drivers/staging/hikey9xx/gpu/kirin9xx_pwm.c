@@ -66,7 +66,6 @@ static struct pinctrl_cmd_desc pwm_pinctrl_finit_cmds[] = {
 
 #define PWM_OUT_PRECISION	(800)
 
-
 int pinctrl_cmds_tx(struct platform_device *pdev, struct pinctrl_cmd_desc *cmds, int cnt)
 {
 	int ret = 0;
@@ -77,13 +76,13 @@ int pinctrl_cmds_tx(struct platform_device *pdev, struct pinctrl_cmd_desc *cmds,
 	cm = cmds;
 
 	for (i = 0; i < cnt; i++) {
-		if (cm == NULL) {
+		if (!cm) {
 			DRM_ERROR("cm is null! index=%d\n", i);
 			continue;
 		}
 
 		if (cm->dtype == DTYPE_PINCTRL_GET) {
-			if (NULL == pdev) {
+			if (!pdev) {
 				DRM_ERROR("pdev is NULL");
 				return -EINVAL;
 			}
@@ -158,7 +157,7 @@ err:
 int hisi_pwm_set_backlight(struct backlight_device *bl, uint32_t bl_level)
 {
 	char __iomem *pwm_base = NULL;
-	uint32_t bl_max = bl->props.max_brightness;
+	u32 bl_max = bl->props.max_brightness;
 
 	pwm_base = hisifd_pwm_base;
 	if (!pwm_base) {
@@ -173,9 +172,8 @@ int hisi_pwm_set_backlight(struct backlight_device *bl, uint32_t bl_level)
 		return -EINVAL;
 	}
 
-	if (bl_level > bl_max) {
+	if (bl_level > bl_max)
 		bl_level = bl_max;
-	}
 
 	bl_level = (bl_level * PWM_OUT_PRECISION) / bl_max;
 
@@ -232,11 +230,11 @@ int hisi_pwm_on(void)
 			return -EINVAL;
 		}
 
-		DRM_INFO("dss_pwm_clk clk_enable successed, ret=%d!\n", ret);
+		DRM_INFO("dss_pwm_clk clk_enable succeeded, ret=%d!\n", ret);
 	}
 
 	ret = pinctrl_cmds_tx(g_pwm_pdev, pwm_pinctrl_normal_cmds,
-		ARRAY_SIZE(pwm_pinctrl_normal_cmds));
+			      ARRAY_SIZE(pwm_pinctrl_normal_cmds));
 
 	//if enable PWM, please set IOMG_004 in IOC_AO module
 	//set IOMG_004: select PWM_OUT0
@@ -269,7 +267,7 @@ int hisi_pwm_off(void)
 		return 0;
 
 	ret = pinctrl_cmds_tx(g_pwm_pdev, pwm_pinctrl_lowpower_cmds,
-		ARRAY_SIZE(pwm_pinctrl_lowpower_cmds));
+			      ARRAY_SIZE(pwm_pinctrl_lowpower_cmds));
 
 	clk_tmp = g_pwm_clk;
 	if (clk_tmp) {
@@ -290,7 +288,7 @@ static int hisi_pwm_probe(struct platform_device *pdev)
 	struct device_node *np = NULL;
 	int ret = 0;
 
-	if (NULL == pdev) {
+	if (!pdev) {
 		DRM_ERROR("pdev is NULL");
 		return -EINVAL;
 	}
@@ -320,7 +318,7 @@ static int hisi_pwm_probe(struct platform_device *pdev)
 
 	/* pwm pinctrl init */
 	ret = pinctrl_cmds_tx(pdev, pwm_pinctrl_init_cmds,
-		ARRAY_SIZE(pwm_pinctrl_init_cmds));
+			      ARRAY_SIZE(pwm_pinctrl_init_cmds));
 	if (ret != 0) {
 		DRM_ERROR("Init pwm pinctrl failed! ret=%d.\n", ret);
 		goto err_return;
@@ -330,13 +328,13 @@ static int hisi_pwm_probe(struct platform_device *pdev)
 	g_pwm_clk = of_clk_get(np, 0);
 	if (IS_ERR(g_pwm_clk)) {
 		DRM_ERROR("%s clock not found: %d!\n",
-			np->name, (int)PTR_ERR(g_pwm_clk));
+			  np->name, (int)PTR_ERR(g_pwm_clk));
 		ret = -ENXIO;
 		goto err_return;
 	}
 
 	DRM_INFO("dss_pwm_clk:[%lu]->[%lu].\n",
-		DEFAULT_PWM_CLK_RATE, clk_get_rate(g_pwm_clk));
+		 DEFAULT_PWM_CLK_RATE, clk_get_rate(g_pwm_clk));
 
 	return 0;
 
@@ -350,7 +348,7 @@ static int hisi_pwm_remove(struct platform_device *pdev)
 	int ret = 0;
 
 	ret = pinctrl_cmds_tx(pdev, pwm_pinctrl_finit_cmds,
-		ARRAY_SIZE(pwm_pinctrl_finit_cmds));
+			      ARRAY_SIZE(pwm_pinctrl_finit_cmds));
 
 	clk_tmp = g_pwm_clk;
 	if (clk_tmp) {

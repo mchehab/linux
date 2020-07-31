@@ -17,79 +17,103 @@
 
 #include "kirin9xx_drm_dpe_utils.h"
 
-int g_debug_set_reg_val = 0;
+static int g_debug_set_reg_val;
 
 DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
 
-extern u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX];
-
-mipi_ifbc_division_t g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
+struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
 	/*single mipi*/
 	{
-		/*none*/
-		{XRES_DIV_1, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_0, PXL0_DSI_GT_EN_1},
-		/*orise2x*/
-		{XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3},
-		/*orise3x*/
-		{XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_1, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3},
-		/*himax2x*/
-		{XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_2, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3},
-		/*rsp2x*/
-		{XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_3, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3},
-		/*rsp3x  [NOTE]reality: xres_div = 1.5, yres_div = 2, amended in "mipi_ifbc_get_rect" function*/
-		{XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_4, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3},
-		/*vesa2x_1pipe*/
-		{XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3},
-		/*vesa3x_1pipe*/
-		{XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3},
-		/*vesa2x_2pipe*/
-		{XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3},
-		/*vesa3x_2pipe*/
-		{XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3}
-	},
+			/*none*/
+		{
+			XRES_DIV_1, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_0, PXL0_DSI_GT_EN_1
+		}, {
+			/*orise2x*/
+			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
+		}, {
+			/*orise3x*/
+			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_1, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
+		}, {
+			/*himax2x*/
+			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_2, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
+		}, {
+			/*rsp2x*/
+			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_3, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
+		}, {
+			/*
+			 * rsp3x
+			 * NOTE: in reality: xres_div = 1.5, yres_div = 2,
+			 * amended in "mipi_ifbc_get_rect" function
+			 */
+			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_4, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa2x_1pipe*/
+			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa3x_1pipe*/
+			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa2x_2pipe*/
+			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa3x_2pipe*/
+			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
+		}
 
 	/*dual mipi*/
-	{
-		/*none*/
-		{XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3},
-		/*orise2x*/
-		{XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3},
-		/*orise3x*/
-		{XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_1, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3},
-		/*himax2x*/
-		{XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_2, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3},
-		/*rsp2x*/
-		{XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_3, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3},
-		/*rsp3x*/
-		{XRES_DIV_3, YRES_DIV_2, IFBC_COMP_MODE_4, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3},
-		/*vesa2x_1pipe*/
-		{XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3},
-		/*vesa3x_1pipe*/
-		{XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3},
-		/*vesa2x_2pipe*/
-		{XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3},
-		/*vesa3x_2pipe*/
-		{XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
-			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, 3} }
+	}, {
+		{
+			/*none*/
+			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
+		}, {
+			/*orise2x*/
+			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
+		}, {
+			/*orise3x*/
+			XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_1, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3
+		}, {
+			/*himax2x*/
+			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_2, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
+		}, {
+			/*rsp2x*/
+			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_3, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
+		}, {
+			/*rsp3x*/
+			XRES_DIV_3, YRES_DIV_2, IFBC_COMP_MODE_4, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa2x_1pipe*/
+			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa3x_1pipe*/
+			XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa2x_2pipe*/
+			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
+		}, {
+			/*vesa3x_2pipe*/
+			XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
+			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, 3
+		}
+	}
 };
 
 void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs)
@@ -104,14 +128,14 @@ void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs)
 
 	if (g_debug_set_reg_val) {
 		printk(KERN_INFO "writel: [%p] = 0x%x\n", addr,
-			     tmp | ((val & mask) << bs));
+		       tmp | ((val & mask) << bs));
 	}
 }
 
-uint32_t set_bits32(uint32_t old_val, uint32_t val, uint8_t bw, uint8_t bs)
+u32 set_bits32(u32 old_val, uint32_t val, uint8_t bw, uint8_t bs)
 {
-	uint32_t mask = (1UL << bw) - 1UL;
-	uint32_t tmp = 0;
+	u32 mask = (1UL << bw) - 1UL;
+	u32 tmp = 0;
 
 	tmp = old_val;
 	tmp &= ~(mask << bs);
@@ -139,9 +163,10 @@ static int mipi_ifbc_get_rect(struct dss_rect *rect)
 		DRM_ERROR("yres(%d) is not division_v(%d) pixel aligned!\n", rect->h, yres_div);
 
 	/*
-	** [NOTE] rsp3x && single_mipi CMD mode amended xres_div = 1.5, yres_div = 2 ,
-	** VIDEO mode amended xres_div = 3, yres_div = 1
-	*/
+	 * NOTE: rsp3x && single_mipi CMD mode amended xres_div = 1.5,
+	 *  yres_div = 2,
+	 * VIDEO mode amended xres_div = 3, yres_div = 1
+	 */
 	rect->w /= xres_div;
 	rect->h /= yres_div;
 
@@ -225,7 +250,7 @@ void init_ldi(struct dss_crtc *acrtc)
 	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
-		return ;
+		return;
 	}
 
 	mode = &acrtc->base.state->mode;
@@ -249,16 +274,16 @@ void init_ldi(struct dss_crtc *acrtc)
 	init_ldi_pxl_div(acrtc);
 
 	outp32(ldi_base + LDI_DPI0_HRZ_CTRL0,
-		hfp | ((hbp + DSS_WIDTH(hsw)) << 16));
+	       hfp | ((hbp + DSS_WIDTH(hsw)) << 16));
 	outp32(ldi_base + LDI_DPI0_HRZ_CTRL1, 0);
 	outp32(ldi_base + LDI_DPI0_HRZ_CTRL2, DSS_WIDTH(rect.w));
 	outp32(ldi_base + LDI_VRT_CTRL0,
-		vfp | (vbp << 16));
+	       vfp | (vbp << 16));
 	outp32(ldi_base + LDI_VRT_CTRL1, DSS_HEIGHT(vsw));
 	outp32(ldi_base + LDI_VRT_CTRL2, DSS_HEIGHT(rect.h));
 
 	outp32(ldi_base + LDI_PLR_CTRL,
-		vsync_plr | (hsync_plr << 1) |
+	       vsync_plr | (hsync_plr << 1) |
 		(pixelclk_plr << 2) | (data_en_plr << 3));
 
 	/* bpp*/
@@ -292,7 +317,7 @@ void deinit_ldi(struct dss_crtc *acrtc)
 	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
-		return ;
+		return;
 	}
 
 	ldi_base = ctx->base + DSS_LDI0_OFFSET;
@@ -389,12 +414,12 @@ void init_dbuf(struct dss_crtc *acrtc)
 		mode->vdisplay);
 
 	/*
-	** int K = 0;
-	** int Tp = 1000000  / adj_mode->clock;
-	** K = (hsw + hbp + mode->hdisplay +
-	**	hfp) / mode->hdisplay;
-	** thd_cg_out = dfs_time / (Tp * K * 6);
-	*/
+	 * int K = 0;
+	 * int Tp = 1000000  / adj_mode->clock;
+	 * K = (hsw + hbp + mode->hdisplay +
+	 *	hfp) / mode->hdisplay;
+	 * thd_cg_out = dfs_time / (Tp * K * 6);
+	 */
 	thd_cg_out = (dfs_time * adj_mode->clock * 1000UL * mode->hdisplay) /
 		(((hsw + hbp + hfp) + mode->hdisplay) * 6 * 1000000UL);
 
@@ -457,9 +482,8 @@ void init_dbuf(struct dss_crtc *acrtc)
 	outp32(dbuf_base + DBUF_FLUX_REQ_CTRL, (dfs_ok_mask << 1) | thd_flux_req_sw_en);
 
 	outp32(dbuf_base + DBUF_DFS_LP_CTRL, 0x1);
-	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
 		outp32(dbuf_base + DBUF_DFS_RAM_MANAGE, dfs_ram);
-	}
 }
 
 void init_dpp(struct dss_crtc *acrtc)
@@ -483,9 +507,9 @@ void init_dpp(struct dss_crtc *acrtc)
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 
 	outp32(dpp_base + DPP_IMG_SIZE_BEF_SR,
-		(DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
+	       (DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
 	outp32(dpp_base + DPP_IMG_SIZE_AFT_SR,
-		(DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
+	       (DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
 }
 
 void enable_ldi(struct dss_crtc *acrtc)
@@ -577,7 +601,6 @@ void dpe_interrupt_unmask(struct dss_crtc *acrtc)
 	unmask &= ~(BIT_VSYNC | BIT_VACTIVE0_END | BIT_LDI_UNFLOW);
 
 	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, unmask);
-
 }
 
 void dpe_interrupt_mask(struct dss_crtc *acrtc)
@@ -589,7 +612,7 @@ void dpe_interrupt_mask(struct dss_crtc *acrtc)
 	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
-		return ;
+		return;
 	}
 
 	dss_base = ctx->base;
@@ -660,7 +683,7 @@ void dpe_check_itf_status(struct dss_crtc *acrtc)
 	ctx = acrtc->ctx;
 	if (!ctx) {
 		DRM_ERROR("ctx is NULL!\n");
-		return ;
+		return;
 	}
 
 	itf_idx = 0;
@@ -672,15 +695,13 @@ void dpe_check_itf_status(struct dss_crtc *acrtc)
 			is_timeout = (delay_count > 100) ? true : false;
 			delay_count = 0;
 			break;
-		} else {
-			mdelay(1);
-			++delay_count;
 		}
+		mdelay(1);
+		++delay_count;
 	}
 
-	if (is_timeout) {
+	if (is_timeout)
 		DRM_DEBUG_DRIVER("mctl_itf%d not in idle status,ints=0x%x !\n", itf_idx, tmp);
-	}
 }
 
 void dss_inner_clk_pdp_disable(struct dss_hw_ctx *ctx)
@@ -708,9 +729,9 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 {
 	char __iomem *dss_base;
 
-	if (NULL == ctx) {
+	if (!ctx) {
 		DRM_ERROR("NULL Pointer!\n");
-		return ;
+		return;
 	}
 
 	dss_base = ctx->base;
@@ -815,7 +836,7 @@ int dpe_common_clk_enable(struct dss_hw_ctx *ctx)
 	int ret = 0;
 	struct clk *clk_tmp = NULL;
 
-	if (ctx == NULL) {
+	if (!ctx) {
 		DRM_ERROR("ctx is NULL point!\n");
 		return -EINVAL;
 	}
@@ -872,7 +893,7 @@ int dpe_common_clk_disable(struct dss_hw_ctx *ctx)
 {
 	struct clk *clk_tmp = NULL;
 
-	if (ctx == NULL) {
+	if (!ctx) {
 		DRM_ERROR("ctx is NULL point!\n");
 		return -EINVAL;
 	}
@@ -903,7 +924,7 @@ int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
 	int ret = 0;
 	struct clk *clk_tmp = NULL;
 
-	if (ctx == NULL) {
+	if (!ctx) {
 		DRM_ERROR("ctx is NULL point!\n");
 		return -EINVAL;
 	}
@@ -945,7 +966,7 @@ int dpe_inner_clk_disable(struct dss_hw_ctx *ctx)
 {
 	struct clk *clk_tmp = NULL;
 
-	if (ctx == NULL) {
+	if (!ctx) {
 		DRM_ERROR("ctx is NULL point!\n");
 		return -EINVAL;
 	}
@@ -970,7 +991,7 @@ int dpe_regulator_enable(struct dss_hw_ctx *ctx)
 	int ret = 0;
 
 	DRM_INFO("enabling DPE regulator\n");
-	if (NULL == ctx) {
+	if (!ctx) {
 		DRM_ERROR("NULL ptr.\n");
 		return -EINVAL;
 	}
@@ -981,7 +1002,7 @@ int dpe_regulator_enable(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	DRM_INFO("-. \n");
+	DRM_INFO("-.\n");
 
 	return ret;
 }
@@ -990,12 +1011,12 @@ int dpe_regulator_disable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
 
-	if (NULL == ctx) {
+	if (!ctx) {
 		DRM_ERROR("NULL ptr.\n");
 		return -EINVAL;
 	}
 
-	#if defined (CONFIG_DRM_HISI_KIRIN970)
+	#if defined(CONFIG_DRM_HISI_KIRIN970)
 		dpe_set_pixel_clk_rate_on_pll0(ctx);
 		dpe_set_common_clk_rate_on_pll0(ctx);
 	#endif
@@ -1013,15 +1034,14 @@ int mediacrg_regulator_enable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
 
-	if (NULL == ctx) {
+	if (!ctx) {
 		DRM_ERROR("NULL ptr.\n");
 		return -EINVAL;
 	}
 
 	//ret = regulator_enable(ctx->mediacrg_regulator);
-	if (ret) {
+	if (ret)
 		DRM_ERROR("mediacrg regulator_enable failed, error=%d!\n", ret);
-	}
 
 	return ret;
 }
@@ -1030,7 +1050,7 @@ int mediacrg_regulator_disable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
 
-	if (NULL == ctx) {
+	if (!ctx) {
 		DRM_ERROR("NULL ptr.\n");
 		return -EINVAL;
 	}
@@ -1046,10 +1066,10 @@ int mediacrg_regulator_disable(struct dss_hw_ctx *ctx)
 
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 {
-	uint64_t clk_rate;
+	u64 clk_rate;
 	int ret = 0;
 
-	if (NULL == ctx) {
+	if (!ctx) {
 		DRM_ERROR("NULL Pointer!\n");
 		return -EINVAL;
 	}
@@ -1061,20 +1081,19 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n",
-		clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+		 clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
 
 #if 0 /* it will be set on dss_ldi_set_mode func */
 	ret = clk_set_rate(ctx->dss_pxl0_clk, pinfo->pxl_clk_rate);
 	if (ret < 0) {
 		DRM_ERROR("fb%d dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
-			ctx->index, pinfo->pxl_clk_rate, ret);
-		if (g_fpga_flag == 0) {
+			  ctx->index, pinfo->pxl_clk_rate, ret);
+		if (g_fpga_flag == 0)
 			return -EINVAL;
-		}
 	}
 
 	DRM_INFO("dss_pxl0_clk:[%llu]->[%llu].\n",
-			pinfo->pxl_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
+		 pinfo->pxl_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 #endif
 
 	clk_rate = DEFAULT_DSS_MMBUF_CLK_RATE_L1;
@@ -1085,7 +1104,7 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 	}
 
 	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n",
-		clk_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
+		 clk_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
 
 	return ret;
 }
@@ -1093,10 +1112,10 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 int dpe_set_pixel_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 {
 	int ret;
-	uint64_t clk_rate;
+	u64 clk_rate;
 
-	DRM_INFO("+. \n");
-	if (NULL == ctx) {
+	DRM_INFO("+.\n");
+	if (!ctx) {
 		DRM_ERROR("NULL Pointer!\n");
 		return -EINVAL;
 	}
@@ -1104,10 +1123,12 @@ int dpe_set_pixel_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 	clk_rate = DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF;
 	ret = clk_set_rate(ctx->dss_pxl0_clk, clk_rate);
 	if (ret < 0) {
-		DRM_ERROR("dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n", clk_rate, ret);
+		DRM_ERROR("dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
+			  clk_rate, ret);
 		return -EINVAL;
 	}
-	DRM_INFO("dss_pxl0_clk:[%llu]->[%llu].\n", clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
+	DRM_INFO("dss_pxl0_clk:[%llu]->[%llu].\n",
+		 clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 
 	return ret;
 }
@@ -1115,10 +1136,10 @@ int dpe_set_pixel_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 int dpe_set_common_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 {
 	int ret;
-	uint64_t clk_rate;
+	u64 clk_rate;
 
-	DRM_INFO("+. \n");
-	if (NULL == ctx) {
+	DRM_INFO("+.\n");
+	if (!ctx) {
 		DRM_ERROR("NULL Pointer!\n");
 		return -EINVAL;
 	}
@@ -1126,18 +1147,22 @@ int dpe_set_common_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 	clk_rate = DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF;
 	ret = clk_set_rate(ctx->dss_mmbuf_clk, clk_rate);
 	if (ret < 0) {
-		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n", clk_rate, ret);
+		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n",
+			  clk_rate, ret);
 		return -EINVAL;
 	}
-	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n", clk_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
+	DRM_INFO("dss_mmbuf_clk:[%llu]->[%llu].\n",
+		 clk_rate, (uint64_t)clk_get_rate(ctx->dss_mmbuf_clk));
 
 	clk_rate = DEFAULT_DSS_CORE_CLK_RATE_POWER_OFF;
 	ret = clk_set_rate(ctx->dss_pri_clk, clk_rate);
 	if (ret < 0) {
-		DRM_ERROR("dss_pri_clk clk_set_rate(%llu) failed, error=%d!\n", clk_rate, ret);
+		DRM_ERROR("dss_pri_clk clk_set_rate(%llu) failed, error=%d!\n",
+			  clk_rate, ret);
 		return -EINVAL;
 	}
-	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n", clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n",
+		 clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
 
 	return ret;
 }
