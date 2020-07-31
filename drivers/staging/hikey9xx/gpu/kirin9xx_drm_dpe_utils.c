@@ -21,6 +21,8 @@ static int g_debug_set_reg_val;
 
 DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
 
+extern u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX];
+
 struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
 	/*single mipi*/
 	{
@@ -240,7 +242,7 @@ void init_ldi(struct dss_crtc *acrtc)
 	struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
 
-	dss_rect_t rect = {0, 0, 0, 0};
+	struct dss_rect rect = {0, 0, 0, 0};
 	u32 hfp, hbp, hsw, vfp, vbp, vsw;
 	u32 vsync_plr = 0;
 	u32 hsync_plr = 0;
