@@ -72,19 +72,19 @@ enum dss_channel {
 
 #define PRIMARY_CH	DSS_CH1 /* primary plane */
 
-typedef struct dss_rect {
+struct dss_rect {
 	s32 x;
 	s32 y;
 	s32 w;
 	s32 h;
-} dss_rect_t;
+};
 
-typedef struct dss_rect_ltrb {
+struct dss_rect_ltrb {
 	s32 left;
 	s32 top;
 	s32 right;
 	s32 bottom;
-} dss_rect_ltrb_t;
+};
 
 enum {
 	DSI_1_LANES = 0,
@@ -103,7 +103,7 @@ enum dss_ovl_idx {
 
 #define DSS_WCH_MAX  (2)
 
-typedef struct dss_img {
+struct dss_img {
 	u32 format;
 	u32 width;
 	u32 height;
@@ -130,13 +130,13 @@ typedef struct dss_img {
 	u32 secure_mode;
 	s32 shared_fd;
 	u32 reserved0;
-} dss_img_t;
+};
 
-typedef struct drm_dss_layer {
-	dss_img_t img;
-	dss_rect_t src_rect;
-	dss_rect_t src_rect_mask;
-	dss_rect_t dst_rect;
+struct drm_dss_layer {
+	struct dss_img img;
+	struct dss_rect src_rect;
+	struct dss_rect src_rect_mask;
+	struct dss_rect dst_rect;
 	u32 transform;
 	s32 blending;
 	u32 glb_alpha;
@@ -145,7 +145,7 @@ typedef struct drm_dss_layer {
 	s32 chn_idx;
 	u32 need_cap;
 	s32 acquire_fence;
-} drm_dss_layer_t;
+};
 
 /******************************************************************************/
 
@@ -1160,17 +1160,17 @@ enum dss_rdma_idx {
 #define AIF_MODULE_CLK_SEL	(0x0A04)
 #define AIF_MODULE_CLK_EN	(0x0A08)
 
-typedef struct dss_aif {
+struct dss_aif {
 	u32 aif_ch_ctl;
 	u32 aif_ch_ctl_add;
-} dss_aif_t;
+};
 
-typedef struct dss_aif_bw {
+struct dss_aif_bw {
 	u64 bw;
 	u8 chn_idx;
 	s8 axi_sel;
 	u8 is_used;
-} dss_aif_bw_t;
+};
 
 /*
  * MIF
@@ -1212,13 +1212,13 @@ typedef struct dss_aif_bw {
 #define LITTLE_LAYER_BUF_SIZE	(256 * 1024)
 #define MIF_STRIDE_UNIT (4 * 1024)
 
-typedef struct dss_mif {
+struct dss_mif {
 	u32 mif_ctrl1;
 	u32 mif_ctrl2;
 	u32 mif_ctrl3;
 	u32 mif_ctrl4;
 	u32 mif_ctrl5;
-} dss_mif_t;
+};
 
 /*
  * stretch blt, linear/tile, rotation, pixel format
@@ -1317,7 +1317,7 @@ enum dss_mmu_tlb_tag_org {
 
 #define SMMU_SID_NUM	(64)
 
-typedef struct dss_smmu {
+struct dss_smmu {
 	u32 smmu_scr;
 	u32 smmu_memctrl;
 	u32 smmu_lp_ctrl;
@@ -1375,7 +1375,7 @@ typedef struct dss_smmu {
 	u32 smmu_offset_addr_s;
 
 	u8 smmu_smrx_ns_used[DSS_CHN_MAX_DEFINE];
-} dss_smmu_t;
+};
 
 /*
  * RDMA
@@ -1455,7 +1455,7 @@ typedef struct dss_smmu {
 #define DFC_DITHER_ENABLE	(0x0020)
 #define DFC_PADDING_CTL	(0x0024)
 
-typedef struct dss_dfc {
+struct dss_dfc {
 	u32 disp_size;
 	u32 pix_in_num;
 	u32 disp_fmt;
@@ -1465,7 +1465,7 @@ typedef struct dss_dfc {
 	u32 icg_module;
 	u32 dither_enable;
 	u32 padding_ctl;
-} dss_dfc_t;
+};
 
 /*
  * SCF
@@ -1514,7 +1514,7 @@ typedef struct dss_dfc {
 #define SCF_EDGE_FACTOR (3)
 #define ARSR2P_INC_FACTOR (65536)
 
-typedef struct dss_scl {
+struct dss_scl {
 	u32 en_hscl_str;
 	u32 en_vscl_str;
 	u32 h_v_order;
@@ -1528,7 +1528,7 @@ typedef struct dss_scl {
 	u32 en_mmp;
 	u32 scf_ch_core_gt;
 	u32 fmt;
-} dss_scl_t;
+};
 
 enum scl_coef_lut_idx {
 	SCL_COEF_NONE_IDX = -1,
@@ -1585,7 +1585,7 @@ enum scl_coef_lut_idx {
 #define ARSR2P_LUT_COEFUV_V_OFFSET (0x0600)
 #define ARSR2P_LUT_COEFUV_H_OFFSET (0x0700)
 
-typedef struct dss_arsr2p_effect {
+struct dss_arsr2p_effect {
 	u32 skin_thres_y;
 	u32 skin_thres_u;
 	u32 skin_thres_v;
@@ -1605,9 +1605,9 @@ typedef struct dss_arsr2p_effect {
 	u32 sharp_cfg9;
 	u32 texturw_analysts;
 	u32 intplshootctrl;
-} dss_arsr2p_effect_t;
+};
 
-typedef struct dss_arsr2p {
+struct dss_arsr2p {
 	u32 arsr_input_width_height;
 	u32 arsr_output_width_height;
 	u32 ihleft;
@@ -1618,11 +1618,11 @@ typedef struct dss_arsr2p {
 	u32 ivinc;
 	u32 offset;
 	u32 mode;
-	dss_arsr2p_effect_t arsr2p_effect;
+	struct dss_arsr2p_effect arsr2p_effect;
 	u32 ihleft1;
 	u32 ihright1;
 	u32 ivbottom1;
-} dss_arsr2p_t;
+};
 
 /*
  * POST_CLIP  v g
@@ -1632,12 +1632,12 @@ typedef struct dss_arsr2p {
 #define POST_CLIP_CTL_VRZ	(0x0014)
 #define POST_CLIP_EN	(0x0018)
 
-typedef struct dss_post_clip {
+struct dss_post_clip {
 	u32 disp_size;
 	u32 clip_ctl_hrz;
 	u32 clip_ctl_vrz;
 	u32 ctl_clip_en;
-} dss_post_clip_t;
+};
 
 /*
  * PCSC v
@@ -1654,9 +1654,9 @@ typedef struct dss_post_clip {
 #define PCSC_ICG_MODULE	(0x0024)
 #define PCSC_MPREC	(0x0028)
 
-typedef struct dss_pcsc {
+struct dss_pcsc {
 	u32 pcsc_idc0;
-} dss_pcsc_t;
+};
 
 /*
  * CSC
@@ -1674,7 +1674,7 @@ typedef struct dss_pcsc {
 #define CSC_ICG_MODULE	(0x0024)
 #define CSC_MPREC	(0x0028)
 
-typedef struct dss_csc {
+struct dss_csc {
 	u32 idc0;
 	u32 idc2;
 	u32 odc0;
@@ -1686,7 +1686,7 @@ typedef struct dss_csc {
 	u32 p4;
 	u32 icg_module;
 	u32 mprec;
-} dss_csc_t;
+};
 
 /*
  * channel DEBUG
@@ -1838,7 +1838,7 @@ enum DSS_AFBC_HALF_BLOCK_MODE {
 	AFBC_HALF_BLOCK_LOWER_ONLY,
 };
 
-typedef struct dss_rdma {
+struct dss_rdma {
 	u32 oft_x0;
 	u32 oft_y0;
 	u32 oft_x1;
@@ -1892,9 +1892,9 @@ typedef struct dss_rdma {
 
 	u8 vpp_used;
 	u8 afbc_used;
-} dss_rdma_t;
+};
 
-typedef struct dss_wdma {
+struct dss_wdma {
 	u32 oft_x0;
 	u32 oft_y0;
 	u32 oft_x1;
@@ -1947,7 +1947,7 @@ typedef struct dss_wdma {
 
 	u8 afbc_used;
 	u8 rot_used;
-} dss_wdma_t;
+};
 
 /*
  * MCTL  MUTEX0 1 2 3 4 5
@@ -2120,37 +2120,37 @@ enum dss_mctl_idx {
 	DSS_MCTL_IDX_MAX,
 };
 
-typedef struct dss_mctl {
+struct dss_mctl {
 	u32 ctl_mutex_itf;
 	u32 ctl_mutex_dbuf;
 	u32 ctl_mutex_scf;
 	u32 ctl_mutex_ov;
-} dss_mctl_t;
+};
 
-typedef struct dss_mctl_ch_base {
+struct dss_mctl_ch_base {
 	char __iomem *chn_mutex_base;
 	char __iomem *chn_flush_en_base;
 	char __iomem *chn_ov_en_base;
 	char __iomem *chn_starty_base;
 	char __iomem *chn_mod_dbg_base;
-} dss_mctl_ch_base_t;
+};
 
-typedef struct dss_mctl_ch {
+struct dss_mctl_ch {
 	u32 chn_mutex;
 	u32 chn_flush_en;
 	u32 chn_ov_oen;
 	u32 chn_starty;
 	u32 chn_mod_dbg;
-} dss_mctl_ch_t;
+};
 
-typedef struct dss_mctl_sys {
+struct dss_mctl_sys {
 	u32 ov_flush_en[DSS_OVL_IDX_MAX];
 	u32 chn_ov_sel[DSS_OVL_IDX_MAX];
 	u32 wchn_ov_sel[DSS_WCH_MAX];
 	u8 ov_flush_en_used[DSS_OVL_IDX_MAX];
 	u8 chn_ov_sel_used[DSS_OVL_IDX_MAX];
 	u8 wch_ov_sel_used[DSS_WCH_MAX];
-} dss_mctl_sys_t;
+};
 
 /*
  * OVL
@@ -2356,34 +2356,34 @@ typedef struct dss_mctl_sys {
 #define OV2_REG_DEFAULT			(0x218)
 
 #define OV_8LAYER_NUM				(8)
-typedef struct dss_ovl_layer {
+struct dss_ovl_layer {
 	u32 layer_pos;
 	u32 layer_size;
 	u32 layer_pattern;
 	u32 layer_alpha;
 	u32 layer_cfg;
 
-} dss_ovl_layer_t;
+};
 
-typedef struct dss_ovl_layer_pos {
+struct dss_ovl_layer_pos {
 	u32 layer_pspos;
 	u32 layer_pepos;
 
-} dss_ovl_layer_pos_t;
+};
 
-typedef struct dss_ovl {
+struct dss_ovl {
 	u32 ovl_size;
 	u32 ovl_bg_color;
 	u32 ovl_dst_startpos;
 	u32 ovl_dst_endpos;
 	u32 ovl_gcfg;
 	u32 ovl_block_size;
-	dss_ovl_layer_t ovl_layer[OVL_6LAYER_NUM];
-	dss_ovl_layer_pos_t ovl_layer_pos[OVL_6LAYER_NUM];
+	struct dss_ovl_layer ovl_layer[OVL_6LAYER_NUM];
+	struct dss_ovl_layer_pos ovl_layer_pos[OVL_6LAYER_NUM];
 	u8 ovl_layer_used[OVL_6LAYER_NUM];
-} dss_ovl_t;
+};
 
-typedef struct dss_ovl_alpha {
+struct dss_ovl_alpha {
 	u32 src_amode;
 	u32 src_gmode;
 	u32 alpha_offsrc;
@@ -2398,7 +2398,7 @@ typedef struct dss_ovl_alpha {
 	u32 dst_pmode;
 
 	u32 fix_mode;
-} dss_ovl_alpha_t;
+};
 
 /*
  * DBUF
@@ -2598,7 +2598,7 @@ typedef struct dss_ovl_alpha {
 #define LCP_DEGAMA_MEM_CTRL	(0x03C)
 #define LCP_GMP_MEM_CTRL	(0x040)
 
-typedef struct dss_arsr1p {
+struct dss_arsr1p {
 	u32 ihleft;
 	u32 ihright;
 	u32 ihleft1;
@@ -2639,7 +2639,7 @@ typedef struct dss_arsr1p {
 	u32 dpp_img_vrt_bef_sr;
 	u32 dpp_img_hrz_aft_sr;
 	u32 dpp_img_vrt_aft_sr;
-} dss_arsr1p_t;
+};
 
 #define ARSR1P_INC_FACTOR (65536)
 
@@ -3088,14 +3088,14 @@ struct dss_hw_ctx {
 	unsigned long screen_size;
 };
 
-typedef struct dss_clk_rate {
+struct dss_clk_rate {
 	u64 dss_pri_clk_rate;
 	u64 dss_pclk_dss_rate;
 	u64 dss_pclk_pctrl_rate;
 	u64 dss_mmbuf_rate;
 	u32 dss_voltage_value; //0:0.7v, 2:0.8v
 	u32 reserved;
-} dss_clk_rate_t;
+};
 
 struct dss_crtc {
 	struct drm_crtc base;
@@ -3206,7 +3206,7 @@ enum PXL0_DSI_GT_EN {
 	PXL0_DSI_GT_EN_3,
 };
 
-typedef struct mipi_ifbc_division {
+struct mipi_ifbc_division {
 	u32 xres_div;
 	u32 yres_div;
 	u32 comp_mode;
@@ -3214,7 +3214,7 @@ typedef struct mipi_ifbc_division {
 	u32 pxl0_div4_gt_en;
 	u32 pxl0_divxcfg;
 	u32 pxl0_dsi_gt_en;
-} mipi_ifbc_division_t;
+};
 
 /*****************************************************************************/
 
