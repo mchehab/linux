@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/dma/hisilicon,hisi_dma_64.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Hisilicon Kirin 64 DMA Controller Device Tree Bindings
+
+maintainers:
+  - Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+
+allOf:
+  - $ref: "dma-controller.yaml#"
+
+properties:
+  "#dma-cells":
+    description: The cell is the request line number.
+
+  compatible:
+    const: hisilicon,hisi-dma64-1.0
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    minItems: 1
+    maxItems: 2
+
+  clock-names:
+    items:
+      - const: bus
+      - const: mbus
+
+required:
+  - "#dma-cells"
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - resets
+  - dma-channels
+
+examples:
+  - |
+    dma0: dma@fdf30000 {
+      compatible = "hisilicon,hisi-dma64-1.0";
+      reg = <0x0 0xfdf30000 0x0 0x1000>;
+      #dma-cells = <1>;
+      dma-channels = <16>;
+      dma-requests = <32>;
+      dma-min-chan = <1>;
+      interrupts = <0 143 4>;
+      clocks = <&crg_ctrl HI3670_CLK_GATE_DMAC>,
+         <&crg_ctrl HI3670_PCLK>;
+      clock-names = "clk_dmac", "apb_pclk";
+      status = "ok";
+    };
