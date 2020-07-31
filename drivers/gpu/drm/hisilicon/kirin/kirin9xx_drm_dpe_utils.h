@@ -71,7 +71,7 @@ int hisi_dss_mctl_mutex_unlock(struct dss_hw_ctx *ctx);
 int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres);
 
 void hisi_fb_pan_display(struct drm_plane *plane);
-void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, drm_dss_layer_t *layer);
+void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, struct drm_dss_layer *layer);
 
 u32 dss_get_format(u32 pixel_format);
 
