@@ -40,7 +40,7 @@
 
 #include "kirin9xx_drm_drv.h"
 #include "kirin9xx_drm_dpe_utils.h"
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
 #include "kirin960_dpe_reg.h"
@@ -48,7 +48,7 @@
 
 //#define DSS_POWER_UP_ON_UEFI
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 #define DTS_COMP_DSS_NAME "hisilicon,kirin970-dpe"
 #else
 #define DTS_COMP_DSS_NAME "hisilicon,hi3660-dpe"
@@ -107,21 +107,20 @@ u32 dss_get_format(u32 pixel_format)
  **
  */
 
-int hdmi_ceil(uint64_t a, uint64_t b)
+int hdmi_ceil(u64 a, uint64_t b)
 {
 	if (b == 0)
 		return -1;
 
-	if (a%b != 0) {
-		return a/b + 1;
-	} else {
-		return a/b;
-	}
+	if (a % b != 0)
+		return a / b + 1;
+	else
+		return a / b;
 }
 
 int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 {
-	u64 vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUPUT;
+	u64 vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUTPUT;
 	u64 refdiv, fbdiv, frac, postdiv1 = 0, postdiv2 = 0;
 	u64 dss_pxl0_clk = 7 * 144000000UL;
 	u64 sys_clock_fref = KIRIN970_SYS_19M2;
@@ -323,7 +322,7 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 	int ret = 0;
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	mediacrg_regulator_enable(ctx);
 	dpe_common_clk_enable(ctx);
 	dpe_inner_clk_enable(ctx);
@@ -388,7 +387,7 @@ static void dss_power_down(struct dss_crtc *acrtc)
 	dpe_check_itf_status(acrtc);
 	dss_inner_clk_pdp_disable(ctx);
 
-	if (ctx->g_dss_version_tag & FB_ACCEL_KIRIN970 ) {
+	if (ctx->g_dss_version_tag & FB_ACCEL_KIRIN970) {
 		dpe_regulator_disable(ctx);
 		dpe_inner_clk_disable(ctx);
 		dpe_common_clk_disable(ctx);
@@ -609,7 +608,6 @@ static void dss_crtc_atomic_flush(struct drm_crtc *crtc,
 			drm_crtc_send_vblank_event(crtc, event);
 		spin_unlock_irq(&crtc->dev->event_lock);
 	}
-
 }
 
 static const struct drm_crtc_helper_funcs dss_crtc_helper_funcs = {
@@ -797,15 +795,15 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	np = of_find_compatible_node(NULL, NULL, DTS_COMP_DSS_NAME);
 	if (!np) {
 		DRM_ERROR("NOT FOUND device node %s!\n",
-			DTS_COMP_DSS_NAME);
+			  DTS_COMP_DSS_NAME);
 		return -ENXIO;
 	}
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	ret = of_property_read_u32(np, "dss_version_tag", &dss_version_tag);
-	if (ret) {
+	if (ret)
 		DRM_ERROR("failed to get dss_version_tag.\n");
-	}
+
 	ctx->g_dss_version_tag = dss_version_tag;
 	DRM_INFO("dss_version_tag=0x%x.\n", ctx->g_dss_version_tag);
 #else
@@ -815,52 +813,52 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 
 	ctx->base = of_iomap(np, 0);
 	if (!(ctx->base)) {
-		DRM_ERROR ("failed to get dss base resource.\n");
+		DRM_ERROR("failed to get dss base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->peri_crg_base  = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
-		DRM_ERROR ("failed to get dss peri_crg_base resource.\n");
+		DRM_ERROR("failed to get dss peri_crg_base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->sctrl_base  = of_iomap(np, 2);
 	if (!(ctx->sctrl_base)) {
-		DRM_ERROR ("failed to get dss sctrl_base resource.\n");
+		DRM_ERROR("failed to get dss sctrl_base resource.\n");
 		return -ENXIO;
 	}
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		ctx->pctrl_base = of_iomap(np, 3);
 		if (!(ctx->pctrl_base)) {
-			DRM_ERROR ("failed to get dss pctrl_base resource.\n");
+			DRM_ERROR("failed to get dss pctrl_base resource.\n");
 			return -ENXIO;
 		}
 	} else {
 		ctx->pmc_base = of_iomap(np, 3);
 		if (!(ctx->pmc_base)) {
-			DRM_ERROR ("failed to get dss pmc_base resource.\n");
+			DRM_ERROR("failed to get dss pmc_base resource.\n");
 			return -ENXIO;
 		}
 	}
 
 	ctx->noc_dss_base = of_iomap(np, 4);
 	if (!(ctx->noc_dss_base)) {
-		DRM_ERROR ("failed to get noc_dss_base resource.\n");
+		DRM_ERROR("failed to get noc_dss_base resource.\n");
 		return -ENXIO;
 	}
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	ctx->pmctrl_base = of_iomap(np, 5);
 	if (!(ctx->pmctrl_base)) {
-		DRM_ERROR ("failed to get dss pmctrl_base resource.\n");
+		DRM_ERROR("failed to get dss pmctrl_base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->media_crg_base = of_iomap(np, 6);
 	if (!(ctx->media_crg_base)) {
-		DRM_ERROR ("failed to get dss media_crg_base resource.\n");
+		DRM_ERROR("failed to get dss media_crg_base resource.\n");
 		return -ENXIO;
 	}
 #endif
@@ -872,9 +870,9 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		return -ENXIO;
 	}
 
-	DRM_INFO("dss irq = %d. \n", ctx->irq);
+	DRM_INFO("dss irq = %d.\n", ctx->irq);
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
 	if (!ctx->dpe_regulator) {
 		DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
@@ -903,19 +901,19 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	ctx->dss_pri_clk = devm_clk_get(dev, "clk_edc0");
 	if (!ctx->dss_pri_clk) {
 		DRM_ERROR("failed to parse dss_pri_clk\n");
-	    return -ENODEV;
+	return -ENODEV;
 	}
 
 	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
 		ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_07V_RATE);
 		if (ret < 0) {
 			DRM_ERROR("dss_pri_clk clk_set_rate(%lu) failed, error=%d!\n",
-				DEFAULT_DSS_CORE_CLK_07V_RATE, ret);
+				  DEFAULT_DSS_CORE_CLK_07V_RATE, ret);
 			return -EINVAL;
 		}
 
 		DRM_INFO("dss_pri_clk:[%lu]->[%llu].\n",
-			DEFAULT_DSS_CORE_CLK_07V_RATE, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+			 DEFAULT_DSS_CORE_CLK_07V_RATE, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
 	}
 
 	ctx->dss_pxl0_clk = devm_clk_get(dev, "clk_ldi0");
@@ -928,12 +926,12 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		ret = clk_set_rate(ctx->dss_pxl0_clk, DSS_MAX_PXL0_CLK_144M);
 		if (ret < 0) {
 			DRM_ERROR("dss_pxl0_clk clk_set_rate(%lu) failed, error=%d!\n",
-				DSS_MAX_PXL0_CLK_144M, ret);
+				  DSS_MAX_PXL0_CLK_144M, ret);
 			return -EINVAL;
 		}
 
 		DRM_INFO("dss_pxl0_clk:[%lu]->[%llu].\n",
-			DSS_MAX_PXL0_CLK_144M, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
+			 DSS_MAX_PXL0_CLK_144M, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 	}
 
 	/* regulator enable */
