@@ -16,7 +16,7 @@
 #ifndef KIRIN_DRM_DPE_UTILS_H
 #define KIRIN_DRM_DPE_UTILS_H
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
 #include "kirin960_dpe_reg.h"
@@ -24,7 +24,7 @@
 #include "kirin9xx_drm_drv.h"
 
 void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs);
-uint32_t set_bits32(uint32_t old_val, uint32_t val, uint8_t bw, uint8_t bs);
+u32 set_bits32(u32 old_val, uint32_t val, uint8_t bw, uint8_t bs);
 
 void init_dbuf(struct dss_crtc *acrtc);
 void init_dpp(struct dss_crtc *acrtc);

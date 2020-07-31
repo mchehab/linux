@@ -31,16 +31,15 @@
 #include <drm/drm_panel.h>
 #include <drm/drm_probe_helper.h>
 
-
 #include "kirin9xx_dw_dsi_reg.h"
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 #include "kirin970_dpe_reg.h"
 #else
 #include "kirin960_dpe_reg.h"
 #endif
 #include "kirin9xx_drm_drv.h"
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 #define DTS_COMP_DSI_NAME "hisilicon,kirin970-dsi"
 #else
 #define DTS_COMP_DSI_NAME "hisilicon,kirin960-dsi"
@@ -123,18 +122,18 @@ struct mipi_phy_params {
 	u32 load_command;
 
 	// for CDPHY
-	uint32_t rg_cphy_div;	//Q
-	uint32_t rg_div;		//M 0x4A[7:0]
-	uint32_t rg_pre_div;	//N 0x49[0]
-	uint32_t rg_320m;		//0x48[2]
-	uint32_t rg_2p5g;		//0x48[1]
-	uint32_t rg_0p8v;		//0x48[0]
-	uint32_t rg_lpf_r;		//0x46[5:4]
-	uint32_t rg_cp;			//0x46[3:0]
-	uint32_t t_prepare;
-	uint32_t t_lpx;
-	uint32_t t_prebegin;
-	uint32_t t_post;
+	u32 rg_cphy_div;	//Q
+	u32 rg_div;		//M 0x4A[7:0]
+	u32 rg_pre_div;	//N 0x49[0]
+	u32 rg_320m;		//0x48[2]
+	u32 rg_2p5g;		//0x48[1]
+	u32 rg_0p8v;		//0x48[0]
+	u32 rg_lpf_r;		//0x46[5:4]
+	u32 rg_cp;			//0x46[3:0]
+	u32 t_prepare;
+	u32 t_lpx;
+	u32 t_prebegin;
+	u32 t_post;
 };
 
 struct dsi_hw_ctx {
@@ -208,9 +207,9 @@ struct ldi_panel_info {
 	u32 h_pulse_width;
 
 	/*
-	** note: vbp > 8 if used overlay compose,
-	** also lcd vbp > 8 in lcd power on sequence
-	*/
+	 * note: vbp > 8 if used overlay compose,
+	 * also lcd vbp > 8 in lcd power on sequence
+	 */
 	u32 v_back_porch;
 	u32 v_front_porch;
 	u32 v_pulse_width;
@@ -328,7 +327,7 @@ void dsi_set_output_client(struct drm_device *dev)
 }
 EXPORT_SYMBOL(dsi_set_output_client);
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 			      struct mipi_phy_params *phy_ctrl, u32 id)
 {
@@ -374,9 +373,9 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 		return;
 
 	if (mode->clock > 80000)
-	    dsi->client[id].lanes = 4;
+		dsi->client[id].lanes = 4;
 	else
-	    dsi->client[id].lanes = 3;
+		dsi->client[id].lanes = 3;
 
 	if (dsi->client[id].phy_clock)
 		dphy_req_kHz = dsi->client[id].phy_clock;
@@ -390,14 +389,15 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	//chip spec :
 	//If the output data rate is below 320 Mbps, RG_BNAD_SEL should be set to 1.
 	//At this mode a post divider of 1/4 will be applied to VCO.
-	if ((320 <= lane_clock) && (lane_clock <= 2500)) {
+	if ((lane_clock >= 320) && (lane_clock <= 2500)) {
 		phy_ctrl->rg_band_sel = 0;
 		vco_div = 1;
-	} else if ((80 <= lane_clock) && (lane_clock < 320)) {
+	} else if ((lane_clock >= 80) && (lane_clock < 320)) {
 		phy_ctrl->rg_band_sel = 1;
 		vco_div = 4;
 	} else {
-		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M.\n", lane_clock);
+		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M.\n",
+			  lane_clock);
 	}
 
 	m_n_int = lane_clock * vco_div * 1000000UL / DEFAULT_MIPI_CLK_RATE;
@@ -408,13 +408,13 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	m_pll = (u32)(lane_clock * vco_div * n_pll * 1000000UL / DEFAULT_MIPI_CLK_RATE);
 
 	lane_clock = m_pll * (DEFAULT_MIPI_CLK_RATE / n_pll) / vco_div;
-	if (lane_clock > 750000000) {
+	if (lane_clock > 750000000)
 		phy_ctrl->rg_cp = 3;
-	} else if ((80000000 <= lane_clock) && (lane_clock <= 750000000)) {
+	else if ((lane_clock >= 80000000) && (lane_clock <= 750000000))
 		phy_ctrl->rg_cp = 1;
-	} else {
-		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M.\n", lane_clock);
-	}
+	else
+		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M.\n",
+			  lane_clock);
 
 	//chip spec :
 	phy_ctrl->rg_pre_div = n_pll - 1;
@@ -463,7 +463,7 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 
 	// D-PHY Specification : 40ns + 4*UI <= data_t_hs_prepare <= 85ns + 6*UI
 	// clocked by TXBYTECLKHS
-	data_t_hs_prepare = 400 * accuracy + 4*ui;
+	data_t_hs_prepare = 400 * accuracy + 4 * ui;
 	// D-PHY chip spec : clk_t_lpx + clk_t_hs_prepare > 200ns
 	// D-PHY Specification : clk_t_lpx >= 50ns
 	// clocked by TXBYTECLKHS
@@ -497,7 +497,7 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 
 	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + ROUND1(clk_post, unit_tx_byte_clk_hs);
 	phy_ctrl->data_pre_delay = phy_ctrl->clk_pre_delay + 2 + phy_ctrl->clk_t_lpx +
-		phy_ctrl->clk_t_hs_prepare + phy_ctrl->clk_t_hs_zero + 8 + ROUND1(clk_pre, unit_tx_byte_clk_hs) ;
+		phy_ctrl->clk_t_hs_prepare + phy_ctrl->clk_t_hs_zero + 8 + ROUND1(clk_pre, unit_tx_byte_clk_hs);
 
 	phy_ctrl->clk_lane_lp2hs_time = phy_ctrl->clk_pre_delay + phy_ctrl->clk_t_lpx + phy_ctrl->clk_t_hs_prepare +
 		phy_ctrl->clk_t_hs_zero + 5 + 7;
@@ -514,7 +514,7 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 		(uint32_t)(phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk + 1) :
 		(uint32_t)(phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk);
 
-	DRM_DEBUG("DPHY clock_lane and data_lane config : \n"
+	DRM_DEBUG("DPHY clock_lane and data_lane config :\n"
 		"lane_clock = %llu, n_pll=%d, m_pll=%d\n"
 		"rg_cp=%d\n"
 		"rg_band_sel=%d\n"
@@ -608,10 +608,12 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	bpp = mipi_dsi_pixel_format_to_bpp(dsi->client[id].format);
 	if (bpp < 0)
 		return;
+
 	if (mode->clock > 80000)
-	    dsi->client[id].lanes = 4;
+		dsi->client[id].lanes = 4;
 	else
-	    dsi->client[id].lanes = 3;
+		dsi->client[id].lanes = 3;
+
 	if (dsi->client[id].phy_clock)
 		dphy_req_kHz = dsi->client[id].phy_clock;
 	else
@@ -621,20 +623,22 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	DRM_INFO("Expected : lane_clock = %llu M\n", lane_clock);
 
 	/************************  PLL parameters config  *********************/
-	/*chip spec :
-		If the output data rate is below 320 Mbps,
-		RG_BNAD_SEL should be set to 1.
-		At this mode a post divider of 1/4 will be applied to VCO.
-	*/
-	if ((320 <= lane_clock) && (lane_clock <= 2500)) {
+
+	/*
+	 * chip spec :
+	 *	If the output data rate is below 320 Mbps,
+	 *	RG_BNAD_SEL should be set to 1.
+	 *	At this mode a post divider of 1/4 will be applied to VCO.
+	 */
+	if ((lane_clock >= 320) && (lane_clock <= 2500)) {
 		phy_ctrl->rg_band_sel = 0;	/*0x1E[2]*/
 		vco_div = 1;
-	} else if ((80 <= lane_clock) && (lane_clock < 320)) {
+	} else if ((lane_clock >= 80) && (lane_clock < 320)) {
 		phy_ctrl->rg_band_sel = 1;
 		vco_div = 4;
 	} else {
 		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M\n",
-			lane_clock);
+			  lane_clock);
 	}
 
 	m_n_int = lane_clock * vco_div * 1000000UL / DEFAULT_MIPI_CLK_RATE;
@@ -824,7 +828,7 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 
 	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + ROUND1(clk_post, unit_tx_byte_clk_hs);
 	phy_ctrl->data_pre_delay = clk_pre_delay_reality + phy_ctrl->clk_t_lpx +
-		phy_ctrl->clk_t_hs_prepare + clk_t_hs_zero_reality + ROUND1(clk_pre, unit_tx_byte_clk_hs) ;
+		phy_ctrl->clk_t_hs_prepare + clk_t_hs_zero_reality + ROUND1(clk_pre, unit_tx_byte_clk_hs);
 
 	clk_post_delay_reality = phy_ctrl->clk_post_delay + 4;
 	data_pre_delay_reality = phy_ctrl->data_pre_delay + 2;
@@ -844,7 +848,7 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 		(phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk + 1) :
 		(phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk);
 
-	DRM_DEBUG("PHY clock_lane and data_lane config : \n"
+	DRM_DEBUG("PHY clock_lane and data_lane config :\n"
 		"rg_vrefsel_vcm=%u\n"
 		"clk_pre_delay=%u\n"
 		"clk_post_delay=%u\n"
@@ -949,8 +953,8 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi,
 					       char __iomem *mipi_dsi_base,
 					       u32 id)
 {
-	uint32_t i;
-	uint32_t addr = 0;
+	u32 i;
+	u32 addr = 0;
 	u32 lanes;
 
 	lanes =  dsi->client[id].lanes - 1;
@@ -979,7 +983,7 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi,
 	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_TRAIL, DSS_REDUCE(dsi->phy.clk_t_hs_trial));
 
 	for (i = 0; i <= 4; i++) {
-		if (lanes == 2 && i == 1) /*init mipi dsi 3 lanes shoud skip lane3*/
+		if (lanes == 2 && i == 1) /*init mipi dsi 3 lanes should skip lane3*/
 			i++;
 
 		if (i == 2) /* skip clock lane*/
@@ -1009,7 +1013,7 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi,
 		addr = MIPIDSI_PHY_TST_DATA_TRAIL + (i << 5);
 		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_t_hs_trial));
 
-		DRM_DEBUG("DPHY spec1v2 config : \n"
+		DRM_DEBUG("DPHY spec1v2 config :\n"
 			"addr=0x%x\n"
 			"clk_pre_delay=%u\n"
 			"clk_t_hs_trial=%u\n"
@@ -1039,15 +1043,14 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	dss_rect_t rect;
 	u32 cmp_stopstate_val = 0;
 	u32 lanes;
-#if !defined (CONFIG_DRM_HISI_KIRIN970)
+#if !defined(CONFIG_DRM_HISI_KIRIN970)
 	int i = 0;
 #endif
 
 	WARN_ON(!dsi);
 	WARN_ON(!mipi_dsi_base);
 
-	DRM_INFO("dsi_mipi_init, id=%d\n", id);
-
+	DRM_INFO("%s: id=%d\n", __func__, id);
 
 	mipi = &dsi->mipi;
 
@@ -1058,7 +1061,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	memset(&dsi->phy, 0, sizeof(struct mipi_phy_params));
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	get_dsi_dphy_ctrl(dsi, &dsi->phy, id);
 #else
 	get_dsi_phy_ctrl(dsi, &dsi->phy, id);
@@ -1081,7 +1084,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000001);
 	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000000);
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	dsi_phy_tst_set(mipi_dsi_base, 0x0042, 0x21);
 	//PLL configuration I
 	dsi_phy_tst_set(mipi_dsi_base, 0x0046, dsi->phy.rg_cp + (dsi->phy.rg_lpf_r << 4));
@@ -1113,7 +1116,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 #else
 	/* physical configuration PLL I*/
 	dsi_phy_tst_set(mipi_dsi_base, 0x14,
-		(dsi->phy.rg_pll_fbd_s << 4) + (dsi->phy.rg_pll_enswc << 3) +
+			(dsi->phy.rg_pll_fbd_s << 4) + (dsi->phy.rg_pll_enswc << 3) +
 		(dsi->phy.rg_pll_enbwt << 2) + dsi->phy.rg_pll_chp);
 
 	/* physical configuration PLL II, M*/
@@ -1121,7 +1124,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	/* physical configuration PLL III*/
 	dsi_phy_tst_set(mipi_dsi_base, 0x16,
-		(dsi->phy.rg_pll_cp << 5) + (dsi->phy.rg_pll_lpf_cs << 4) +
+			(dsi->phy.rg_pll_cp << 5) + (dsi->phy.rg_pll_lpf_cs << 4) +
 		dsi->phy.rg_pll_refsel);
 
 	/* physical configuration PLL IV, N*/
@@ -1132,7 +1135,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	/* MISC AFE Configuration*/
 	dsi_phy_tst_set(mipi_dsi_base, 0x1E,
-		(dsi->phy.rg_pll_cp_p << 5) + (dsi->phy.reload_sel << 4) +
+			(dsi->phy.rg_pll_cp_p << 5) + (dsi->phy.reload_sel << 4) +
 		(dsi->phy.rg_phase_gen_en << 3) + (dsi->phy.rg_band_sel << 2) +
 		(dsi->phy.pll_power_down << 1) + dsi->phy.pll_register_override);
 
@@ -1205,7 +1208,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	if (!is_ready) {
 		DRM_INFO("phylock is not ready!MIPIDSI_PHY_STATUS_OFFSET=0x%x.\n",
-			tmp);
+			 tmp);
 	}
 
 	if (lanes >= DSI_4_LANES)
@@ -1229,19 +1232,20 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	if (!is_ready) {
 		DRM_INFO("phystopstateclklane is not ready! MIPIDSI_PHY_STATUS_OFFSET=0x%x.\n",
-			tmp);
+			 tmp);
 	}
 
 	/*************************Configure the DPHY end*************************/
 
-	/* phy_stop_wait_time*/
+	/* phy_stop_wait_time */
 	set_reg(mipi_dsi_base + MIPIDSI_PHY_IF_CFG_OFFSET, dsi->phy.phy_stop_wait_time, 8, 8);
 
 	/*--------------configuring the DPI packet transmission----------------*/
+
 	/*
-	** 2. Configure the DPI Interface:
-	** This defines how the DPI interface interacts with the controller.
-	*/
+	 * 2. Configure the DPI Interface:
+	 * This defines how the DPI interface interacts with the controller.
+	 */
 	set_reg(mipi_dsi_base + MIPIDSI_DPI_VCID_OFFSET, mipi->vc, 2, 0);
 	set_reg(mipi_dsi_base + MIPIDSI_DPI_COLOR_CODING_OFFSET, mipi->color_mode, 4, 0);
 
@@ -1252,10 +1256,10 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	set_reg(mipi_dsi_base + MIPIDSI_DPI_CFG_POL_OFFSET, 0x0, 1, 4);
 
 	/*
-	** 3. Select the Video Transmission Mode:
-	** This defines how the processor requires the video line to be
-	** transported through the DSI link.
-	*/
+	 * 3. Select the Video Transmission Mode:
+	 * This defines how the processor requires the video line to be
+	 * transported through the DSI link.
+	 */
 	/* video mode: low power mode*/
 	set_reg(mipi_dsi_base + MIPIDSI_VID_MODE_CFG_OFFSET, 0x3f, 6, 8);
 	/* set_reg(mipi_dsi_base + MIPIDSI_VID_MODE_CFG_OFFSET, 0x0, 1, 14); */
@@ -1273,12 +1277,12 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	set_reg(mipi_dsi_base + MIPIDSI_PCKHDL_CFG_OFFSET, 0x1, 1, 2);
 
 	/*
-	** 4. Define the DPI Horizontal timing configuration:
-	**
-	** Hsa_time = HSA*(PCLK period/Clk Lane Byte Period);
-	** Hbp_time = HBP*(PCLK period/Clk Lane Byte Period);
-	** Hline_time = (HSA+HBP+HACT+HFP)*(PCLK period/Clk Lane Byte Period);
-	*/
+	 * 4. Define the DPI Horizontal timing configuration:
+	 *
+	 * Hsa_time = HSA*(PCLK period/Clk Lane Byte Period);
+	 * Hbp_time = HBP*(PCLK period/Clk Lane Byte Period);
+	 * Hline_time = (HSA+HBP+HACT+HFP)*(PCLK period/Clk Lane Byte Period);
+	 */
 	pixel_clk = dsi->cur_mode.clock * 1000;
 	/*htot = dsi->cur_mode.htotal;*/
 	/*vtot = dsi->cur_mode.vtotal;*/
@@ -1298,29 +1302,39 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 		rect.w + dsi->ldi.h_front_porch) * dsi->phy.lane_byte_clk, pixel_clk);
 
 	DRM_INFO("hsa_time=%d, hbp_time=%d, hline_time=%d\n",
-	    hsa_time, hbp_time, hline_time);
+		 hsa_time, hbp_time, hline_time);
 	DRM_INFO("lane_byte_clk=%llu, pixel_clk=%llu\n",
-	    dsi->phy.lane_byte_clk, pixel_clk);
+		 dsi->phy.lane_byte_clk, pixel_clk);
 	set_reg(mipi_dsi_base + MIPIDSI_VID_HSA_TIME_OFFSET, hsa_time, 12, 0);
 	set_reg(mipi_dsi_base + MIPIDSI_VID_HBP_TIME_OFFSET, hbp_time, 12, 0);
 	set_reg(mipi_dsi_base + MIPIDSI_VID_HLINE_TIME_OFFSET, hline_time, 15, 0);
 
 	/* Define the Vertical line configuration*/
-	set_reg(mipi_dsi_base + MIPIDSI_VID_VSA_LINES_OFFSET, dsi->ldi.v_pulse_width, 10, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_VID_VBP_LINES_OFFSET, dsi->ldi.v_back_porch, 10, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_VID_VFP_LINES_OFFSET, dsi->ldi.v_front_porch, 10, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_VID_VACTIVE_LINES_OFFSET, rect.h, 14, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_TO_CNT_CFG_OFFSET, 0x7FF, 16, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_VID_VSA_LINES_OFFSET,
+		dsi->ldi.v_pulse_width, 10, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_VID_VBP_LINES_OFFSET,
+		dsi->ldi.v_back_porch, 10, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_VID_VFP_LINES_OFFSET,
+		dsi->ldi.v_front_porch, 10, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_VID_VACTIVE_LINES_OFFSET,
+		rect.h, 14, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_TO_CNT_CFG_OFFSET,
+		0x7FF, 16, 0);
 
 	/* Configure core's phy parameters*/
-	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_LPCLK_CFG_OFFSET, dsi->phy.clk_lane_lp2hs_time, 10, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_LPCLK_CFG_OFFSET, dsi->phy.clk_lane_hs2lp_time, 10, 16);
+	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_LPCLK_CFG_OFFSET,
+		dsi->phy.clk_lane_lp2hs_time, 10, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_LPCLK_CFG_OFFSET,
+		dsi->phy.clk_lane_hs2lp_time, 10, 16);
 
-	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_RD_CFG_OFFSET, 0x7FFF, 15, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET, dsi->phy.data_lane_lp2hs_time, 10, 0);
-	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET, dsi->phy.data_lane_hs2lp_time, 10, 16);
+	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_RD_CFG_OFFSET,
+		0x7FFF, 15, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET,
+		dsi->phy.data_lane_lp2hs_time, 10, 0);
+	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET,
+		dsi->phy.data_lane_hs2lp_time, 10, 16);
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	//16~19bit:pclk_en, pclk_sel, dpipclk_en, dpipclk_sel
 	set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, 0x5, 4, 16);
 	//0:dphy
@@ -1368,7 +1382,7 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	dsi_mipi_init(dsi, mipi_dsi_base, id);
 
 	/* dsi memory init */
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	outp32(mipi_dsi_base + DSI_MEM_CTRL, 0x02600008);
 #endif
 
@@ -1388,6 +1402,7 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 {
 	u64 pctrl_dphytx_stopcnt = 0;
+
 	WARN_ON(!mipi_dsi_base);
 
 	/* switch to video mode */
@@ -1458,7 +1473,7 @@ static void dsi_encoder_enable(struct drm_encoder *encoder)
 }
 
 static enum drm_mode_status dsi_encoder_mode_valid(struct drm_encoder *encoder,
-					const struct drm_display_mode *mode)
+						   const struct drm_display_mode *mode)
 
 {
 	const struct drm_crtc_helper_funcs *crtc_funcs;
@@ -1675,7 +1690,7 @@ static int dsi_dcs_long_write(void __iomem *base,
 }
 
 static ssize_t dsi_host_transfer(struct mipi_dsi_host *host,
-				    const struct mipi_dsi_msg *msg)
+				 const struct mipi_dsi_msg *msg)
 {
 	struct dw_dsi *dsi = host_to_dsi(host);
 	struct dsi_hw_ctx *ctx = dsi->ctx;
@@ -1718,12 +1733,12 @@ static int dsi_host_init(struct device *dev, struct dw_dsi *dsi)
 	mipi->vc = 0;
 	mipi->color_mode = DSI_24BITS_1;
 	mipi->clk_post_adjust = 120;
-	mipi->clk_pre_adjust= 0;
-	mipi->clk_t_hs_prepare_adjust= 0;
-	mipi->clk_t_lpx_adjust= 0;
-	mipi->clk_t_hs_trial_adjust= 0;
-	mipi->clk_t_hs_exit_adjust= 0;
-	mipi->clk_t_hs_zero_adjust= 0;
+	mipi->clk_pre_adjust = 0;
+	mipi->clk_t_hs_prepare_adjust = 0;
+	mipi->clk_t_lpx_adjust = 0;
+	mipi->clk_t_hs_trial_adjust = 0;
+	mipi->clk_t_hs_exit_adjust = 0;
+	mipi->clk_t_hs_zero_adjust = 0;
 
 	dsi->ldi.data_en_plr = 0;
 	dsi->ldi.vsync_plr = 0;
@@ -1762,7 +1777,7 @@ dsi_connector_best_encoder(struct drm_connector *connector)
 	return &dsi->encoder;
 }
 
-static struct drm_connector_helper_funcs dsi_connector_helper_funcs = {
+static const struct drm_connector_helper_funcs dsi_connector_helper_funcs = {
 	.get_modes = dsi_connector_get_modes,
 	.mode_valid = dsi_connector_mode_valid,
 	.best_encoder = dsi_connector_best_encoder,
@@ -1825,6 +1840,7 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 	DRM_INFO("connector init\n");
 	return 0;
 }
+
 static int dsi_bind(struct device *dev, struct device *master, void *data)
 {
 	struct dsi_data *ddata = dev_get_drvdata(dev);
@@ -1964,26 +1980,26 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	np = of_find_compatible_node(NULL, NULL, DTS_COMP_DSI_NAME);
 	if (!np) {
 		DRM_ERROR("NOT FOUND device node %s!\n",
-				   DTS_COMP_DSI_NAME);
+			  DTS_COMP_DSI_NAME);
 		return -ENXIO;
 	}
 
 	ctx->base = of_iomap(np, 0);
 	if (!(ctx->base)) {
-		DRM_ERROR ("failed to get dsi base resource.\n");
+		DRM_ERROR("failed to get dsi base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->peri_crg_base = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
-		DRM_ERROR ("failed to get peri_crg_base resource.\n");
+		DRM_ERROR("failed to get peri_crg_base resource.\n");
 		return -ENXIO;
 	}
 
-#if defined (CONFIG_DRM_HISI_KIRIN970)
+#if defined(CONFIG_DRM_HISI_KIRIN970)
 	ctx->pctrl_base = of_iomap(np, 2);
 	if (!(ctx->pctrl_base)) {
-		DRM_ERROR ("failed to get dss pctrl_base resource.\n");
+		DRM_ERROR("failed to get dss pctrl_base resource.\n");
 		return -ENXIO;
 	}
 #endif
@@ -1996,7 +2012,7 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	dsi->cur_client = OUT_PANEL;
 	dsi->attached_client = dsi->cur_client;
 
-	DRM_INFO("dsi  cur_client is %d  <0->hdmi;1->panel> \n", dsi->cur_client);
+	DRM_INFO("dsi  cur_client is %d  <0->hdmi;1->panel>\n", dsi->cur_client);
 	/*dis-reset*/
 	/*ip_reset_dis_dsi0, ip_reset_dis_dsi1*/
 	outp32(ctx->peri_crg_base + PERRSTDIS3, 0x30000000);
@@ -2010,12 +2026,12 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	ret = clk_set_rate(ctx->dss_dphy0_ref_clk, DEFAULT_MIPI_CLK_RATE);
 	if (ret < 0) {
 		DRM_ERROR("dss_dphy0_ref_clk clk_set_rate(%lu) failed, error=%d!\n",
-			DEFAULT_MIPI_CLK_RATE, ret);
+			  DEFAULT_MIPI_CLK_RATE, ret);
 		return -EINVAL;
 	}
 
 	DRM_DEBUG("dss_dphy0_ref_clk:[%lu]->[%lu].\n",
-		DEFAULT_MIPI_CLK_RATE, clk_get_rate(ctx->dss_dphy0_ref_clk));
+		  DEFAULT_MIPI_CLK_RATE, clk_get_rate(ctx->dss_dphy0_ref_clk));
 
 	ctx->dss_dphy0_cfg_clk = devm_clk_get(&pdev->dev, "clk_txdphy0_cfg");
 	if (IS_ERR(ctx->dss_dphy0_cfg_clk)) {
@@ -2026,12 +2042,12 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	ret = clk_set_rate(ctx->dss_dphy0_cfg_clk, DEFAULT_MIPI_CLK_RATE);
 	if (ret < 0) {
 		DRM_ERROR("dss_dphy0_cfg_clk clk_set_rate(%lu) failed, error=%d!\n",
-			DEFAULT_MIPI_CLK_RATE, ret);
+			  DEFAULT_MIPI_CLK_RATE, ret);
 		return -EINVAL;
 	}
 
 	DRM_DEBUG("dss_dphy0_cfg_clk:[%lu]->[%lu].\n",
-		DEFAULT_MIPI_CLK_RATE, clk_get_rate(ctx->dss_dphy0_cfg_clk));
+		  DEFAULT_MIPI_CLK_RATE, clk_get_rate(ctx->dss_dphy0_cfg_clk));
 
 	ctx->dss_pclk_dsi0_clk = devm_clk_get(&pdev->dev, "pclk_dsi0");
 	if (IS_ERR(ctx->dss_pclk_dsi0_clk)) {

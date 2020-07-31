@@ -48,9 +48,9 @@ struct kirin_fbdev {
 };
 
 extern const struct kirin_dc_ops dss_dc_ops;
-extern void dsi_set_output_client(struct drm_device *dev);
+void dsi_set_output_client(struct drm_device *dev);
 
 struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
-		struct drm_mode_fb_cmd2 *mode_cmd);
+					       struct drm_mode_fb_cmd2 *mode_cmd);
 
 #endif /* __KIRIN_DRM_DRV_H__ */

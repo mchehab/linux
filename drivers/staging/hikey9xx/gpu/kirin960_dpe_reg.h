@@ -28,11 +28,11 @@
 #include <drm/drm_plane.h>
 #include <drm/drm_crtc.h>
 
-#define FB_ACCEL_HI62xx 	0x1
-#define FB_ACCEL_HI363x 	0x2
-#define FB_ACCEL_HI365x 	0x4
-#define FB_ACCEL_HI625x 	0x8
-#define FB_ACCEL_HI366x 	0x10
+#define FB_ACCEL_HI62xx	0x1
+#define FB_ACCEL_HI363x	0x2
+#define FB_ACCEL_HI365x	0x4
+#define FB_ACCEL_HI625x	0x8
+#define FB_ACCEL_HI366x	0x10
 #define FB_ACCEL_KIRIN970_ES  0x20
 #define FB_ACCEL_KIRIN970  0x40
 #define FB_ACCEL_KIRIN660  0x80
@@ -40,9 +40,9 @@
 #define FB_ACCEL_KIRIN980  0x200
 #define FB_ACCEL_PLATFORM_TYPE_FPGA     0x10000000   //FPGA
 #define FB_ACCEL_PLATFORM_TYPE_ASIC     0x20000000   //ASIC
-/*******************************************************************************
-**
-*/
+
+/******************************************************************************/
+
 enum dss_chn_idx {
 	DSS_RCHN_NONE = -1,
 	DSS_RCHN_D2 = 0,
@@ -104,32 +104,32 @@ enum dss_ovl_idx {
 #define DSS_WCH_MAX  (2)
 
 typedef struct dss_img {
-	uint32_t format;
-	uint32_t width;
-	uint32_t height;
-	uint32_t bpp;		/* bytes per pixel */
-	uint32_t buf_size;
-	uint32_t stride;
-	uint32_t stride_plane1;
-	uint32_t stride_plane2;
-	uint64_t phy_addr;
-	uint64_t vir_addr;
-	uint32_t offset_plane1;
-	uint32_t offset_plane2;
+	u32 format;
+	u32 width;
+	u32 height;
+	u32 bpp;		/* bytes per pixel */
+	u32 buf_size;
+	u32 stride;
+	u32 stride_plane1;
+	u32 stride_plane2;
+	u64 phy_addr;
+	u64 vir_addr;
+	u32 offset_plane1;
+	u32 offset_plane2;
 
-	uint64_t afbc_header_addr;
-	uint64_t afbc_payload_addr;
-	uint32_t afbc_header_stride;
-	uint32_t afbc_payload_stride;
-	uint32_t afbc_scramble_mode;
-	uint32_t mmbuf_base;
-	uint32_t mmbuf_size;
+	u64 afbc_header_addr;
+	u64 afbc_payload_addr;
+	u32 afbc_header_stride;
+	u32 afbc_payload_stride;
+	u32 afbc_scramble_mode;
+	u32 mmbuf_base;
+	u32 mmbuf_size;
 
-	uint32_t mmu_enable;
-	uint32_t csc_mode;
-	uint32_t secure_mode;
-	int32_t shared_fd;
-	uint32_t reserved0;
+	u32 mmu_enable;
+	u32 csc_mode;
+	u32 secure_mode;
+	s32 shared_fd;
+	u32 reserved0;
 } dss_img_t;
 
 typedef struct drm_dss_layer {
@@ -137,20 +137,18 @@ typedef struct drm_dss_layer {
 	dss_rect_t src_rect;
 	dss_rect_t src_rect_mask;
 	dss_rect_t dst_rect;
-	uint32_t transform;
-	int32_t blending;
-	uint32_t glb_alpha;
-	uint32_t color;		/* background color or dim color */
-	int32_t layer_idx;
-	int32_t chn_idx;
-	uint32_t need_cap;
-	int32_t acquire_fence;
+	u32 transform;
+	s32 blending;
+	u32 glb_alpha;
+	u32 color;		/* background color or dim color */
+	s32 layer_idx;
+	s32 chn_idx;
+	u32 need_cap;
+	s32 acquire_fence;
 } drm_dss_layer_t;
 
+/******************************************************************************/
 
-/*******************************************************************************
-**
-*/
 #define DEFAULT_MIPI_CLK_RATE	(192 * 100000L)
 #define DEFAULT_PCLK_DSI_RATE	(120 * 1000000L)
 
@@ -178,9 +176,8 @@ typedef struct drm_dss_layer {
 #define GPIO_PG_SEL_B (76)
 #define GPIO_TX_RX_B (78)
 
-/*******************************************************************************
- **
- */
+/******************************************************************************/
+
 #define CRGPERI_PLL0_CLK_RATE	(1600000000UL)
 #define CRGPERI_PLL2_CLK_RATE	(960000000UL)
 #define CRGPERI_PLL3_CLK_RATE	(1600000000UL)
@@ -195,10 +192,10 @@ typedef struct drm_dss_layer {
 #define DSS_MAX_PXL0_CLK_288M (288000000UL)
 
 /*dss clk power off */
-#define DEFAULT_DSS_CORE_CLK_RATE_POWER_OFF   	(277000000UL)
-#define DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF    	(277000000UL)
-#define DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF 	(238000000UL)
-#define DEFAULT_DSS_PXL1_CLK_RATE_POWER_OFF 	(238000000UL)
+#define DEFAULT_DSS_CORE_CLK_RATE_POWER_OFF	(277000000UL)
+#define DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF	(277000000UL)
+#define DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF	(238000000UL)
+#define DEFAULT_DSS_PXL1_CLK_RATE_POWER_OFF	(238000000UL)
 
 #define MMBUF_SIZE_MAX	(288 * 1024)
 #define HISI_DSS_CMDLIST_MAX	(16)
@@ -234,7 +231,7 @@ typedef struct drm_dss_layer {
 #define DEFAULT_ACLK_DPCTRL_RATE_CS	207000000UL
 #define DEFAULT_MIDIA_PPLL7_CLOCK_FREQ	1782000000UL
 
-#define KIRIN970_VCO_MIN_FREQ_OUPUT         1000000 /*Boston: 1000 * 1000*/
+#define KIRIN970_VCO_MIN_FREQ_OUTPUT         1000000 /*Boston: 1000 * 1000*/
 #define KIRIN970_SYS_19M2   19200 /*Boston: 19.2f * 1000 */
 
 #define MIDIA_PPLL7_CTRL0	0x50c
@@ -249,7 +246,7 @@ typedef struct drm_dss_layer {
 
 /*
  * DSS Registers
-*/
+ */
 
 /* MACROS */
 #define DSS_WIDTH(width)	((width) - 1)
@@ -470,9 +467,7 @@ enum dss_rdma_idx {
 	DSS_RDMA_MAX,
 };
 
-/*******************************************************************************
- **
- */
+/*****************************************************************************/
 
 #define PEREN0	(0x000)
 #define PERDIS0	(0x004)
@@ -539,9 +534,8 @@ enum dss_rdma_idx {
 #define PCTRL_DPHYTX_CTRL1	BIT(1)
 #define PCTRL_DPHYTX_CTRL0	BIT(0)
 
-/*******************************************************************************
- **
- */
+/*****************************************************************************/
+
 #define BIT_DSS_GLB_INTS	BIT(30)
 #define BIT_MMU_IRPT_S	BIT(29)
 #define BIT_MMU_IRPT_NS	BIT(28)
@@ -706,8 +700,8 @@ enum dss_rdma_idx {
 #define BIT_CE_HIST1_RW_COLLIDE_IND	BIT(1)
 #define BIT_CE_HIST0_RW_COLLIDE_IND	BIT(0)
 
-/*******************************************************************************
- ** MODULE BASE ADDRESS
+/*
+ * MODULE BASE ADDRESS
  */
 
 #define DSS_MIPI_DSI0_OFFSET	(0x00001000)
@@ -884,8 +878,8 @@ enum dss_rdma_idx {
 #define DSS_DSC_OFFSET	(0x7DC00)
 #define DSS_LDI1_OFFSET	(0x7E000)
 
-/*******************************************************************************
- ** GLB
+/*
+ * GLB
  */
 #define GLB_DSS_TAG	 (DSS_GLB0_OFFSET + 0x0000)
 
@@ -947,8 +941,8 @@ enum dss_rdma_idx {
 #define GLB_DSS_MEM_CTRL	(DSS_GLB0_OFFSET + 0x0600)
 #define GLB_DSS_PM_CTRL	(DSS_GLB0_OFFSET + 0x0604)
 
-/*******************************************************************************
- ** DBG
+/*
+ * DBG
  */
 #define DBG_CRC_DBG_OV0	(0x0000)
 #define DBG_CRC_DBG_OV1	(0x0004)
@@ -991,8 +985,8 @@ enum dss_rdma_idx {
 #define DBG_RCH8_INTS	(0x02A4)
 #define DBG_RCH8_INT_MSK	(0x02A8)
 
-/*******************************************************************************
- ** CMDLIST
+/*
+ * CMDLIST
  */
 
 #define CMDLIST_CH0_PENDING_CLR	(0x0000)
@@ -1054,8 +1048,8 @@ enum dss_rdma_idx {
 #define BIT_CMDLIST_CH1_INTS	BIT(1)
 #define BIT_CMDLIST_CH0_INTS	BIT(0)
 
-/*******************************************************************************
- ** AIF
+/*
+ * AIF
  */
 #define AIF0_CH0_OFFSET	(DSS_VBIF0_AIF + 0x00)
 #define AIF0_CH0_ADD_OFFSET	(DSS_VBIF0_AIF + 0x04)
@@ -1178,8 +1172,8 @@ typedef struct dss_aif_bw {
 	u8 is_used;
 } dss_aif_bw_t;
 
-/*******************************************************************************
- ** MIF
+/*
+ * MIF
  */
 #define MIF_ENABLE	(0x0000)
 #define MIF_MEM_CTRL	(0x0004)
@@ -1227,8 +1221,8 @@ typedef struct dss_mif {
 } dss_mif_t;
 
 /*
- ** stretch blt, linear/tile, rotation, pixel format
- ** 0 0 000
+ * stretch blt, linear/tile, rotation, pixel format
+ * 0 0 000
  */
 enum dss_mmu_tlb_tag_org {
 	MMU_TLB_TAG_ORG_0x0 = 0x0,
@@ -1260,8 +1254,8 @@ enum dss_mmu_tlb_tag_org {
 	MMU_TLB_TAG_ORG_0x1F = 0x1F,
 };
 
-/*******************************************************************************
- **SMMU
+/*
+ * SMMU
  */
 #define SMMU_SCR	(0x0000)
 #define SMMU_MEMCTRL	(0x0004)
@@ -1383,8 +1377,8 @@ typedef struct dss_smmu {
 	u8 smmu_smrx_ns_used[DSS_CHN_MAX_DEFINE];
 } dss_smmu_t;
 
-/*******************************************************************************
- ** RDMA
+/*
+ * RDMA
  */
 
 #define DMA_OFT_X0	(0x0000)
@@ -1447,8 +1441,8 @@ typedef struct dss_smmu {
 #define CH_CLK_SEL	(0x00E0)
 #define CH_CLK_EN	(0x00E4)
 
-/*******************************************************************************
- ** DFC
+/*
+ * DFC
  */
 #define DFC_DISP_SIZE	(0x0000)
 #define DFC_PIX_IN_NUM	(0x0004)
@@ -1473,8 +1467,8 @@ typedef struct dss_dfc {
 	u32 padding_ctl;
 } dss_dfc_t;
 
-/*******************************************************************************
- ** SCF
+/*
+ * SCF
  */
 #define DSS_SCF_H0_Y_COEF_OFFSET	(0x0000)
 #define DSS_SCF_Y_COEF_OFFSET	(0x2000)
@@ -1506,7 +1500,7 @@ typedef struct dss_dfc {
 #define SCF_CLK_SEL	(0x00F8)
 #define SCF_CLK_EN	(0x00FC)
 #define WCH_SCF_COEF_MEM_CTRL (0x0218)
-#define WCH_SCF_LB_MEM_CTRL 	(0x290)
+#define WCH_SCF_LB_MEM_CTRL	(0x290)
 
 /* MACROS */
 #define SCF_MIN_INPUT	(16)
@@ -1514,7 +1508,7 @@ typedef struct dss_dfc {
 
 /* Threshold for SCF Stretch and SCF filter */
 #define RDMA_STRETCH_THRESHOLD	(2)
-#define SCF_INC_FACTOR	(1 << 18)
+#define SCF_INC_FACTOR	BIT(18)
 #define SCF_UPSCALE_MAX	(60)
 #define SCF_DOWNSCALE_MAX	  (60)
 #define SCF_EDGE_FACTOR (3)
@@ -1630,8 +1624,8 @@ typedef struct dss_arsr2p {
 	u32 ivbottom1;
 } dss_arsr2p_t;
 
-/*******************************************************************************
- ** POST_CLIP  v g
+/*
+ * POST_CLIP  v g
  */
 #define POST_CLIP_DISP_SIZE	(0x0000)
 #define POST_CLIP_CTL_HRZ	(0x0010)
@@ -1645,8 +1639,8 @@ typedef struct dss_post_clip {
 	u32 ctl_clip_en;
 } dss_post_clip_t;
 
-/*******************************************************************************
- ** PCSC v
+/*
+ * PCSC v
  */
 #define PCSC_IDC0	(0x0000)
 #define PCSC_IDC2	(0x0004)
@@ -1664,9 +1658,10 @@ typedef struct dss_pcsc {
 	u32 pcsc_idc0;
 } dss_pcsc_t;
 
-/*******************************************************************************
- ** CSC
+/*
+ * CSC
  */
+
 #define CSC_IDC0	(0x0000)
 #define CSC_IDC2	(0x0004)
 #define CSC_ODC0	(0x0008)
@@ -1693,19 +1688,19 @@ typedef struct dss_csc {
 	u32 mprec;
 } dss_csc_t;
 
-/*******************************************************************************
- **channel DEBUG
+/*
+ * channel DEBUG
  */
 #define CH_DEBUG_SEL (0x600)
 
-/*******************************************************************************
- ** VPP
+/*
+ * VPP
  */
 #define VPP_CTRL (0x700)
 #define VPP_MEM_CTRL (0x704)
 
-/*******************************************************************************
- **DMA BUF
+/*
+ * DMA BUF
  */
 #define DMA_BUF_CTRL	(0x800)
 #define DMA_BUF_SIZE  (0x850)
@@ -1733,15 +1728,15 @@ typedef struct dss_csc {
 #define AFBCD_MONITOR_REG2_OFFSET	(0x94C)
 #define AFBCD_MONITOR_REG3_OFFSET	(0x950)
 #define AFBCD_DEBUG_REG0_OFFSET	(0x954)
-#define AFBCD_CREG_FBCD_CTRL_MODE  	(0x960)
-#define AFBCD_HREG_HDR_PTR_L1 		(0x964)
-#define AFBCD_HREG_PLD_PTR_L1 		(0x968)
-#define AFBCD_HEADER_SRTIDE_1 		(0x96C)
-#define AFBCD_PAYLOAD_SRTIDE_1	 	(0x970)
-#define AFBCD_HREG_HDR_PTR_L1 		(0x964)
-#define AFBCD_HREG_PLD_PTR_L1 		(0x968)
-#define AFBCD_HEADER_SRTIDE_1 		(0x96C)
-#define AFBCD_PAYLOAD_SRTIDE_1 		(0x970)
+#define AFBCD_CREG_FBCD_CTRL_MODE	(0x960)
+#define AFBCD_HREG_HDR_PTR_L1		(0x964)
+#define AFBCD_HREG_PLD_PTR_L1		(0x968)
+#define AFBCD_HEADER_SRTIDE_1		(0x96C)
+#define AFBCD_PAYLOAD_SRTIDE_1		(0x970)
+#define AFBCD_HREG_HDR_PTR_L1		(0x964)
+#define AFBCD_HREG_PLD_PTR_L1		(0x968)
+#define AFBCD_HEADER_SRTIDE_1		(0x96C)
+#define AFBCD_PAYLOAD_SRTIDE_1		(0x970)
 #define AFBCD_BLOCK_TYPE				(0x974)
 #define AFBCD_MM_BASE_1				(0x978)
 #define AFBCD_MM_BASE_2				(0x97C)
@@ -1763,12 +1758,12 @@ typedef struct dss_csc {
 #define AFBCE_THRESHOLD	(0x92C)
 #define AFBCE_SCRAMBLE_MODE	(0x930)
 #define AFBCE_HEADER_POINTER_OFFSET	(0x934)
-#define AFBCE_CREG_FBCE_CTRL_MODE  	(0x950)
-#define AFBCE_HREG_HDR_PTR_L1 		(0x954)
-#define AFBCE_HREG_PLD_PTR_L1 		(0x958)
-#define AFBCE_HEADER_SRTIDE_1 			(0x95C)
-#define AFBCE_PAYLOAD_SRTIDE_1 		(0x960)
-#define AFBCE_MEM_CTRL_1 				(0x968)
+#define AFBCE_CREG_FBCE_CTRL_MODE	(0x950)
+#define AFBCE_HREG_HDR_PTR_L1		(0x954)
+#define AFBCE_HREG_PLD_PTR_L1		(0x958)
+#define AFBCE_HEADER_SRTIDE_1			(0x95C)
+#define AFBCE_PAYLOAD_SRTIDE_1		(0x960)
+#define AFBCE_MEM_CTRL_1				(0x968)
 #define FBCD_CREG_FBCD_CTRL_GATE		(0x98C)
 
 #define ROT_FIRST_LNS	(0x530)
@@ -1954,8 +1949,8 @@ typedef struct dss_wdma {
 	u8 rot_used;
 } dss_wdma_t;
 
-/*******************************************************************************
- ** MCTL  MUTEX0 1 2 3 4 5
+/*
+ * MCTL  MUTEX0 1 2 3 4 5
  */
 #define MCTL_CTL_EN	(0x0000)
 #define MCTL_CTL_MUTEX	(0x0004)
@@ -1990,8 +1985,8 @@ typedef struct dss_wdma {
 #define MCTL_CTL_CLK_EN	(0x0084)
 #define MCTL_CTL_DBG	(0x00E0)
 
-/*******************************************************************************
- ** MCTL  SYS
+/*
+ * MCTL  SYS
  */
 #define MCTL_CTL_SECU_CFG	(0x0000)
 #define MCTL_PAY_SECU_FLUSH_EN  (0x0018)
@@ -2157,8 +2152,8 @@ typedef struct dss_mctl_sys {
 	u8 wch_ov_sel_used[DSS_WCH_MAX];
 } dss_mctl_sys_t;
 
-/*******************************************************************************
- ** OVL
+/*
+ * OVL
  */
 #define OVL_SIZE	(0x0000)
 #define OVL_BG_COLOR	(0x4)
@@ -2320,45 +2315,45 @@ typedef struct dss_mctl_sys {
 #define OVL_6LAYER_NUM		(6)
 #define OVL_2LAYER_NUM		(2)
 
-/*******************************************************************************
-** OVL
-*/
+/*
+ * OVL
+ */
 #define OV_SIZE						(0x000)
-#define OV_BG_COLOR_RGB 			(0x004)
-#define OV_BG_COLOR_A 				(0x008)
-#define OV_DST_STARTPOS 			(0x00C)
-#define OV_DST_ENDPOS 				(0x010)
-#define OV_GCFG 					(0x014)
-#define OV_LAYER0_POS 				(0x030)
-#define OV_LAYER0_SIZE 				(0x034)
+#define OV_BG_COLOR_RGB			(0x004)
+#define OV_BG_COLOR_A				(0x008)
+#define OV_DST_STARTPOS			(0x00C)
+#define OV_DST_ENDPOS				(0x010)
+#define OV_GCFG					(0x014)
+#define OV_LAYER0_POS				(0x030)
+#define OV_LAYER0_SIZE				(0x034)
 #define OV_LAYER0_SRCLOKEY		(0x038)
-#define OV_LAYER0_SRCHIKEY 		(0x03C)
-#define OV_LAYER0_DSTLOKEY 		(0x040)
-#define OV_LAYER0_DSTHIKEY 		(0x044)
-#define OV_LAYER0_PATTERN_RGB 	(0x048)
-#define OV_LAYER0_PATTERN_A 		(0x04C)
-#define OV_LAYER0_ALPHA_MODE 		(0x050)
-#define OV_LAYER0_ALPHA_A 			(0x054)
-#define OV_LAYER0_CFG 				(0x058)
-#define OV_LAYER0_PSPOS 			(0x05C)
-#define OV_LAYER0_PEPOS 			(0x060)
-#define OV_LAYER0_INFO_ALPHA 		(0x064)
-#define OV_LAYER0_INFO_SRCCOLOR 	(0x068)
-#define OV_LAYER0_DBG_INFO 		(0x06C)
+#define OV_LAYER0_SRCHIKEY		(0x03C)
+#define OV_LAYER0_DSTLOKEY		(0x040)
+#define OV_LAYER0_DSTHIKEY		(0x044)
+#define OV_LAYER0_PATTERN_RGB	(0x048)
+#define OV_LAYER0_PATTERN_A		(0x04C)
+#define OV_LAYER0_ALPHA_MODE		(0x050)
+#define OV_LAYER0_ALPHA_A			(0x054)
+#define OV_LAYER0_CFG				(0x058)
+#define OV_LAYER0_PSPOS			(0x05C)
+#define OV_LAYER0_PEPOS			(0x060)
+#define OV_LAYER0_INFO_ALPHA		(0x064)
+#define OV_LAYER0_INFO_SRCCOLOR	(0x068)
+#define OV_LAYER0_DBG_INFO		(0x06C)
 #define OV8_BASE_DBG_INFO			(0x340)
 #define OV8_RD_SHADOW_SEL			(0x344)
 #define OV8_CLK_SEL					(0x348)
-#define OV8_CLK_EN 					(0x34C)
-#define OV8_BLOCK_SIZE 				(0x350)
-#define OV8_BLOCK_DBG 				(0x354)
-#define OV8_REG_DEFAULT 			(0x358)
+#define OV8_CLK_EN					(0x34C)
+#define OV8_BLOCK_SIZE				(0x350)
+#define OV8_BLOCK_DBG				(0x354)
+#define OV8_REG_DEFAULT			(0x358)
 #define OV2_BASE_DBG_INFO			(0x200)
 #define OV2_RD_SHADOW_SEL			(0x204)
 #define OV2_CLK_SEL					(0x208)
-#define OV2_CLK_EN 					(0x20C)
-#define OV2_BLOCK_SIZE 				(0x210)
-#define OV2_BLOCK_DBG 				(0x214)
-#define OV2_REG_DEFAULT 			(0x218)
+#define OV2_CLK_EN					(0x20C)
+#define OV2_BLOCK_SIZE				(0x210)
+#define OV2_BLOCK_DBG				(0x214)
+#define OV2_REG_DEFAULT			(0x218)
 
 #define OV_8LAYER_NUM				(8)
 typedef struct dss_ovl_layer {
@@ -2405,8 +2400,8 @@ typedef struct dss_ovl_alpha {
 	u32 fix_mode;
 } dss_ovl_alpha_t;
 
-/*******************************************************************************
- ** DBUF
+/*
+ * DBUF
  */
 #define DBUF_FRM_SIZE	(0x0000)
 #define DBUF_FRM_HSIZE	(0x0004)
@@ -2440,8 +2435,8 @@ typedef struct dss_ovl_alpha {
 #define DBUF_DFS_RAM_MANAGE  (0x00A8)
 #define DBUF_DFS_DATA_FILL_OUT  (0x00AC)
 
-/*******************************************************************************
- ** DPP
+/*
+ * DPP
  */
 #define DPP_RD_SHADOW_SEL	(0x000)
 #define DPP_DEFAULT	(0x004)
@@ -2576,11 +2571,11 @@ typedef struct dss_ovl_alpha {
 #define ACE_Y_EXT	(0x03C)
 #define ACE_U_EXT	(0x040)
 #define ACE_V_EXT	(0x044)
-#define ACE_Y_ATTENU 	(0x048)
+#define ACE_Y_ATTENU	(0x048)
 #define ACE_U_ATTENU	(0x04C)
 #define ACE_V_ATTENU	(0x050)
 #define ACE_ROTA	(0x054)
-#define ACE_ROTB 	(0x058)
+#define ACE_ROTB	(0x058)
 #define ACE_Y_CORE	(0x05C)
 #define ACE_U_CORE	(0x060)
 #define ACE_V_CORE	(0x064)
@@ -2683,8 +2678,8 @@ typedef struct dss_arsr1p {
 #define ARSR1P_LSC_CFG3		(0x080)
 #define ARSR1P_FORCE_CLK_ON_CFG		(0x084)
 
-/*******************************************************************************
- ** BIT EXT
+/*
+ * BIT EXT
  */
 #define BIT_EXT0_CTL (0x000)
 
@@ -2768,8 +2763,8 @@ typedef struct dss_arsr1p {
 #define HIACE_GAMMA_RAM_B_CFG_PM_CTRL (0x0144)
 #define HIACE_LHIST_RAM_CFG_PM_CTRL (0x0148)
 
-/*******************************************************************************
- ** IFBC
+/*
+ * IFBC
  */
 #define IFBC_SIZE	(0x0000)
 #define IFBC_CTRL	(0x0004)
@@ -2793,8 +2788,8 @@ typedef struct dss_arsr1p {
 #define IFBC_PAD	(0x004C)
 #define IFBC_REG_DEFAULT	(0x0050)
 
-/*******************************************************************************
- ** DSC
+/*
+ * DSC
  */
 #define DSC_VERSION	(0x0000)
 #define DSC_PPS_IDENTIFIER	(0x0004)
@@ -2844,8 +2839,8 @@ typedef struct dss_arsr1p {
 #define DSC_RD_SHADOW_SEL	(0x00B4)
 #define DSC_REG_DEFAULT	(0x00B8)
 
-/*******************************************************************************
- ** LDI
+/*
+ * LDI
  */
 #define LDI_DPI0_HRZ_CTRL0	(0x0000)
 #define LDI_DPI0_HRZ_CTRL1	(0x0004)
@@ -2902,8 +2897,8 @@ typedef struct dss_arsr1p {
 #define LDI_MODULE_CLK_SEL (0x0258)
 #define LDI_MODULE_CLK_EN (0x025C)
 
-/*******************************************************************************
- ** MIPI DSI
+/*
+ * MIPI DSI
  */
 #define MIPIDSI_VERSION_OFFSET	(0x0000)
 #define MIPIDSI_PWR_UP_OFFSET	(0x0004)
@@ -2986,8 +2981,8 @@ typedef struct dss_arsr1p {
 #define VID_VACTIVE_LINES_ACT	(0x0160)
 #define SDF_3D_ACT	(0x0190)
 
-/*******************************************************************************
- ** MMBUF
+/*
+ * MMBUF
  */
 #define SMC_LOCK	(0x0000)
 #define SMC_MEM_LP	(0x0004)
@@ -3094,12 +3089,12 @@ struct dss_hw_ctx {
 };
 
 typedef struct dss_clk_rate {
-	uint64_t dss_pri_clk_rate;
-	uint64_t dss_pclk_dss_rate;
-	uint64_t dss_pclk_pctrl_rate;
-	uint64_t dss_mmbuf_rate;
-	uint32_t dss_voltage_value; //0:0.7v, 2:0.8v
-	uint32_t reserved;
+	u64 dss_pri_clk_rate;
+	u64 dss_pclk_dss_rate;
+	u64 dss_pclk_pctrl_rate;
+	u64 dss_mmbuf_rate;
+	u32 dss_voltage_value; //0:0.7v, 2:0.8v
+	u32 reserved;
 } dss_clk_rate_t;
 
 struct dss_crtc {
@@ -3221,9 +3216,8 @@ typedef struct mipi_ifbc_division {
 	u32 pxl0_dsi_gt_en;
 } mipi_ifbc_division_t;
 
-/*******************************************************************************
-**
-*/
+/*****************************************************************************/
+
 #define outp32(addr, val) writel(val, addr)
 #define outp16(addr, val) writew(val, addr)
 #define outp8(addr, val) writeb(val, addr)
