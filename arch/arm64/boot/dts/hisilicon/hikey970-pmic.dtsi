@@ -33,12 +33,15 @@
 
 				ldo3: ldo3@16 {
 					reg = <0x16>;
+					vsel-reg = <0x51>;
+
 					regulator-name = "ldo3";
 					regulator-min-microvolt = <1500000>;
 					regulator-max-microvolt = <2000000>;
 					regulator-boot-on;
-					hi6421-ctrl = <0x16 0x01 0x00>;
-					hi6421-vsel = <0x51 0x0F>;
+
+					enable-mask = <0x01>;
+
 					voltage-table = <1500000>, <1550000>,
 							<1600000>, <1650000>,
 							<1700000>, <1725000>,
@@ -49,16 +52,21 @@
 							<1950000>, <2000000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <120>;
-					eco-microamp = <10000>;
 				};
 
 				ldo4: ldo4@17 { /* 40 PIN */
 					reg = <0x17>;
+					vsel-reg = <0x52>;
+
 					regulator-name = "ldo4";
 					regulator-min-microvolt = <1725000>;
 					regulator-max-microvolt = <1900000>;
 					regulator-boot-on;
-					hi6421-ctrl = <0x17 0x01 0x10>;
+
+					enable-mask = <0x01>;
+					idle-mode-mask = <0x10>;
+					eco-microamp = <10000>;
+
 					hi6421-vsel = <0x52 0x07>;
 					voltage-table = <1725000>, <1750000>,
 							<1775000>, <1800000>,
@@ -66,107 +74,125 @@
 							<1875000>, <1900000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <120>;
-					eco-microamp = <10000>;
 				};
 
 				ldo9: ldo9@1C { /* SDCARD I/O */
 					reg = <0x1C>;
+					vsel-reg = <0x57>;
+
 					regulator-name = "ldo9";
 					regulator-min-microvolt = <1750000>;
 					regulator-max-microvolt = <3300000>;
 					regulator-boot-on;
-					hi6421-ctrl = <0x1C 0x01 0x10>;
-					hi6421-vsel = <0x57 0x07>;
+
+					enable-mask = <0x01>;
+					idle-mode-mask = <0x10>;
+					eco-microamp = <10000>;
+
 					voltage-table = <1750000>, <1800000>,
 							<1825000>, <2800000>,
 							<2850000>, <2950000>,
 							<3000000>, <3300000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <360>;
-					eco-microamp = <10000>;
 				};
 
 				ldo15: ldo15@21 { /* UFS */
 					reg = <0x21>;
+					vsel-reg = <0x5C>;
+
 					regulator-name = "ldo15";
 					regulator-min-microvolt = <1800000>;
 					regulator-max-microvolt = <3000000>;
 					regulator-always-on;
-					hi6421-ctrl = <0x21 0x01 0x10>;
-					hi6421-vsel = <0x5C 0x07>;
+
+					enable-mask = <0x01>;
+					idle-mode-mask = <0x10>;
+					eco-microamp = <10000>;
+
 					voltage-table = <1800000>, <1850000>,
 							<2400000>, <2600000>,
 							<2700000>, <2850000>,
 							<2950000>, <3000000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <120>;
-					eco-microamp = <10000>;
 				};
 
 				ldo16: ldo16@22 { /* SD */
 					reg = <0x22>;
+					vsel-reg = <0x5D>;
+
 					regulator-name = "ldo16";
 					regulator-min-microvolt = <1800000>;
 					regulator-max-microvolt = <3000000>;
 					regulator-boot-on;
-					hi6421-ctrl = <0x22 0x01 0x10>;
-					hi6421-vsel = <0x5D 0x07>;
+
+					enable-mask = <0x01>;
+					idle-mode-mask = <0x10>;
+					eco-microamp = <10000>;
+
 					voltage-table = <1800000>, <1850000>,
 							<2400000>, <2600000>,
 							<2700000>, <2850000>,
 							<2950000>, <3000000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <360>;
-					eco-microamp = <10000>;
 				};
 
 				ldo17: ldo17@23 {
 					reg = <0x23>;
+					vsel-reg = <0x5E>;
+
 					regulator-name = "ldo17";
 					regulator-min-microvolt = <2500000>;
 					regulator-max-microvolt = <3300000>;
-					hi6421-ctrl = <0x23 0x01 0x10>;
-					hi6421-vsel = <0x5E 0x07>;
+
+					enable-mask = <0x01>;
+					idle-mode-mask = <0x10>;
+					eco-microamp = <10000>;
+
 					voltage-table = <2500000>, <2600000>,
 							<2700000>, <2800000>,
 							<3000000>, <3100000>,
 							<3200000>, <3300000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <120>;
-					eco-microamp = <10000>;
 				};
 
 				ldo33: ldo33@32 { /* PEX8606 */
 					reg = <0x32>;
+					vsel-reg = <0x6D>;
 					regulator-name = "ldo33";
 					regulator-min-microvolt = <2500000>;
 					regulator-max-microvolt = <3300000>;
 					regulator-boot-on;
-					hi6421-ctrl = <0x32 0x01 0x00>;
-					hi6421-vsel = <0x6D 0x07>;
+
+					enable-mask = <0x01>;
+
 					voltage-table = <2500000>, <2600000>,
 							<2700000>, <2800000>,
 							<3000000>, <3100000>,
 							<3200000>, <3300000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <120>;
-					eco-microamp = <10000>;
 				};
 
 				ldo34: ldo34@33 { /* GPS AUX IN VDD */
 					reg = <0x33>;
+					vsel-reg = <0x6E>;
+
 					regulator-name = "ldo34";
 					regulator-min-microvolt = <2600000>;
 					regulator-max-microvolt = <3300000>;
-					hi6421-ctrl = <0x33 0x01 0x00>;
-					hi6421-vsel = <0x6E 0x07>;
+
+					enable-mask = <0x01>;
+
 					voltage-table = <2600000>, <2700000>,
 							<2800000>, <2900000>,
 							<3000000>, <3100000>,
 							<3200000>, <3300000>;
 					off-on-delay-us = <20000>;
 					startup-delay-us = <120>;
-					eco-microamp = <10000>;
 				};
 			};
 		};
