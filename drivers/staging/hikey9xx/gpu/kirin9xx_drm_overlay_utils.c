@@ -1008,7 +1008,7 @@ static int hisi_dss_mctl_sys_config(struct dss_hw_ctx *ctx, int chn_idx)
 }
 
 static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
-				const dss_rect_ltrb_t *rect, u32 display_addr, u32 hal_format,
+				const struct dss_rect_ltrb *rect, u32 display_addr, u32 hal_format,
 	u32 bpp, int chn_idx, bool afbcd, bool mmu_enable)
 {
 	void __iomem *rdma_base;
@@ -1234,7 +1234,7 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 }
 
 static int hisi_dss_ovl_config(struct dss_hw_ctx *ctx,
-			       const dss_rect_ltrb_t *rect, u32 xres, u32 yres)
+			       const struct dss_rect_ltrb *rect, u32 xres, u32 yres)
 {
 	void __iomem *ovl0_base;
 
@@ -1524,7 +1524,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 
 	bool afbcd = false;
 	bool mmu_enable = false;
-	dss_rect_ltrb_t rect;
+	struct dss_rect_ltrb rect;
 	u32 bpp;
 	u32 stride;
 	u32 display_addr = 0;
@@ -1601,7 +1601,7 @@ void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane,
 
 	bool afbcd = false;
 	bool mmu_enable = false;
-	dss_rect_ltrb_t rect;
+	struct dss_rect_ltrb rect;
 	u32 bpp;
 	u32 stride;
 	u32 display_addr;
