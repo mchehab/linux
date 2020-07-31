@@ -1040,7 +1040,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	u32 tmp = 0;
 	bool is_ready = false;
 	struct mipi_panel_info *mipi = NULL;
-	dss_rect_t rect;
+	struct dss_rect rect;
 	u32 cmp_stopstate_val = 0;
 	u32 lanes;
 #if !defined(CONFIG_DRM_HISI_KIRIN970)
