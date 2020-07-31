@@ -41,7 +41,6 @@
 /* vcc name */
 #define REGULATOR_PDP_NAME	"ldo3"
 
-
 /* irq name */
 #define IRQ_PDP_NAME	"irq_pdp"
 #define IRQ_SDP_NAME	"irq_sdp"
@@ -91,9 +90,9 @@ enum MIPI_LP11_MODE {
 
 /* resource desc */
 struct resource_desc {
-	uint32_t flag;
+	u32 flag;
 	char *name;
-	uint32_t *value;
+	u32 *value;
 };
 
 /* dtype for vcc */
@@ -136,6 +135,7 @@ struct pinctrl_data {
 	struct pinctrl_state *pinctrl_def;
 	struct pinctrl_state *pinctrl_idle;
 };
+
 struct pinctrl_cmd_desc {
 	int dtype;
 	struct pinctrl_data *pctrl_data;
@@ -156,7 +156,7 @@ struct gpio_desc {
 	int waittype;
 	int wait;
 	char *label;
-	uint32_t *gpio;
+	u32 *gpio;
 	int value;
 };
 
@@ -170,15 +170,15 @@ enum bl_control_mode {
 	COMMON_IC_MODE = 8,
 };
 
-/*******************************************************************************
-** FUNCTIONS PROTOTYPES
-*/
+/*
+ * FUNCTIONS PROTOTYPES
+ */
 #define MIPI_DPHY_NUM	(2)
 
-extern uint32_t g_dts_resouce_ready;
+extern u32 g_dts_resource_ready;
 
 int resource_cmds_tx(struct platform_device *pdev,
-	struct resource_desc *cmds, int cnt);
+		     struct resource_desc *cmds, int cnt);
 int vcc_cmds_tx(struct platform_device *pdev, struct vcc_desc *cmds, int cnt);
 int pinctrl_cmds_tx(struct platform_device *pdev, struct pinctrl_cmd_desc *cmds, int cnt);
 int gpio_cmds_tx(struct gpio_desc *cmds, int cnt);
