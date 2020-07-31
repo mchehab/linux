@@ -7736,6 +7736,14 @@ F:	include/linux/hippidevice.h
 F:	include/uapi/linux/if_hippi.h
 F:	net/802/hippi.c
 
+HISILICON 6421v600 SPMI PMIC DRIVER
+M:	Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+L:      linux-kernel@vger.kernel.org
+S:      Maintained
+F:	drivers/mfd/hi6421-spmi-pmic.c
+F:	drivers/regulator/hi6421v600-regulator.c
+F:	drivers/spmi/spmi.c
+
 HISILICON DMA DRIVER
 M:	Zhou Wang <wangzhou1@hisilicon.com>
 L:	dmaengine@vger.kernel.org
