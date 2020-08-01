@@ -17,6 +17,12 @@
 
 #include "kirin9xx_drm_dpe_utils.h"
 
+#if defined(CONFIG_DRM_HISI_KIRIN970)
+#include "kirin970_dpe_reg.h"
+#else
+#include "kirin960_dpe_reg.h"
+#endif
+
 static int g_debug_set_reg_val;
 
 DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
@@ -117,22 +123,6 @@ struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
 		}
 	}
 };
-
-void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs)
-{
-	u32 mask = (1UL << bw) - 1UL;
-	u32 tmp = 0;
-
-	tmp = readl(addr);
-	tmp &= ~(mask << bs);
-
-	writel(tmp | ((val & mask) << bs), addr);
-
-	if (g_debug_set_reg_val) {
-		printk(KERN_INFO "writel: [%p] = 0x%x\n", addr,
-		       tmp | ((val & mask) << bs));
-	}
-}
 
 u32 set_bits32(u32 old_val, uint32_t val, uint8_t bw, uint8_t bs)
 {

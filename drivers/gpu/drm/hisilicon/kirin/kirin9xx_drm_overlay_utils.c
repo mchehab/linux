@@ -25,6 +25,12 @@
 #include "kirin9xx_drm_dpe_utils.h"
 #include "kirin9xx_drm_drv.h"
 
+#if defined(CONFIG_DRM_HISI_KIRIN970)
+#include "kirin970_dpe_reg.h"
+#else
+#include "kirin960_dpe_reg.h"
+#endif
+
 static const int mid_array[DSS_CHN_MAX_DEFINE] = {
 	0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x2, 0x1, 0x3, 0x0
 };
