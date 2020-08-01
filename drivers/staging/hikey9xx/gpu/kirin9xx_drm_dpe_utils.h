@@ -16,14 +16,201 @@
 #ifndef KIRIN_DRM_DPE_UTILS_H
 #define KIRIN_DRM_DPE_UTILS_H
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#include "kirin970_dpe_reg.h"
-#else
-#include "kirin960_dpe_reg.h"
-#endif
+#include <drm/drm_plane.h>
+#include <drm/drm_crtc.h>
+
 #include "kirin9xx_drm_drv.h"
 
-void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs);
+enum dss_channel {
+	DSS_CH1 = 0,	/* channel 1 for primary plane */
+	DSS_CH_NUM
+};
+
+#define PRIMARY_CH	DSS_CH1 /* primary plane */
+
+enum hisi_fb_pixel_format {
+	HISI_FB_PIXEL_FORMAT_RGB_565 = 0,
+	HISI_FB_PIXEL_FORMAT_RGBX_4444,
+	HISI_FB_PIXEL_FORMAT_RGBA_4444,
+	HISI_FB_PIXEL_FORMAT_RGBX_5551,
+	HISI_FB_PIXEL_FORMAT_RGBA_5551,
+	HISI_FB_PIXEL_FORMAT_RGBX_8888,
+	HISI_FB_PIXEL_FORMAT_RGBA_8888,
+
+	HISI_FB_PIXEL_FORMAT_BGR_565,
+	HISI_FB_PIXEL_FORMAT_BGRX_4444,
+	HISI_FB_PIXEL_FORMAT_BGRA_4444,
+	HISI_FB_PIXEL_FORMAT_BGRX_5551,
+	HISI_FB_PIXEL_FORMAT_BGRA_5551,
+	HISI_FB_PIXEL_FORMAT_BGRX_8888,
+	HISI_FB_PIXEL_FORMAT_BGRA_8888,
+
+	HISI_FB_PIXEL_FORMAT_YUV_422_I,
+
+	/* YUV Semi-planar */
+	HISI_FB_PIXEL_FORMAT_YCbCr_422_SP,	/* NV16 */
+	HISI_FB_PIXEL_FORMAT_YCrCb_422_SP,
+	HISI_FB_PIXEL_FORMAT_YCbCr_420_SP,
+	HISI_FB_PIXEL_FORMAT_YCrCb_420_SP,	/* NV21 */
+
+	/* YUV Planar */
+	HISI_FB_PIXEL_FORMAT_YCbCr_422_P,
+	HISI_FB_PIXEL_FORMAT_YCrCb_422_P,
+	HISI_FB_PIXEL_FORMAT_YCbCr_420_P,
+	HISI_FB_PIXEL_FORMAT_YCrCb_420_P,	/* HISI_FB_PIXEL_FORMAT_YV12 */
+
+	/* YUV Package */
+	HISI_FB_PIXEL_FORMAT_YUYV_422_Pkg,
+	HISI_FB_PIXEL_FORMAT_UYVY_422_Pkg,
+	HISI_FB_PIXEL_FORMAT_YVYU_422_Pkg,
+	HISI_FB_PIXEL_FORMAT_VYUY_422_Pkg,
+	HISI_FB_PIXEL_FORMAT_MAX,
+
+	HISI_FB_PIXEL_FORMAT_UNSUPPORT = 800
+};
+
+struct dss_hw_ctx {
+	void __iomem *base;
+	struct regmap *noc_regmap;
+	struct reset_control *reset;
+	u32 g_dss_version_tag;
+
+	void __iomem *noc_dss_base;
+	void __iomem *peri_crg_base;
+	void __iomem *pmc_base;
+	void __iomem *sctrl_base;
+	void __iomem *media_crg_base;
+	void __iomem *pctrl_base;
+	void __iomem *mmbuf_crg_base;
+	void __iomem *pmctrl_base;
+
+	struct clk *dss_axi_clk;
+	struct clk *dss_pclk_dss_clk;
+	struct clk *dss_pri_clk;
+	struct clk *dss_pxl0_clk;
+	struct clk *dss_pxl1_clk;
+	struct clk *dss_mmbuf_clk;
+	struct clk *dss_pclk_mmbuf_clk;
+
+	struct dss_clk_rate *dss_clk;
+
+	struct regulator *dpe_regulator;
+	struct regulator *mmbuf_regulator;
+	struct regulator *mediacrg_regulator;
+
+	bool power_on;
+	int irq;
+
+	wait_queue_head_t vactive0_end_wq;
+	u32 vactive0_end_flag;
+	ktime_t vsync_timestamp;
+	ktime_t vsync_timestamp_prev;
+
+	struct iommu_domain *mmu_domain;
+	char __iomem *screen_base;
+	unsigned long smem_start;
+	unsigned long screen_size;
+};
+
+struct dss_clk_rate {
+	u64 dss_pri_clk_rate;
+	u64 dss_pclk_dss_rate;
+	u64 dss_pclk_pctrl_rate;
+	u64 dss_mmbuf_rate;
+	u32 dss_voltage_value; //0:0.7v, 2:0.8v
+	u32 reserved;
+};
+
+struct dss_crtc {
+	struct drm_crtc base;
+	struct dss_hw_ctx *ctx;
+	bool enable;
+	u32 out_format;
+	u32 bgr_fmt;
+};
+
+struct dss_plane {
+	struct drm_plane base;
+	/*void *ctx;*/
+	void *acrtc;
+	u8 ch; /* channel */
+};
+
+struct dss_data {
+	struct dss_crtc acrtc;
+	struct dss_plane aplane[DSS_CH_NUM];
+	struct dss_hw_ctx ctx;
+};
+
+/* ade-format info: */
+struct dss_format {
+	u32 pixel_format;
+	enum hisi_fb_pixel_format dss_format;
+};
+
+struct dss_img {
+	u32 format;
+	u32 width;
+	u32 height;
+	u32 bpp;		/* bytes per pixel */
+	u32 buf_size;
+	u32 stride;
+	u32 stride_plane1;
+	u32 stride_plane2;
+	u64 phy_addr;
+	u64 vir_addr;
+	u32 offset_plane1;
+	u32 offset_plane2;
+
+	u64 afbc_header_addr;
+	u64 afbc_payload_addr;
+	u32 afbc_header_stride;
+	u32 afbc_payload_stride;
+	u32 afbc_scramble_mode;
+	u32 mmbuf_base;
+	u32 mmbuf_size;
+
+	u32 mmu_enable;
+	u32 csc_mode;
+	u32 secure_mode;
+	s32 shared_fd;
+	u32 reserved0;
+};
+
+struct dss_rect {
+	s32 x;
+	s32 y;
+	s32 w;
+	s32 h;
+};
+
+struct drm_dss_layer {
+	struct dss_img img;
+	struct dss_rect src_rect;
+	struct dss_rect src_rect_mask;
+	struct dss_rect dst_rect;
+	u32 transform;
+	s32 blending;
+	u32 glb_alpha;
+	u32 color;		/* background color or dim color */
+	s32 layer_idx;
+	s32 chn_idx;
+	u32 need_cap;
+	s32 acquire_fence;
+};
+
+static inline void set_reg(char __iomem *addr, uint32_t val, uint8_t bw,
+			   uint8_t bs)
+{
+	u32 mask = (1UL << bw) - 1UL;
+	u32 tmp = 0;
+
+	tmp = readl(addr);
+	tmp &= ~(mask << bs);
+
+	writel(tmp | ((val & mask) << bs), addr);
+}
+
 u32 set_bits32(u32 old_val, uint32_t val, uint8_t bw, uint8_t bs);
 
 void init_dbuf(struct dss_crtc *acrtc);
