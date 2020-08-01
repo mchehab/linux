@@ -3218,21 +3218,6 @@ struct mipi_ifbc_division {
 
 /*****************************************************************************/
 
-#define outp32(addr, val) writel(val, addr)
-#define outp16(addr, val) writew(val, addr)
-#define outp8(addr, val) writeb(val, addr)
-#define outp(addr, val) outp32(addr, val)
-
-#define inp32(addr) readl(addr)
-#define inp16(addr) readw(addr)
-#define inp8(addr) readb(addr)
-#define inp(addr) inp32(addr)
-
-#define inpw(port) readw(port)
-#define outpw(port, val) writew(val, port)
-#define inpdw(port) readl(port)
-#define outpdw(port, val) writel(val, port)
-
 #ifndef ALIGN_DOWN
 #define ALIGN_DOWN(val, al)  ((val) & ~((al) - 1))
 #endif
