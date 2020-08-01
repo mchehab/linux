@@ -38,6 +38,7 @@
 #include "kirin960_dpe_reg.h"
 #endif
 #include "kirin9xx_drm_drv.h"
+#include "kirin9xx_drm_dpe_utils.h"
 
 #if defined(CONFIG_DRM_HISI_KIRIN970)
 #define DTS_COMP_DSI_NAME "hisilicon,kirin970-dsi"
@@ -273,17 +274,6 @@ static const struct dsi_phy_range dphy_range_info[] = {
  * Except for debug, this is identical to the one defined at
  * kirin9xx_drm_dpe_utils.h.
  */
-static void set_reg(char __iomem *addr, uint32_t val, uint8_t bw,
-		    uint8_t bs)
-{
-	u32 mask = (1UL << bw) - 1UL;
-	u32 tmp = 0;
-
-	tmp = readl(addr);
-	tmp &= ~(mask << bs);
-
-	writel(tmp | ((val & mask) << bs), addr);
-}
 
 void dsi_set_output_client(struct drm_device *dev)
 {
