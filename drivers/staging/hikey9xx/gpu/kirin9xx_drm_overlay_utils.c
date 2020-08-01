@@ -1298,10 +1298,10 @@ static void hisi_dss_qos_on(struct dss_hw_ctx *ctx)
 
 	noc_dss_base = ctx->noc_dss_base;
 
-	outp32(noc_dss_base + 0xc, 0x2);
-	outp32(noc_dss_base + 0x8c, 0x2);
-	outp32(noc_dss_base + 0x10c, 0x2);
-	outp32(noc_dss_base + 0x18c, 0x2);
+	writel(0x2, noc_dss_base + 0xc);
+	writel(0x2, noc_dss_base + 0x8c);
+	writel(0x2, noc_dss_base + 0x10c);
+	writel(0x2, noc_dss_base + 0x18c);
 }
 
 static void hisi_dss_mif_on(struct dss_hw_ctx *ctx)
@@ -1427,13 +1427,13 @@ void hisi_dss_unflow_handler(struct dss_hw_ctx *ctx, bool unmask)
 
 	dss_base = ctx->base;
 
-	tmp = inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
+	tmp = readl(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 	if (unmask)
 		tmp &= ~BIT_LDI_UNFLOW;
 	else
 		tmp |= BIT_LDI_UNFLOW;
 
-	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, tmp);
+	writel(tmp, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 }
 
 void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
@@ -1457,7 +1457,7 @@ void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
 		set_reg(mctl_base + MCTL_CTL_CLEAR, 0x1, 1, 0);
 
 	while (1) {
-		mctl_status = inp32(mctl_base + MCTL_CTL_STATUS);
+		mctl_status = readl(mctl_base + MCTL_CTL_STATUS);
 		if (((mctl_status & 0x10) == 0) || (delay_count > 500)) {
 			is_timeout = (delay_count > 100) ? true : false;
 			delay_count = 0;

@@ -123,10 +123,10 @@ void set_reg(char __iomem *addr, uint32_t val, uint8_t bw, uint8_t bs)
 	u32 mask = (1UL << bw) - 1UL;
 	u32 tmp = 0;
 
-	tmp = inp32(addr);
+	tmp = readl(addr);
 	tmp &= ~(mask << bs);
 
-	outp32(addr, tmp | ((val & mask) << bs));
+	writel(tmp | ((val & mask) << bs), addr);
 
 	if (g_debug_set_reg_val) {
 		printk(KERN_INFO "writel: [%p] = 0x%x\n", addr,
@@ -275,18 +275,16 @@ void init_ldi(struct dss_crtc *acrtc)
 
 	init_ldi_pxl_div(acrtc);
 
-	outp32(ldi_base + LDI_DPI0_HRZ_CTRL0,
-	       hfp | ((hbp + DSS_WIDTH(hsw)) << 16));
-	outp32(ldi_base + LDI_DPI0_HRZ_CTRL1, 0);
-	outp32(ldi_base + LDI_DPI0_HRZ_CTRL2, DSS_WIDTH(rect.w));
-	outp32(ldi_base + LDI_VRT_CTRL0,
-	       vfp | (vbp << 16));
-	outp32(ldi_base + LDI_VRT_CTRL1, DSS_HEIGHT(vsw));
-	outp32(ldi_base + LDI_VRT_CTRL2, DSS_HEIGHT(rect.h));
+	writel(hfp | ((hbp + DSS_WIDTH(hsw)) << 16),
+	       ldi_base + LDI_DPI0_HRZ_CTRL0);
+	writel(0, ldi_base + LDI_DPI0_HRZ_CTRL1);
+	writel(DSS_WIDTH(rect.w), ldi_base + LDI_DPI0_HRZ_CTRL2);
+	writel(vfp | (vbp << 16), ldi_base + LDI_VRT_CTRL0);
+	writel(DSS_HEIGHT(vsw), ldi_base + LDI_VRT_CTRL1);
+	writel(DSS_HEIGHT(rect.h), ldi_base + LDI_VRT_CTRL2);
 
-	outp32(ldi_base + LDI_PLR_CTRL,
-	       vsync_plr | (hsync_plr << 1) |
-		(pixelclk_plr << 2) | (data_en_plr << 3));
+	writel(vsync_plr | (hsync_plr << 1) | (pixelclk_plr << 2) | (data_en_plr << 3),
+	       ldi_base + LDI_PLR_CTRL);
 
 	/* bpp*/
 	set_reg(ldi_base + LDI_CTRL, acrtc->out_format, 2, 3);
@@ -294,10 +292,10 @@ void init_ldi(struct dss_crtc *acrtc)
 	set_reg(ldi_base + LDI_CTRL, acrtc->bgr_fmt, 1, 13);
 
 	/* for ddr pmqos*/
-	outp32(ldi_base + LDI_VINACT_MSK_LEN, vfp);
+	writel(vfp, ldi_base + LDI_VINACT_MSK_LEN);
 
 	/*cmd event sel*/
-	outp32(ldi_base + LDI_CMD_EVENT_SEL, 0x1);
+	writel(0x1, ldi_base + LDI_CMD_EVENT_SEL);
 
 	/* for 1Hz LCD and mipi command LCD*/
 	set_reg(ldi_base + LDI_DSI_CMD_MOD_CTRL, 0x1, 1, 1);
@@ -470,22 +468,25 @@ void init_dbuf(struct dss_crtc *acrtc)
 		thd_flux_req_aftdfs_out,
 		thd_dfs_ok);
 
-	outp32(dbuf_base + DBUF_FRM_SIZE, mode->hdisplay * mode->vdisplay);
-	outp32(dbuf_base + DBUF_FRM_HSIZE, DSS_WIDTH(mode->hdisplay));
-	outp32(dbuf_base + DBUF_SRAM_VALID_NUM, sram_valid_num);
+	writel(mode->hdisplay * mode->vdisplay, dbuf_base + DBUF_FRM_SIZE);
+	writel(DSS_WIDTH(mode->hdisplay), dbuf_base + DBUF_FRM_HSIZE);
+	writel(sram_valid_num, dbuf_base + DBUF_SRAM_VALID_NUM);
 
-	outp32(dbuf_base + DBUF_THD_RQOS, (thd_rqos_out << 16) | thd_rqos_in);
-	outp32(dbuf_base + DBUF_THD_WQOS, (thd_wqos_out << 16) | thd_wqos_in);
-	outp32(dbuf_base + DBUF_THD_CG, (thd_cg_out << 16) | thd_cg_in);
-	outp32(dbuf_base + DBUF_THD_OTHER, (thd_cg_hold << 16) | thd_wr_wait);
-	outp32(dbuf_base + DBUF_THD_FLUX_REQ_BEF, (thd_flux_req_befdfs_out << 16) | thd_flux_req_befdfs_in);
-	outp32(dbuf_base + DBUF_THD_FLUX_REQ_AFT, (thd_flux_req_aftdfs_out << 16) | thd_flux_req_aftdfs_in);
-	outp32(dbuf_base + DBUF_THD_DFS_OK, thd_dfs_ok);
-	outp32(dbuf_base + DBUF_FLUX_REQ_CTRL, (dfs_ok_mask << 1) | thd_flux_req_sw_en);
+	writel((thd_rqos_out << 16) | thd_rqos_in, dbuf_base + DBUF_THD_RQOS);
+	writel((thd_wqos_out << 16) | thd_wqos_in, dbuf_base + DBUF_THD_WQOS);
+	writel((thd_cg_out << 16) | thd_cg_in, dbuf_base + DBUF_THD_CG);
+	writel((thd_cg_hold << 16) | thd_wr_wait, dbuf_base + DBUF_THD_OTHER);
+	writel((thd_flux_req_befdfs_out << 16) | thd_flux_req_befdfs_in,
+               dbuf_base + DBUF_THD_FLUX_REQ_BEF);
+	writel((thd_flux_req_aftdfs_out << 16) | thd_flux_req_aftdfs_in,
+               dbuf_base + DBUF_THD_FLUX_REQ_AFT);
+	writel(thd_dfs_ok, dbuf_base + DBUF_THD_DFS_OK);
+	writel((dfs_ok_mask << 1) | thd_flux_req_sw_en,
+               dbuf_base + DBUF_FLUX_REQ_CTRL);
 
-	outp32(dbuf_base + DBUF_DFS_LP_CTRL, 0x1);
+	writel(0x1, dbuf_base + DBUF_DFS_LP_CTRL);
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
-		outp32(dbuf_base + DBUF_DFS_RAM_MANAGE, dfs_ram);
+		writel(dfs_ram, dbuf_base + DBUF_DFS_RAM_MANAGE);
 }
 
 void init_dpp(struct dss_crtc *acrtc)
@@ -508,10 +509,10 @@ void init_dpp(struct dss_crtc *acrtc)
 	dpp_base = ctx->base + DSS_DPP_OFFSET;
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 
-	outp32(dpp_base + DPP_IMG_SIZE_BEF_SR,
-	       (DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
-	outp32(dpp_base + DPP_IMG_SIZE_AFT_SR,
-	       (DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay));
+	writel((DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay),
+	       dpp_base + DPP_IMG_SIZE_BEF_SR);
+	writel((DSS_HEIGHT(mode->vdisplay) << 16) | DSS_WIDTH(mode->hdisplay),
+	       dpp_base + DPP_IMG_SIZE_AFT_SR);
 }
 
 void enable_ldi(struct dss_crtc *acrtc)
@@ -563,22 +564,22 @@ void dpe_interrupt_clear(struct dss_crtc *acrtc)
 	dss_base = ctx->base;
 
 	clear = ~0;
-	outp32(dss_base + GLB_CPU_PDP_INTS, clear);
-	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS, clear);
-	outp32(dss_base + DSS_DPP_OFFSET + DPP_INTS, clear);
+	writel(clear, dss_base + GLB_CPU_PDP_INTS);
+	writel(clear, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
+	writel(clear, dss_base + DSS_DPP_OFFSET + DPP_INTS);
 
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_MCTL_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_WCH0_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_WCH1_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH0_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH1_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH2_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH3_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH4_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH5_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH6_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH7_INTS, clear);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_DSS_GLB_INTS, clear);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_MCTL_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_WCH0_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_WCH1_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH0_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH1_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH2_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH3_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH4_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH5_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH6_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_RCH7_INTS);
+	writel(clear, dss_base + DSS_DBG_OFFSET + DBG_DSS_GLB_INTS);
 }
 
 void dpe_interrupt_unmask(struct dss_crtc *acrtc)
@@ -597,12 +598,12 @@ void dpe_interrupt_unmask(struct dss_crtc *acrtc)
 
 	unmask = ~0;
 	unmask &= ~(BIT_ITF0_INTS | BIT_MMU_IRPT_NS);
-	outp32(dss_base + GLB_CPU_PDP_INT_MSK, unmask);
+	writel(unmask, dss_base + GLB_CPU_PDP_INT_MSK);
 
 	unmask = ~0;
 	unmask &= ~(BIT_VSYNC | BIT_VACTIVE0_END | BIT_LDI_UNFLOW);
 
-	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, unmask);
+	writel(unmask, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 }
 
 void dpe_interrupt_mask(struct dss_crtc *acrtc)
@@ -620,21 +621,21 @@ void dpe_interrupt_mask(struct dss_crtc *acrtc)
 	dss_base = ctx->base;
 
 	mask = ~0;
-	outp32(dss_base + GLB_CPU_PDP_INT_MSK, mask);
-	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, mask);
-	outp32(dss_base + DSS_DPP_OFFSET + DPP_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_DSS_GLB_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_MCTL_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_WCH0_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_WCH1_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH0_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH1_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH2_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH3_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH4_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH5_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH6_INT_MSK, mask);
-	outp32(dss_base + DSS_DBG_OFFSET + DBG_RCH7_INT_MSK, mask);
+	writel(mask, dss_base + GLB_CPU_PDP_INT_MSK);
+	writel(mask, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
+	writel(mask, dss_base + DSS_DPP_OFFSET + DPP_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_DSS_GLB_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_MCTL_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_WCH0_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_WCH1_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH0_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH1_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH2_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH3_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH4_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH5_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH6_INT_MSK);
+	writel(mask, dss_base + DSS_DBG_OFFSET + DBG_RCH7_INT_MSK);
 }
 
 int dpe_init(struct dss_crtc *acrtc)
@@ -692,7 +693,7 @@ void dpe_check_itf_status(struct dss_crtc *acrtc)
 	mctl_sys_base =  ctx->base + DSS_MCTRL_SYS_OFFSET;
 
 	while (1) {
-		tmp = inp32(mctl_sys_base + MCTL_MOD17_STATUS + itf_idx * 0x4);
+		tmp = readl(mctl_sys_base + MCTL_MOD17_STATUS + itf_idx * 0x4);
 		if (((tmp & 0x10) == 0x10) || delay_count > 100) {
 			is_timeout = (delay_count > 100) ? true : false;
 			delay_count = 0;
@@ -720,11 +721,11 @@ void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
 	}
 	dss_base = ctx->base;
 
-	outp32(dss_base + DSS_IFBC_OFFSET + IFBC_MEM_CTRL, 0x00000088);
-	outp32(dss_base + DSS_DSC_OFFSET + DSC_MEM_CTRL, 0x00000888);
-	outp32(dss_base + DSS_LDI0_OFFSET + LDI_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_DBUF0_OFFSET + DBUF_MEM_CTRL, 0x00000008);
-	outp32(dss_base + DSS_DPP_DITHER_OFFSET + DITHER_MEM_CTRL, 0x00000008);
+	writel(0x00000088, dss_base + DSS_IFBC_OFFSET + IFBC_MEM_CTRL);
+	writel(0x00000888, dss_base + DSS_DSC_OFFSET + DSC_MEM_CTRL);
+	writel(0x00000008, dss_base + DSS_LDI0_OFFSET + LDI_MEM_CTRL);
+	writel(0x00000008, dss_base + DSS_DBUF0_OFFSET + DBUF_MEM_CTRL);
+	writel(0x00000008, dss_base + DSS_DPP_DITHER_OFFSET + DITHER_MEM_CTRL);
 }
 
 void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
@@ -739,61 +740,87 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 	dss_base = ctx->base;
 
 	/*core/axi/mmbuf*/
-	outp32(dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL, 0x00000008);  /*cmd mem*/
+	writel(0x00000008, dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL);  /*cmd mem*/
 
-	outp32(dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_v0 ,scf mem*/
-	outp32(dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);/*rch_v0 ,scf mem*/
-	outp32(dss_base + DSS_RCH_VG0_ARSR_OFFSET + ARSR2P_LB_MEM_CTRL, 0x00000008);/*rch_v0 ,arsr2p mem*/
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL, 0x00000008);/*rch_v0 ,vpp mem*/
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_v0 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);/*rch_v0 ,afbcd mem*/
+	writel(0x00000088,
+	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_v0 ,scf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v0 ,scf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_VG0_ARSR_OFFSET + ARSR2P_LB_MEM_CTRL);/*rch_v0 ,arsr2p mem*/
+	writel(0x00000008, dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL);/*rch_v0 ,vpp mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v0 ,dma_buf mem*/
+	writel(0x00008888, dss_base + DSS_RCH_VG0_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_v0 ,afbcd mem*/
 
-	outp32(dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_v1 ,scf mem*/
-	outp32(dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);/*rch_v1 ,scf mem*/
-	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_v1 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);/*rch_v1 ,afbcd mem*/
+	writel(0x00000088,
+	       dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_v1 ,scf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v1 ,scf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v1 ,dma_buf mem*/
+	writel(0x00008888, dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_v1 ,afbcd mem*/
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
-		outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
-		outp32(dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
-		outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL, 0x88888888);
-		outp32(dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1, 0x00000888);
+		writel(0x88888888,
+		       dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL);
+		writel(0x00000888,
+		       dss_base + DSS_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL_1);
+		writel(0x88888888,
+		       dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL);
+		writel(0x00000888,
+		       dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1);
 	} else {
-		outp32(dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_v2 ,scf mem*/
-		outp32(dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x00000008);/*rch_v2 ,scf mem*/
+		writel(0x00000088,
+		       dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_v2 ,scf mem*/
+		writel(0x00000008,
+		       dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v2 ,scf mem*/
 	}
 
-	outp32(dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_v2 ,dma_buf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v2 ,dma_buf mem*/
 
-	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_g0 ,scf mem*/
-	outp32(dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x0000008);/*rch_g0 ,scf mem*/
-	outp32(dss_base + DSS_RCH_G0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_g0 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_G0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);/*rch_g0 ,afbcd mem*/
+	writel(0x00000088,
+	       dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_g0 ,scf mem*/
+	writel(0x0000008, dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_g0 ,scf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_G0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_g0 ,dma_buf mem*/
+	writel(0x00008888, dss_base + DSS_RCH_G0_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_g0 ,afbcd mem*/
 
-	outp32(dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_COEF_MEM_CTRL, 0x00000088);/*rch_g1 ,scf mem*/
-	outp32(dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL, 0x0000008);/*rch_g1 ,scf mem*/
-	outp32(dss_base + DSS_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_g1 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);/*rch_g1 ,afbcd mem*/
+	writel(0x00000088,
+	       dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_g1 ,scf mem*/
+	writel(0x0000008, dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_g1 ,scf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_g1 ,dma_buf mem*/
+	writel(0x00008888, dss_base + DSS_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_g1 ,afbcd mem*/
 
-	outp32(dss_base + DSS_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_d0 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL, 0x00008888);/*rch_d0 ,afbcd mem*/
-	outp32(dss_base + DSS_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_d1 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_D2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_d2 ,dma_buf mem*/
-	outp32(dss_base + DSS_RCH_D3_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*rch_d3 ,dma_buf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d0 ,dma_buf mem*/
+	writel(0x00008888, dss_base + DSS_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_d0 ,afbcd mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d1 ,dma_buf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_D2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d2 ,dma_buf mem*/
+	writel(0x00000008,
+	       dss_base + DSS_RCH_D3_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d3 ,dma_buf mem*/
 
-	outp32(dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*wch0 DMA/AFBCE mem*/
-	outp32(dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL, 0x00000888);/*wch0 DMA/AFBCE mem*/
-	outp32(dss_base + DSS_WCH0_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);/*wch0 rot mem*/
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*wch1 DMA/AFBCE mem*/
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL, 0x00000888);/*wch1 DMA/AFBCE mem*/
-	outp32(dss_base + DSS_WCH1_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);/*wch1 rot mem*/
+	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch0 DMA/AFBCE mem*/
+	writel(0x00000888, dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL);/*wch0 DMA/AFBCE mem*/
+	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + ROT_MEM_CTRL);/*wch0 rot mem*/
+	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch1 DMA/AFBCE mem*/
+	writel(0x00000888, dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL);/*wch1 DMA/AFBCE mem*/
+	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + ROT_MEM_CTRL);/*wch1 rot mem*/
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
-		outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL, 0x00000088);
-		outp32(dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_LB_MEM_CTRL, 0x00000008);
-		outp32(dss_base + GLB_DSS_MEM_CTRL, 0x02605550);
+		writel(0x00000088,
+		       dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL);
+		writel(0x00000008,
+		       dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_LB_MEM_CTRL);
+		writel(0x02605550, dss_base + GLB_DSS_MEM_CTRL);
 	} else {
-		outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);/*wch2 DMA/AFBCE mem*/
-		outp32(dss_base + DSS_WCH2_DMA_OFFSET + ROT_MEM_CTRL, 0x00000008);/*wch2 rot mem*/
+		writel(0x00000008,
+		       dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch2 DMA/AFBCE mem*/
+		writel(0x00000008,
+		       dss_base + DSS_WCH2_DMA_OFFSET + ROT_MEM_CTRL);/*wch2 rot mem*/
 		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
 		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
 	}

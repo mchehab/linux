@@ -279,10 +279,10 @@ static void set_reg(char __iomem *addr, uint32_t val, uint8_t bw,
 	u32 mask = (1UL << bw) - 1UL;
 	u32 tmp = 0;
 
-	tmp = inp32(addr);
+	tmp = readl(addr);
 	tmp &= ~(mask << bs);
 
-	outp32(addr, tmp | ((val & mask) << bs));
+	writel(tmp | ((val & mask) << bs), addr);
 }
 
 void dsi_set_output_client(struct drm_device *dev)
@@ -1078,11 +1078,11 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, dsi->phy.clk_division, 8, 0);
 	set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, dsi->phy.clk_division, 8, 8);
 
-	outp32(mipi_dsi_base + MIPIDSI_PHY_RSTZ_OFFSET, 0x00000000);
+	writel(0x00000000, mipi_dsi_base + MIPIDSI_PHY_RSTZ_OFFSET);
 
-	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000000);
-	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000001);
-	outp32(mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET, 0x00000000);
+	writel(0x00000000, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
+	writel(0x00000001, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
+	writel(0x00000000, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 
 #if defined(CONFIG_DRM_HISI_KIRIN970)
 	dsi_phy_tst_set(mipi_dsi_base, 0x0042, 0x21);
@@ -1194,12 +1194,12 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	}
 #endif
 
-	outp32(mipi_dsi_base + MIPIDSI_PHY_RSTZ_OFFSET, 0x00000007);
+	writel(0x00000007, mipi_dsi_base + MIPIDSI_PHY_RSTZ_OFFSET);
 
 	is_ready = false;
 	dw_jiffies = jiffies + HZ / 2;
 	do {
-		tmp = inp32(mipi_dsi_base + MIPIDSI_PHY_STATUS_OFFSET);
+		tmp = readl(mipi_dsi_base + MIPIDSI_PHY_STATUS_OFFSET);
 		if ((tmp & 0x00000001) == 0x00000001) {
 			is_ready = true;
 			break;
@@ -1223,7 +1223,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	is_ready = false;
 	dw_jiffies = jiffies + HZ / 2;
 	do {
-		tmp = inp32(mipi_dsi_base + MIPIDSI_PHY_STATUS_OFFSET);
+		tmp = readl(mipi_dsi_base + MIPIDSI_PHY_STATUS_OFFSET);
 		if ((tmp & cmp_stopstate_val) == cmp_stopstate_val) {
 			is_ready = true;
 			break;
@@ -1383,7 +1383,7 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	/* dsi memory init */
 #if defined(CONFIG_DRM_HISI_KIRIN970)
-	outp32(mipi_dsi_base + DSI_MEM_CTRL, 0x02600008);
+	writel(0x02600008, mipi_dsi_base + DSI_MEM_CTRL);
 #endif
 
 	/* switch to cmd mode */
@@ -1422,7 +1422,7 @@ static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	DRM_DEBUG("pctrl_dphytx_stopcnt = %llu\n", pctrl_dphytx_stopcnt);
 
 	//FIXME:
-	outp32(dsi->ctx->pctrl_base + PERI_CTRL29, (u32)pctrl_dphytx_stopcnt);
+	writel((u32)pctrl_dphytx_stopcnt, dsi->ctx->pctrl_base + PERI_CTRL29);
 #endif
 
 	return 0;
@@ -2015,7 +2015,7 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	DRM_INFO("dsi  cur_client is %d  <0->hdmi;1->panel>\n", dsi->cur_client);
 	/*dis-reset*/
 	/*ip_reset_dis_dsi0, ip_reset_dis_dsi1*/
-	outp32(ctx->peri_crg_base + PERRSTDIS3, 0x30000000);
+	writel(0x30000000, ctx->peri_crg_base + PERRSTDIS3);
 
 	ctx->dss_dphy0_ref_clk = devm_clk_get(&pdev->dev, "clk_txdphy0_ref");
 	if (IS_ERR(ctx->dss_dphy0_ref_clk)) {

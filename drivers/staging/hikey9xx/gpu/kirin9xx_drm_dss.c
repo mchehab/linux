@@ -215,7 +215,7 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	frac = (u64)(ceil_temp * vco_freq_output - sys_clock_fref / refdiv * fbdiv) * refdiv * frac_range;
 	frac = (u64)frac / sys_clock_fref;
 
-	ppll7ctrl0 = inp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
+	ppll7ctrl0 = readl(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
 	ppll7ctrl0 &= ~MIDIA_PPLL7_FREQ_DEVIDER_MASK;
 
 	ppll7ctrl0_val = 0x0;
@@ -223,9 +223,9 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	ppll7ctrl0_val &= MIDIA_PPLL7_FREQ_DEVIDER_MASK;
 	ppll7ctrl0 |= ppll7ctrl0_val;
 
-	outp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0, ppll7ctrl0);
+	writel(ppll7ctrl0, ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
 
-	ppll7ctrl1 = inp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
+	ppll7ctrl1 = readl(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
 	ppll7ctrl1 &= ~MIDIA_PPLL7_FRAC_MODE_MASK;
 
 	ppll7ctrl1_val = 0x0;
@@ -233,7 +233,7 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	ppll7ctrl1_val &= MIDIA_PPLL7_FRAC_MODE_MASK;
 	ppll7ctrl1 |= ppll7ctrl1_val;
 
-	outp32(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1, ppll7ctrl1);
+	writel(ppll7ctrl1, ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
 
 	DRM_INFO("PLL7 set to (0x%0x, 0x%0x)\n", ppll7ctrl0, ppll7ctrl1);
 
@@ -438,16 +438,16 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 	u32 isr_s2 = 0;
 	u32 mask = 0;
 
-	isr_s1 = inp32(dss_base + GLB_CPU_PDP_INTS);
-	isr_s2 = inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
+	isr_s1 = readl(dss_base + GLB_CPU_PDP_INTS);
+	isr_s2 = readl(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
 	DRM_INFO_ONCE("isr_s1 = 0x%x!\n", isr_s1);
 	DRM_INFO_ONCE("isr_s2 = 0x%x!\n", isr_s2);
 
-	outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS, isr_s2);
-	outp32(dss_base + GLB_CPU_PDP_INTS, isr_s1);
+	writel(isr_s2, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
+	writel(isr_s1, dss_base + GLB_CPU_PDP_INTS);
 
-	isr_s1 &= ~(inp32(dss_base + GLB_CPU_PDP_INT_MSK));
-	isr_s2 &= ~(inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK));
+	isr_s1 &= ~(readl(dss_base + GLB_CPU_PDP_INT_MSK));
+	isr_s2 &= ~(readl(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK));
 
 	if (isr_s2 & BIT_VACTIVE0_END) {
 		ctx->vactive0_end_flag++;
@@ -460,9 +460,9 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 	}
 
 	if (isr_s2 & BIT_LDI_UNFLOW) {
-		mask = inp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
+		mask = readl(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 		mask |= BIT_LDI_UNFLOW;
-		outp32(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK, mask);
+		writel(mask, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 
 		DRM_ERROR("ldi underflow!\n");
 	}
