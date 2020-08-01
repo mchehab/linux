@@ -177,14 +177,14 @@ int hisi_pwm_set_backlight(struct backlight_device *bl, uint32_t bl_level)
 
 	bl_level = (bl_level * PWM_OUT_PRECISION) / bl_max;
 
-	outp32(pwm_base + PWM_LOCK_OFFSET, 0x1acce551);
-	outp32(pwm_base + PWM_CTL_OFFSET, 0x0);
-	outp32(pwm_base + PWM_CFG_OFFSET, 0x2);
-	outp32(pwm_base + PWM_PR0_OFFSET, 0x1);
-	outp32(pwm_base + PWM_PR1_OFFSET, 0x2);
-	outp32(pwm_base + PWM_CTL_OFFSET, 0x1);
-	outp32(pwm_base + PWM_C0_MR_OFFSET, (PWM_OUT_PRECISION - 1));
-	outp32(pwm_base + PWM_C0_MR0_OFFSET, bl_level);
+	writel(0x1acce551, pwm_base + PWM_LOCK_OFFSET);
+	writel(0x0, pwm_base + PWM_CTL_OFFSET);
+	writel(0x2, pwm_base + PWM_CFG_OFFSET);
+	writel(0x1, pwm_base + PWM_PR0_OFFSET);
+	writel(0x2, pwm_base + PWM_PR1_OFFSET);
+	writel(0x1, pwm_base + PWM_CTL_OFFSET);
+	writel((PWM_OUT_PRECISION - 1), pwm_base + PWM_C0_MR_OFFSET);
+	writel(bl_level, pwm_base + PWM_C0_MR0_OFFSET);
 
 	return 0;
 }
@@ -214,7 +214,7 @@ int hisi_pwm_on(void)
 		return 0;
 
 	// dis-reset pwm
-	outp32(peri_crg_base + PERRSTDIS2, 0x1);
+	writel(0x1, peri_crg_base + PERRSTDIS2);
 
 	clk_tmp = g_pwm_clk;
 	if (clk_tmp) {
@@ -276,7 +276,7 @@ int hisi_pwm_off(void)
 	}
 
 	//reset pwm
-	outp32(peri_crg_base + PERRSTEN2, 0x1);
+	writel(0x1, peri_crg_base + PERRSTEN2);
 
 	g_pwm_on = 0;
 
