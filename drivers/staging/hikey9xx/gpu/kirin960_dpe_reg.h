@@ -3081,8 +3081,6 @@ struct dss_hw_ctx {
 	ktime_t vsync_timestamp_prev;
 
 	struct iommu_domain *mmu_domain;
-	struct ion_client *ion_client;
-	struct ion_handle *ion_handle;
 	char __iomem *screen_base;
 	unsigned long smem_start;
 	unsigned long screen_size;

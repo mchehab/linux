@@ -976,8 +976,6 @@ static int dss_drm_init(struct drm_device *dev)
 	if (ret)
 		return ret;
 
-	ctx->ion_client = NULL;
-	ctx->ion_handle = NULL;
 	ctx->screen_base = 0;
 	ctx->screen_size = 0;
 	ctx->smem_start = 0;
