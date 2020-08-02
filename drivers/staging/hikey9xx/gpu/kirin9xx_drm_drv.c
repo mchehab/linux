@@ -340,10 +340,10 @@ static int kirin_drm_platform_resume(struct platform_device *pdev)
 
 static const struct of_device_id kirin_drm_dt_ids[] = {
 	{ .compatible = "hisilicon,kirin960-dpe",
-	  .data = &dss_dc_ops,
+	  .data = &kirin960_dss_dc_ops,
 	},
 	{ .compatible = "hisilicon,kirin970-dpe",
-	  .data = &dss_dc_ops,
+	  .data = &kirin970_dss_dc_ops,
 	},
 	{ /* end node */ },
 };

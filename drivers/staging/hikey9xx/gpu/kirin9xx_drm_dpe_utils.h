@@ -16,10 +16,13 @@
 #ifndef KIRIN_DRM_DPE_UTILS_H
 #define KIRIN_DRM_DPE_UTILS_H
 
+#include <linux/kernel.h>
+
 #include <drm/drm_plane.h>
 #include <drm/drm_crtc.h>
 
 #include "kirin9xx_drm_drv.h"
+#include "kirin9xx_dpe.h"
 
 enum dss_channel {
 	DSS_CH1 = 0,	/* channel 1 for primary plane */
@@ -110,7 +113,25 @@ struct dss_hw_ctx {
 	char __iomem *screen_base;
 	unsigned long smem_start;
 	unsigned long screen_size;
+
+	/* Version-specific data */
+	u32 g_dss_module_base[DSS_CHN_MAX_DEFINE][MODULE_CHN_MAX];
+	u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX];
+	int g_scf_lut_chn_coef_idx[DSS_CHN_MAX_DEFINE];
+	u32 g_dss_module_cap[DSS_CHN_MAX_DEFINE][MODULE_CAP_MAX];
+	u32 g_dss_chn_sid_num[DSS_CHN_MAX_DEFINE];
+	u32 g_dss_smmu_smrx_idx[DSS_CHN_MAX_DEFINE];
+	u32 smmu_offset;
+	u32 afbc_header_addr_align;
+	u32 dss_mmbuf_clk_rate_power_off;
+	u32 rot_mem_ctrl;
+	u32 dither_mem_ctrl;
+	u32 arsr2p_lb_mem_ctrl;
+	u32 pxl0_clk_rate_power_off;
 };
+
+void kirin960_dpe_defs(struct dss_hw_ctx *ctx);
+void kirin970_dpe_defs(struct dss_hw_ctx *ctx);
 
 struct dss_clk_rate {
 	u64 dss_pri_clk_rate;

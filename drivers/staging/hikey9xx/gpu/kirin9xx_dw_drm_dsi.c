@@ -16,6 +16,7 @@
 
 #include <linux/clk.h>
 #include <linux/component.h>
+#include <linux/of_device.h>
 #include <linux/of_graph.h>
 #include <linux/iopoll.h>
 #include <video/mipi_display.h>
@@ -32,19 +33,9 @@
 #include <drm/drm_probe_helper.h>
 
 #include "kirin9xx_dw_dsi_reg.h"
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#include "kirin970_dpe_reg.h"
-#else
-#include "kirin960_dpe_reg.h"
-#endif
+#include "kirin9xx_dpe.h"
 #include "kirin9xx_drm_drv.h"
 #include "kirin9xx_drm_dpe_utils.h"
-
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#define DTS_COMP_DSI_NAME "hisilicon,kirin970-dsi"
-#else
-#define DTS_COMP_DSI_NAME "hisilicon,kirin960-dsi"
-#endif
 
 #define ROUND(x, y)		((x) / (y) + \
 				((x) % (y) * 10 / (y) >= 5 ? 1 : 0))
@@ -141,6 +132,8 @@ struct dsi_hw_ctx {
 	void __iomem *base;
 	char __iomem *peri_crg_base;
 	void __iomem *pctrl_base;
+
+	u32 g_dss_version_tag;
 
 	struct clk *dss_dphy0_ref_clk;
 	struct clk *dss_dphy1_ref_clk;
@@ -317,9 +310,8 @@ void dsi_set_output_client(struct drm_device *dev)
 }
 EXPORT_SYMBOL(dsi_set_output_client);
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
-			      struct mipi_phy_params *phy_ctrl, u32 id)
+static void kirin970_get_dsi_dphy_ctrl(struct dw_dsi *dsi,
+				       struct mipi_phy_params *phy_ctrl, u32 id)
 {
 	struct mipi_panel_info *mipi = NULL;
 	struct drm_display_mode *mode = NULL;
@@ -548,9 +540,9 @@ static void get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 		phy_ctrl->data_lane_hs2lp_time,
 		phy_ctrl->phy_stop_wait_time);
 }
-#else
-static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
-			     struct mipi_phy_params *phy_ctrl, u32 id)
+
+static void kirin960_get_dsi_phy_ctrl(struct dw_dsi *dsi,
+				      struct mipi_phy_params *phy_ctrl, u32 id)
 {
 	struct mipi_panel_info *mipi = NULL;
 	struct drm_display_mode *mode = NULL;
@@ -880,7 +872,6 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 		phy_ctrl->data_lane_hs2lp_time,
 		phy_ctrl->phy_stop_wait_time);
 }
-#endif
 
 static void dw_dsi_set_mode(struct dw_dsi *dsi, enum dsi_work_mode mode)
 {
@@ -1022,6 +1013,7 @@ static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi,
 static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 			  u32 id)
 {
+	struct dsi_hw_ctx *ctx = dsi->ctx;
 	u32 hline_time = 0;
 	u32 hsa_time = 0;
 	u32 hbp_time = 0;
@@ -1033,9 +1025,6 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	struct dss_rect rect;
 	u32 cmp_stopstate_val = 0;
 	u32 lanes;
-#if !defined(CONFIG_DRM_HISI_KIRIN970)
-	int i = 0;
-#endif
 
 	WARN_ON(!dsi);
 	WARN_ON(!mipi_dsi_base);
@@ -1051,11 +1040,10 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 	memset(&dsi->phy, 0, sizeof(struct mipi_phy_params));
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	get_dsi_dphy_ctrl(dsi, &dsi->phy, id);
-#else
-	get_dsi_phy_ctrl(dsi, &dsi->phy, id);
-#endif
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
+		kirin970_get_dsi_dphy_ctrl(dsi, &dsi->phy, id);
+	else
+		kirin960_get_dsi_phy_ctrl(dsi, &dsi->phy, id);
 
 	rect.x = 0;
 	rect.y = 0;
@@ -1074,115 +1062,119 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	writel(0x00000001, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 	writel(0x00000000, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	dsi_phy_tst_set(mipi_dsi_base, 0x0042, 0x21);
-	//PLL configuration I
-	dsi_phy_tst_set(mipi_dsi_base, 0x0046, dsi->phy.rg_cp + (dsi->phy.rg_lpf_r << 4));
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		dsi_phy_tst_set(mipi_dsi_base, 0x0042, 0x21);
+		//PLL configuration I
+		dsi_phy_tst_set(mipi_dsi_base, 0x0046,
+				dsi->phy.rg_cp + (dsi->phy.rg_lpf_r << 4));
 
-	//PLL configuration II
-	dsi_phy_tst_set(mipi_dsi_base, 0x0048, dsi->phy.rg_0p8v + (dsi->phy.rg_2p5g << 1) +
-		(dsi->phy.rg_320m << 2) + (dsi->phy.rg_band_sel << 3));
+		//PLL configuration II
+		dsi_phy_tst_set(mipi_dsi_base, 0x0048,
+				dsi->phy.rg_0p8v + (dsi->phy.rg_2p5g << 1) +
+				(dsi->phy.rg_320m << 2) + (dsi->phy.rg_band_sel << 3));
 
-	//PLL configuration III
-	dsi_phy_tst_set(mipi_dsi_base, 0x0049, dsi->phy.rg_pre_div);
+		//PLL configuration III
+		dsi_phy_tst_set(mipi_dsi_base, 0x0049, dsi->phy.rg_pre_div);
 
-	//PLL configuration IV
-	dsi_phy_tst_set(mipi_dsi_base, 0x004A, dsi->phy.rg_div);
+		//PLL configuration IV
+		dsi_phy_tst_set(mipi_dsi_base, 0x004A, dsi->phy.rg_div);
 
-	dsi_phy_tst_set(mipi_dsi_base, 0x004F, 0xf0);
-	dsi_phy_tst_set(mipi_dsi_base, 0x0050, 0xc0);
-	dsi_phy_tst_set(mipi_dsi_base, 0x0051, 0x22);
+		dsi_phy_tst_set(mipi_dsi_base, 0x004F, 0xf0);
+		dsi_phy_tst_set(mipi_dsi_base, 0x0050, 0xc0);
+		dsi_phy_tst_set(mipi_dsi_base, 0x0051, 0x22);
 
-	dsi_phy_tst_set(mipi_dsi_base, 0x0053, dsi->phy.rg_vrefsel_vcm);
+		dsi_phy_tst_set(mipi_dsi_base, 0x0053, dsi->phy.rg_vrefsel_vcm);
 
-	/*enable BTA*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x0054, 0x03);
+		/*enable BTA*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x0054, 0x03);
 
-	//PLL update control
-	dsi_phy_tst_set(mipi_dsi_base, 0x004B, 0x1);
+		//PLL update control
+		dsi_phy_tst_set(mipi_dsi_base, 0x004B, 0x1);
 
-	//set dphy spec parameter
-	mipi_config_dphy_spec1v2_parameter(dsi, mipi_dsi_base, id);
-#else
-	/* physical configuration PLL I*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x14,
-			(dsi->phy.rg_pll_fbd_s << 4) + (dsi->phy.rg_pll_enswc << 3) +
-		(dsi->phy.rg_pll_enbwt << 2) + dsi->phy.rg_pll_chp);
+		//set dphy spec parameter
+		mipi_config_dphy_spec1v2_parameter(dsi, mipi_dsi_base, id);
+	} else {
+		int i = 0;
 
-	/* physical configuration PLL II, M*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x15, dsi->phy.rg_pll_fbd_p);
+		/* physical configuration PLL I*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x14,
+				(dsi->phy.rg_pll_fbd_s << 4) + (dsi->phy.rg_pll_enswc << 3) +
+				(dsi->phy.rg_pll_enbwt << 2) + dsi->phy.rg_pll_chp);
 
-	/* physical configuration PLL III*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x16,
-			(dsi->phy.rg_pll_cp << 5) + (dsi->phy.rg_pll_lpf_cs << 4) +
-		dsi->phy.rg_pll_refsel);
+		/* physical configuration PLL II, M*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x15, dsi->phy.rg_pll_fbd_p);
 
-	/* physical configuration PLL IV, N*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x17, dsi->phy.rg_pll_pre_p);
+		/* physical configuration PLL III*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x16,
+				(dsi->phy.rg_pll_cp << 5) + (dsi->phy.rg_pll_lpf_cs << 4) +
+				dsi->phy.rg_pll_refsel);
 
-	/* sets the analog characteristic of V reference in D-PHY TX*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x1D, dsi->phy.rg_vrefsel_vcm);
+		/* physical configuration PLL IV, N*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x17, dsi->phy.rg_pll_pre_p);
 
-	/* MISC AFE Configuration*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x1E,
-			(dsi->phy.rg_pll_cp_p << 5) + (dsi->phy.reload_sel << 4) +
-		(dsi->phy.rg_phase_gen_en << 3) + (dsi->phy.rg_band_sel << 2) +
-		(dsi->phy.pll_power_down << 1) + dsi->phy.pll_register_override);
+		/* sets the analog characteristic of V reference in D-PHY TX*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x1D, dsi->phy.rg_vrefsel_vcm);
 
-	/*reload_command*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x1F, dsi->phy.load_command);
+		/* MISC AFE Configuration*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x1E,
+				(dsi->phy.rg_pll_cp_p << 5) + (dsi->phy.reload_sel << 4) +
+				(dsi->phy.rg_phase_gen_en << 3) + (dsi->phy.rg_band_sel << 2) +
+				(dsi->phy.pll_power_down << 1) + dsi->phy.pll_register_override);
 
-	/* pre_delay of clock lane request setting*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x20, DSS_REDUCE(dsi->phy.clk_pre_delay));
+		/*reload_command*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x1F, dsi->phy.load_command);
 
-	/* post_delay of clock lane request setting*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x21, DSS_REDUCE(dsi->phy.clk_post_delay));
+		/* pre_delay of clock lane request setting*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x20, DSS_REDUCE(dsi->phy.clk_pre_delay));
 
-	/* clock lane timing ctrl - t_lpx*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x22, DSS_REDUCE(dsi->phy.clk_t_lpx));
+		/* post_delay of clock lane request setting*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x21, DSS_REDUCE(dsi->phy.clk_post_delay));
 
-	/* clock lane timing ctrl - t_hs_prepare*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x23, DSS_REDUCE(dsi->phy.clk_t_hs_prepare));
+		/* clock lane timing ctrl - t_lpx*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x22, DSS_REDUCE(dsi->phy.clk_t_lpx));
 
-	/* clock lane timing ctrl - t_hs_zero*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x24, DSS_REDUCE(dsi->phy.clk_t_hs_zero));
+		/* clock lane timing ctrl - t_hs_prepare*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x23, DSS_REDUCE(dsi->phy.clk_t_hs_prepare));
 
-	/* clock lane timing ctrl - t_hs_trial*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x25, dsi->phy.clk_t_hs_trial);
+		/* clock lane timing ctrl - t_hs_zero*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x24, DSS_REDUCE(dsi->phy.clk_t_hs_zero));
 
-	for (i = 0; i <= lanes; i++) {
-		/* data lane pre_delay*/
-		tmp = 0x30 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_pre_delay));
+		/* clock lane timing ctrl - t_hs_trial*/
+		dsi_phy_tst_set(mipi_dsi_base, 0x25, dsi->phy.clk_t_hs_trial);
 
-		/*data lane post_delay*/
-		tmp = 0x31 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_post_delay));
+		for (i = 0; i <= lanes; i++) {
+			/* data lane pre_delay*/
+			tmp = 0x30 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_pre_delay));
 
-		/* data lane timing ctrl - t_lpx*/
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_lpx));
+			/*data lane post_delay*/
+			tmp = 0x31 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_post_delay));
 
-		/* data lane timing ctrl - t_hs_prepare*/
-		tmp = 0x33 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_hs_prepare));
+			/* data lane timing ctrl - t_lpx*/
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_lpx));
 
-		/* data lane timing ctrl - t_hs_zero*/
-		tmp = 0x34 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_hs_zero));
+			/* data lane timing ctrl - t_hs_prepare*/
+			tmp = 0x33 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_hs_prepare));
 
-		/* data lane timing ctrl - t_hs_trial*/
-		tmp = 0x35 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_hs_trial));
+			/* data lane timing ctrl - t_hs_zero*/
+			tmp = 0x34 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_hs_zero));
 
-		/* data lane timing ctrl - t_ta_go*/
-		tmp = 0x36 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_ta_go));
+			/* data lane timing ctrl - t_hs_trial*/
+			tmp = 0x35 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_hs_trial));
 
-		/* data lane timing ctrl - t_ta_get*/
-		tmp = 0x37 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_ta_get));
+			/* data lane timing ctrl - t_ta_go*/
+			tmp = 0x36 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_ta_go));
+
+			/* data lane timing ctrl - t_ta_get*/
+			tmp = 0x37 + (i << 4);
+			dsi_phy_tst_set(mipi_dsi_base, tmp, DSS_REDUCE(dsi->phy.data_t_ta_get));
+		}
 	}
-#endif
 
 	writel(0x00000007, mipi_dsi_base + MIPIDSI_PHY_RSTZ_OFFSET);
 
@@ -1324,12 +1316,12 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET,
 		dsi->phy.data_lane_hs2lp_time, 10, 16);
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	//16~19bit:pclk_en, pclk_sel, dpipclk_en, dpipclk_sel
-	set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, 0x5, 4, 16);
-	//0:dphy
-	set_reg(mipi_dsi_base + PHY_MODE, 0x0, 1, 0);
-#endif
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)  {
+		//16~19bit:pclk_en, pclk_sel, dpipclk_en, dpipclk_sel
+		set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, 0x5, 4, 16);
+		//0:dphy
+		set_reg(mipi_dsi_base + KIRIN970_PHY_MODE, 0x0, 1, 0);
+	}
 
 	/* Waking up Core*/
 	set_reg(mipi_dsi_base + MIPIDSI_PWR_UP_OFFSET, 0x1, 1, 0);
@@ -1366,15 +1358,16 @@ static void dsi_encoder_disable(struct drm_encoder *encoder)
 static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 			    u32 id)
 {
+	struct dsi_hw_ctx *ctx = dsi->ctx;
+
 	WARN_ON(!mipi_dsi_base);
 
 	/* mipi init */
 	dsi_mipi_init(dsi, mipi_dsi_base, id);
 
 	/* dsi memory init */
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	writel(0x02600008, mipi_dsi_base + DSI_MEM_CTRL);
-#endif
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
+		writel(0x02600008, mipi_dsi_base + KIRIN970_DSI_MEM_CTRL);
 
 	/* switch to cmd mode */
 	set_reg(mipi_dsi_base + MIPIDSI_MODE_CFG_OFFSET, 0x1, 1, 0);
@@ -1391,6 +1384,8 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 
 static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 {
+	struct dsi_hw_ctx *ctx = dsi->ctx;
+
 	u64 pctrl_dphytx_stopcnt = 0;
 
 	WARN_ON(!mipi_dsi_base);
@@ -1404,16 +1399,16 @@ static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	/* enable generate High Speed clock, continue clock */
 	set_reg(mipi_dsi_base + MIPIDSI_LPCLK_CTRL_OFFSET, 0x1, 2, 0);
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	// init: wait DPHY 4 data lane stopstate
-	pctrl_dphytx_stopcnt = (u64)(dsi->ldi.h_back_porch +
-		dsi->ldi.h_front_porch + dsi->ldi.h_pulse_width + dsi->cur_mode.hdisplay + 5) *
-		DEFAULT_PCLK_PCTRL_RATE / (dsi->cur_mode.clock * 1000);
-	DRM_DEBUG("pctrl_dphytx_stopcnt = %llu\n", pctrl_dphytx_stopcnt);
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		// init: wait DPHY 4 data lane stopstate
+		pctrl_dphytx_stopcnt = (u64)(dsi->ldi.h_back_porch +
+			dsi->ldi.h_front_porch + dsi->ldi.h_pulse_width + dsi->cur_mode.hdisplay + 5) *
+			DEFAULT_PCLK_PCTRL_RATE / (dsi->cur_mode.clock * 1000);
+		DRM_DEBUG("pctrl_dphytx_stopcnt = %llu\n", pctrl_dphytx_stopcnt);
 
-	//FIXME:
-	writel((u32)pctrl_dphytx_stopcnt, dsi->ctx->pctrl_base + PERI_CTRL29);
-#endif
+		//FIXME:
+		writel((u32)pctrl_dphytx_stopcnt, dsi->ctx->pctrl_base + PERI_CTRL29);
+	}
 
 	return 0;
 }
@@ -1964,13 +1959,17 @@ static int dsi_parse_endpoint(struct dw_dsi *dsi,
 static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 {
 	struct dsi_hw_ctx *ctx = dsi->ctx;
+	const char *compatible;
 	int ret = 0;
 	struct device_node *np = NULL;
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
+		compatible = "hisilicon,kirin970-dsi";
+	else
+		compatible = "hisilicon,kirin960-dsi";
 
-	np = of_find_compatible_node(NULL, NULL, DTS_COMP_DSI_NAME);
+	np = of_find_compatible_node(NULL, NULL, compatible);
 	if (!np) {
-		DRM_ERROR("NOT FOUND device node %s!\n",
-			  DTS_COMP_DSI_NAME);
+		DRM_ERROR("NOT FOUND device node %s!\n", compatible);
 		return -ENXIO;
 	}
 
@@ -1986,13 +1985,13 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 		return -ENXIO;
 	}
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	ctx->pctrl_base = of_iomap(np, 2);
-	if (!(ctx->pctrl_base)) {
-		DRM_ERROR("failed to get dss pctrl_base resource.\n");
-		return -ENXIO;
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		ctx->pctrl_base = of_iomap(np, 2);
+		if (!(ctx->pctrl_base)) {
+			DRM_ERROR("failed to get dss pctrl_base resource.\n");
+			return -ENXIO;
+		}
 	}
-#endif
 
 	dsi->gpio_mux = devm_gpiod_get(&pdev->dev, "mux", GPIOD_OUT_HIGH);
 	if (IS_ERR(dsi->gpio_mux))
@@ -2066,6 +2065,8 @@ static int dsi_probe(struct platform_device *pdev)
 	ctx = &data->ctx;
 	dsi->ctx = ctx;
 
+	ctx->g_dss_version_tag = (long)of_device_get_match_data(dev);
+
 	/* parse HDMI bridge endpoint */
 	ret = dsi_parse_endpoint(dsi, np, OUT_HDMI);
 	if (ret)
@@ -2105,7 +2106,13 @@ static int dsi_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id dsi_of_match[] = {
-	{.compatible = DTS_COMP_DSI_NAME},
+	{
+		.compatible = "hisilicon,kirin960-dsi",
+		.data = (void *)FB_ACCEL_HI366x
+	}, {
+		.compatible = "hisilicon,kirin970-dsi",
+		.data = (void *)FB_ACCEL_KIRIN970
+	},
 	{ }
 };
 MODULE_DEVICE_TABLE(of, dsi_of_match);

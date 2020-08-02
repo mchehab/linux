@@ -24,671 +24,12 @@
 
 #include "kirin9xx_drm_dpe_utils.h"
 #include "kirin9xx_drm_drv.h"
-
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#include "kirin970_dpe_reg.h"
-#else
-#include "kirin960_dpe_reg.h"
-#endif
+#include "kirin9xx_dpe.h"
 
 static const int mid_array[DSS_CHN_MAX_DEFINE] = {
 	0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x2, 0x1, 0x3, 0x0
 };
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-static const u32 g_dss_module_base[DSS_CHN_MAX_DEFINE][MODULE_CHN_MAX] = {
-	// D0
-	{
-	MIF_CH0_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH0_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH0_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH0,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD0_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_D0_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_D0_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_D0_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// D1
-	{
-	MIF_CH1_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH1_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH1_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH1,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD1_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_D1_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_D1_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_D1_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// V0
-	{
-	MIF_CH2_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH2_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH2_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH2,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD2_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_VG0_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_VG0_DFC_OFFSET,  //MODULE_DFC
-	DSS_RCH_VG0_SCL_OFFSET,  //MODULE_SCL
-	DSS_RCH_VG0_SCL_LUT_OFFSET,  //MODULE_SCL_LUT
-	DSS_RCH_VG0_ARSR_OFFSET,  //MODULE_ARSR2P
-	DSS_RCH_VG0_ARSR_LUT_OFFSET,  //MODULE_ARSR2P_LUT
-	DSS_RCH_VG0_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
-	DSS_RCH_VG0_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
-	DSS_RCH_VG0_PCSC_OFFSET,  //MODULE_PCSC
-	DSS_RCH_VG0_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// G0
-	{
-	MIF_CH3_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH3_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH3_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH3,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD3_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_G0_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_G0_DFC_OFFSET,  //MODULE_DFC
-	DSS_RCH_G0_SCL_OFFSET,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	DSS_RCH_G0_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
-	DSS_RCH_G0_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_G0_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// V1
-	{
-	MIF_CH4_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH4_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH4_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH4,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD4_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_VG1_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_VG1_DFC_OFFSET,  //MODULE_DFC
-	DSS_RCH_VG1_SCL_OFFSET,  //MODULE_SCL
-	DSS_RCH_VG1_SCL_LUT_OFFSET,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	DSS_RCH_VG1_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
-	DSS_RCH_VG1_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_VG1_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// G1
-	{
-	MIF_CH5_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH5_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH5_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH5,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD5_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_G1_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_G1_DFC_OFFSET,  //MODULE_DFC
-	DSS_RCH_G1_SCL_OFFSET,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	DSS_RCH_G1_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
-	DSS_RCH_G1_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_G1_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// D2
-	{
-	MIF_CH6_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH6_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH6_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH6,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD6_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_D2_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_D2_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_D2_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// D3
-	{
-	MIF_CH7_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH7_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH7_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH7,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_STARTY,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD7_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_D3_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_D3_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_D3_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// W0
-	{
-	MIF_CH8_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH8_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH8_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_WCH0,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH0_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH0_OV_IEN,  //MODULE_MCTL_CHN_OV_OEN
-	0,  //MODULE_MCTL_CHN_STARTY
-	0,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_WCH0_DMA_OFFSET,  //MODULE_DMA
-	DSS_WCH0_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_WCH0_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// W1
-	{
-	MIF_CH9_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH9_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH9_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_WCH1,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH1_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH1_OV_IEN,  //MODULE_MCTL_CHN_OV_OEN
-	0,  //MODULE_MCTL_CHN_STARTY
-	0,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_WCH1_DMA_OFFSET,  //MODULE_DMA
-	DSS_WCH1_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_WCH1_CSC_OFFSET,  //MODULE_CSC
-	},
-
-	// V2
-	{
-	MIF_CH10_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH11_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH11_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_RCH8,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH8_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH8_OV_OEN,  //MODULE_MCTL_CHN_OV_OEN
-	0,  //MODULE_MCTL_CHN_STARTY
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD8_DBG,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_RCH_VG2_DMA_OFFSET,  //MODULE_DMA
-	DSS_RCH_VG2_DFC_OFFSET,  //MODULE_DFC
-	DSS_RCH_VG2_SCL_OFFSET,  //MODULE_SCL
-	DSS_RCH_VG2_SCL_LUT_OFFSET,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	DSS_RCH_VG2_POST_CLIP_OFFSET_ES,  //MODULE_POST_CLIP_ES
-	DSS_RCH_VG2_POST_CLIP_OFFSET,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_RCH_VG2_CSC_OFFSET,  //MODULE_CSC
-	},
-	// W2
-	{
-	MIF_CH11_OFFSET,   //MODULE_MIF_CHN
-	AIF0_CH12_OFFSET,  //MODULE_AIF0_CHN
-	AIF1_CH12_OFFSET,  //MODULE_AIF1_CHN
-	MCTL_CTL_MUTEX_WCH2,  //MODULE_MCTL_CHN_MUTEX
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH2_FLUSH_EN,  //MODULE_MCTL_CHN_FLUSH_EN
-	0,  //MODULE_MCTL_CHN_OV_OEN
-	0,  //MODULE_MCTL_CHN_STARTY
-	0,  //MODULE_MCTL_CHN_MOD_DBG
-	DSS_WCH2_DMA_OFFSET,  //MODULE_DMA
-	DSS_WCH2_DFC_OFFSET,  //MODULE_DFC
-	0,  //MODULE_SCL
-	0,  //MODULE_SCL_LUT
-	0,  //MODULE_ARSR2P
-	0,  //MODULE_ARSR2P_LUT
-	0, //MODULE_POST_CLIP_ES
-	0,  //MODULE_POST_CLIP
-	0,  //MODULE_PCSC
-	DSS_WCH2_CSC_OFFSET,  //MODULE_CSC
-	},
-};
-
-static const u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX] = {
-	{DSS_OVL0_OFFSET,
-	DSS_MCTRL_CTL0_OFFSET},
-
-	{DSS_OVL1_OFFSET,
-	DSS_MCTRL_CTL1_OFFSET},
-
-	{DSS_OVL2_OFFSET,
-	DSS_MCTRL_CTL2_OFFSET},
-
-	{DSS_OVL3_OFFSET,
-	DSS_MCTRL_CTL3_OFFSET},
-
-	{0,
-	DSS_MCTRL_CTL4_OFFSET},
-
-	{0,
-	DSS_MCTRL_CTL5_OFFSET},
-};
-
-//SCF_LUT_CHN coef_idx
-int g_scf_lut_chn_coef_idx[DSS_CHN_MAX_DEFINE] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-
-u32 g_dss_module_cap[DSS_CHN_MAX_DEFINE][MODULE_CAP_MAX] = {
-	/* D2 */
-	{0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
-	/* D3 */
-	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-	/* V0 */
-	{0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1},
-	/* G0 */
-	{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-	/* V1 */
-	{0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1},
-	/* G1 */
-	{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-	/* D0 */
-	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-	/* D1 */
-	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-
-	/* W0 */
-	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-	/* W1 */
-	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-
-	/* V2 */
-	{0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1},
-	/* W2 */
-	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-};
-
-/* number of smrx idx for each channel */
-u32 g_dss_chn_sid_num[DSS_CHN_MAX_DEFINE] = {
-	4, 1, 4, 4, 4, 4, 1, 1, 3, 4, 3, 3
-};
-
-/* start idx of each channel */
-/* smrx_idx = g_dss_smmu_smrx_idx[chn_idx] + (0 ~ g_dss_chn_sid_num[chn_idx]) */
-u32 g_dss_smmu_smrx_idx[DSS_CHN_MAX_DEFINE] = {
-	0, 4, 5, 9, 13, 17, 21, 22, 26, 29, 23, 36
-};
-#else
-/*
- * dss_chn_idx
- * DSS_RCHN_D2 = 0,	DSS_RCHN_D3,	DSS_RCHN_V0,	DSS_RCHN_G0,	DSS_RCHN_V1,
- * DSS_RCHN_G1,	DSS_RCHN_D0,	DSS_RCHN_D1,	DSS_WCHN_W0,	DSS_WCHN_W1,
- * DSS_RCHN_V2,   DSS_WCHN_W2,
- */
-u32 g_dss_module_base[DSS_CHN_MAX_DEFINE][MODULE_CHN_MAX] = {
-	/* D0 */
-	{
-	MIF_CH0_OFFSET,
-	AIF0_CH0_OFFSET,
-	AIF1_CH0_OFFSET,
-	MCTL_CTL_MUTEX_RCH0,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH0_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD0_DBG,
-	DSS_RCH_D0_DMA_OFFSET,
-	DSS_RCH_D0_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_RCH_D0_CSC_OFFSET,
-	},
-
-	/* D1 */
-	{
-	MIF_CH1_OFFSET,
-	AIF0_CH1_OFFSET,
-	AIF1_CH1_OFFSET,
-	MCTL_CTL_MUTEX_RCH1,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH1_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD1_DBG,
-	DSS_RCH_D1_DMA_OFFSET,
-	DSS_RCH_D1_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_RCH_D1_CSC_OFFSET,
-	},
-
-	/* V0 */
-	{
-	MIF_CH2_OFFSET,
-	AIF0_CH2_OFFSET,
-	AIF1_CH2_OFFSET,
-	MCTL_CTL_MUTEX_RCH2,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH2_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD2_DBG,
-	DSS_RCH_VG0_DMA_OFFSET,
-	DSS_RCH_VG0_DFC_OFFSET,
-	DSS_RCH_VG0_SCL_OFFSET,
-	DSS_RCH_VG0_SCL_LUT_OFFSET,
-	DSS_RCH_VG0_ARSR_OFFSET,
-	DSS_RCH_VG0_ARSR_LUT_OFFSET,
-	DSS_RCH_VG0_POST_CLIP_OFFSET,
-	DSS_RCH_VG0_PCSC_OFFSET,
-	DSS_RCH_VG0_CSC_OFFSET,
-	},
-
-	/* G0 */
-	{
-	MIF_CH3_OFFSET,
-	AIF0_CH3_OFFSET,
-	AIF1_CH3_OFFSET,
-	MCTL_CTL_MUTEX_RCH3,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH3_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD3_DBG,
-	DSS_RCH_G0_DMA_OFFSET,
-	DSS_RCH_G0_DFC_OFFSET,
-	DSS_RCH_G0_SCL_OFFSET,
-	0,
-	0,
-	0,
-	DSS_RCH_G0_POST_CLIP_OFFSET,
-	0,
-	DSS_RCH_G0_CSC_OFFSET,
-	},
-
-	/* V1 */
-	{
-	MIF_CH4_OFFSET,
-	AIF0_CH4_OFFSET,
-	AIF1_CH4_OFFSET,
-	MCTL_CTL_MUTEX_RCH4,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH4_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD4_DBG,
-	DSS_RCH_VG1_DMA_OFFSET,
-	DSS_RCH_VG1_DFC_OFFSET,
-	DSS_RCH_VG1_SCL_OFFSET,
-	DSS_RCH_VG1_SCL_LUT_OFFSET,
-	0,
-	0,
-	DSS_RCH_VG1_POST_CLIP_OFFSET,
-	0,
-	DSS_RCH_VG1_CSC_OFFSET,
-	},
-
-	/* G1 */
-	{
-	MIF_CH5_OFFSET,
-	AIF0_CH5_OFFSET,
-	AIF1_CH5_OFFSET,
-	MCTL_CTL_MUTEX_RCH5,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH5_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD5_DBG,
-	DSS_RCH_G1_DMA_OFFSET,
-	DSS_RCH_G1_DFC_OFFSET,
-	DSS_RCH_G1_SCL_OFFSET,
-	0,
-	0,
-	0,
-	DSS_RCH_G1_POST_CLIP_OFFSET,
-	0,
-	DSS_RCH_G1_CSC_OFFSET,
-	},
-
-	/* D2 */
-	{
-	MIF_CH6_OFFSET,
-	AIF0_CH6_OFFSET,
-	AIF1_CH6_OFFSET,
-	MCTL_CTL_MUTEX_RCH6,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH6_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD6_DBG,
-	DSS_RCH_D2_DMA_OFFSET,
-	DSS_RCH_D2_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_RCH_D2_CSC_OFFSET,
-	},
-
-	/* D3 */
-	{
-	MIF_CH7_OFFSET,
-	AIF0_CH7_OFFSET,
-	AIF1_CH7_OFFSET,
-	MCTL_CTL_MUTEX_RCH7,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_OV_OEN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH7_STARTY,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD7_DBG,
-	DSS_RCH_D3_DMA_OFFSET,
-	DSS_RCH_D3_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_RCH_D3_CSC_OFFSET,
-	},
-
-	/* W0 */
-	{
-	MIF_CH8_OFFSET,
-	AIF0_CH8_OFFSET,
-	AIF1_CH8_OFFSET,
-	MCTL_CTL_MUTEX_WCH0,
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH0_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH0_OV_IEN,
-	0,
-	0,
-	DSS_WCH0_DMA_OFFSET,
-	DSS_WCH0_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_WCH0_CSC_OFFSET,
-	},
-
-	/* W1 */
-	{
-	MIF_CH9_OFFSET,
-	AIF0_CH9_OFFSET,
-	AIF1_CH9_OFFSET,
-	MCTL_CTL_MUTEX_WCH1,
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH1_FLUSH_EN,
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH1_OV_IEN,
-	0,
-	0,
-	DSS_WCH1_DMA_OFFSET,
-	DSS_WCH1_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_WCH1_CSC_OFFSET,
-	},
-	/* V2 */
-	{
-	MIF_CH10_OFFSET,
-	AIF0_CH11_OFFSET,
-	AIF1_CH11_OFFSET,
-	MCTL_CTL_MUTEX_RCH8,
-	DSS_MCTRL_SYS_OFFSET + MCTL_RCH8_FLUSH_EN,
-	0,
-	0,
-	DSS_MCTRL_SYS_OFFSET + MCTL_MOD8_DBG,
-	DSS_RCH_VG2_DMA_OFFSET,
-	DSS_RCH_VG2_DFC_OFFSET,
-	DSS_RCH_VG2_SCL_OFFSET,
-	DSS_RCH_VG2_SCL_LUT_OFFSET,
-	0,
-	0,
-	DSS_RCH_VG2_POST_CLIP_OFFSET,
-	0,
-	DSS_RCH_VG2_CSC_OFFSET,
-	},
-	/* W2 */
-	{
-	MIF_CH11_OFFSET,
-	AIF0_CH12_OFFSET,
-	AIF1_CH12_OFFSET,
-	MCTL_CTL_MUTEX_WCH2,
-	DSS_MCTRL_SYS_OFFSET + MCTL_WCH2_FLUSH_EN,
-	0,
-	0,
-	0,
-	DSS_WCH2_DMA_OFFSET,
-	DSS_WCH2_DFC_OFFSET,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	DSS_WCH2_CSC_OFFSET,
-	},
-};
-
-u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX] = {
-	{DSS_OVL0_OFFSET,
-	DSS_MCTRL_CTL0_OFFSET},
-
-	{DSS_OVL1_OFFSET,
-	DSS_MCTRL_CTL1_OFFSET},
-
-	{DSS_OVL2_OFFSET,
-	DSS_MCTRL_CTL2_OFFSET},
-
-	{DSS_OVL3_OFFSET,
-	DSS_MCTRL_CTL3_OFFSET},
-
-	{0,
-	DSS_MCTRL_CTL4_OFFSET},
-
-	{0,
-	DSS_MCTRL_CTL5_OFFSET},
-};
-
-/*SCF_LUT_CHN coef_idx*/
-int g_scf_lut_chn_coef_idx[DSS_CHN_MAX_DEFINE] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-
-u32 g_dss_module_cap[DSS_CHN_MAX_DEFINE][MODULE_CAP_MAX] = {
-	/* D2 */
-	{0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
-	/* D3 */
-	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-	/* V0 */
-	{0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1},
-	/* G0 */
-	{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-	/* V1 */
-	{0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1},
-	/* G1 */
-	{0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-	/* D0 */
-	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-	/* D1 */
-	{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-
-	/* W0 */
-	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-	/* W1 */
-	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-
-	/* V2 */
-	{0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1},
-	/* W2 */
-	{1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-};
-
-/* number of smrx idx for each channel */
-u32 g_dss_chn_sid_num[DSS_CHN_MAX_DEFINE] = {
-	4, 1, 4, 4, 4, 4, 1, 1, 3, 3, 3, 2
-};
-
-/* start idx of each channel */
-/* smrx_idx = g_dss_smmu_smrx_idx[chn_idx] + (0 ~ g_dss_chn_sid_num[chn_idx]) */
-u32 g_dss_smmu_smrx_idx[DSS_CHN_MAX_DEFINE] = {
-	0, 4, 5, 9, 13, 17, 21, 22, 26, 29, 23, 32
-};
-
-u32 g_dss_mif_sid_map[DSS_CHN_MAX] = {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-#endif
 static int hisi_pixel_format_hal2dma(int format)
 {
 	int ret = 0;
@@ -864,7 +205,7 @@ static int hisi_dss_aif_ch_config(struct dss_hw_ctx *ctx, int chn_idx)
 	}
 
 	mid = mid_array[chn_idx];
-	aif0_ch_base = ctx->base + g_dss_module_base[chn_idx][MODULE_AIF0_CHN];
+	aif0_ch_base = ctx->base + ctx->g_dss_module_base[chn_idx][MODULE_AIF0_CHN];
 
 	set_reg(aif0_ch_base, 0x0, 1, 0);
 	set_reg(aif0_ch_base, (uint32_t)mid, 4, 4);
@@ -882,10 +223,10 @@ static int hisi_dss_smmu_config(struct dss_hw_ctx *ctx, int chn_idx, bool mmu_en
 		return -1;
 	}
 
-	smmu_base = ctx->base + DSS_SMMU_OFFSET;
+	smmu_base = ctx->base + ctx->smmu_offset;
 
-	for (i = 0; i < g_dss_chn_sid_num[chn_idx]; i++) {
-		idx = g_dss_smmu_smrx_idx[chn_idx] + i;
+	for (i = 0; i < ctx->g_dss_chn_sid_num[chn_idx]; i++) {
+		idx = ctx->g_dss_smmu_smrx_idx[chn_idx] + i;
 		if (!mmu_enable) {
 			set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 1, 32, 0);
 		} else {
@@ -909,7 +250,7 @@ static int hisi_dss_mif_config(struct dss_hw_ctx *ctx, int chn_idx, bool mmu_ena
 
 	mif_base = ctx->base + DSS_MIF_OFFSET;
 	mif_ch_base = ctx->base +
-		g_dss_module_base[chn_idx][MODULE_MIF_CHN];
+		ctx->g_dss_module_base[chn_idx][MODULE_MIF_CHN];
 
 	if (!mmu_enable)
 		set_reg(mif_ch_base + MIF_CTRL1, 0x1, 1, 5);
@@ -929,7 +270,7 @@ int hisi_dss_mctl_mutex_lock(struct dss_hw_ctx *ctx)
 	}
 
 	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 
 	set_reg(mctl_base + MCTL_CTL_MUTEX, 0x1, 1, 0);
 
@@ -946,7 +287,7 @@ int hisi_dss_mctl_mutex_unlock(struct dss_hw_ctx *ctx)
 	}
 
 	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 
 	set_reg(mctl_base + MCTL_CTL_MUTEX, 0x0, 1, 0);
 
@@ -966,7 +307,7 @@ static int hisi_dss_mctl_ov_config(struct dss_hw_ctx *ctx, int chn_idx)
 	mctl_rch_offset = (uint32_t)(MCTL_CTL_MUTEX_RCH0 + chn_idx * 0x4);
 
 	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 
 	set_reg(mctl_base + MCTL_CTL_EN, 0x1, 32, 0);
 	set_reg(mctl_base + MCTL_CTL_TOP, 0x2, 32, 0); /*auto mode*/
@@ -1051,7 +392,7 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 		rdma_bpp = 0x0;
 
 	rdma_base = ctx->base +
-		g_dss_module_base[chn_idx][MODULE_DMA];
+		ctx->g_dss_module_base[chn_idx][MODULE_DMA];
 
 	aligned_pixel = DMA_ALIGN_BYTES / bpp;
 	rdma_oft_x0 = rect->left / aligned_pixel;
@@ -1071,10 +412,10 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 		mm_base_0 = ALIGN_UP(mm_base_0, MMBUF_ADDR_ALIGN);
 		mm_base_1 = ALIGN_UP(mm_base_1, MMBUF_ADDR_ALIGN);
 
-		if ((((rect->right - rect->left) + 1) & (AFBC_HEADER_ADDR_ALIGN - 1)) ||
+		if ((((rect->right - rect->left) + 1) & (ctx->afbc_header_addr_align - 1)) ||
 		    (((rect->bottom - rect->top) + 1) & (AFBC_BLOCK_ALIGN - 1))) {
 			DRM_ERROR("img width(%d) is not %d bytes aligned, or img heigh(%d) is not %d bytes aligned!\n",
-				  ((rect->right - rect->left) + 1), AFBC_HEADER_ADDR_ALIGN,
+				  ((rect->right - rect->left) + 1), ctx->afbc_header_addr_align,
 				  ((rect->bottom - rect->top) + 1), AFBC_BLOCK_ALIGN);
 		}
 
@@ -1168,7 +509,7 @@ static int hisi_dss_rdfc_config(struct dss_hw_ctx *ctx,
 	}
 
 	rdfc_base = ctx->base +
-		g_dss_module_base[chn_idx][MODULE_DFC];
+		ctx->g_dss_module_base[chn_idx][MODULE_DFC];
 
 	dfc_pix_in_num = (bpp <= 2) ? 0x1 : 0x0;
 	size_hrz = rect->right - rect->left;
@@ -1203,9 +544,9 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 	ovl0_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		set_reg(ovl0_base + OV8_REG_DEFAULT, 0x1, 32, 0);
@@ -1250,7 +591,7 @@ static int hisi_dss_ovl_config(struct dss_hw_ctx *ctx,
 	}
 
 	ovl0_base = ctx->base +
-		g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		set_reg(ovl0_base + OV8_REG_DEFAULT, 0x1, 32, 0);
@@ -1360,7 +701,7 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 		return;
 	}
 
-	smmu_base = ctx->base + DSS_SMMU_OFFSET;
+	smmu_base = ctx->base + ctx->smmu_offset;
 
 	set_reg(smmu_base + SMMU_SCR, 0x0, 1, 0);  /*global bypass cancel*/
 	set_reg(smmu_base + SMMU_SCR, 0x1, 8, 20); /*ptw_mid*/
@@ -1412,7 +753,7 @@ void hisi_dss_mctl_on(struct dss_hw_ctx *ctx)
 		return;
 	}
 	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 
 	set_reg(mctl_base + MCTL_CTL_EN, 0x1, 32, 0);
@@ -1457,7 +798,7 @@ void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
 	}
 
 	mctl_base = ctx->base +
-		g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
+		ctx->g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
 
 	if (mctl_base)
 		set_reg(mctl_base + MCTL_CTL_CLEAR, 0x1, 1, 0);
