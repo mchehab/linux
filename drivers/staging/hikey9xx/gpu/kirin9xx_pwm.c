@@ -27,11 +27,7 @@
 #include "kirin9xx_fb_panel.h"
 #include "kirin9xx_dw_dsi_reg.h"
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#include "kirin970_dpe_reg.h"
-#else
-#include "kirin960_dpe_reg.h"
-#endif
+#include "kirin9xx_dpe.h"
 
 /* default pwm clk */
 #define DEFAULT_PWM_CLK_RATE	(80 * 1000000L)
