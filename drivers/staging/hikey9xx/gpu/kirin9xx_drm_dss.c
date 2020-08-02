@@ -40,19 +40,9 @@
 
 #include "kirin9xx_drm_drv.h"
 #include "kirin9xx_drm_dpe_utils.h"
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#include "kirin970_dpe_reg.h"
-#else
-#include "kirin960_dpe_reg.h"
-#endif
+#include "kirin9xx_dpe.h"
 
 //#define DSS_POWER_UP_ON_UEFI
-
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#define DTS_COMP_DSS_NAME "hisilicon,kirin970-dpe"
-#else
-#define DTS_COMP_DSS_NAME "hisilicon,hi3660-dpe"
-#endif
 
 #define DSS_DEBUG	0
 
@@ -322,45 +312,45 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 	int ret = 0;
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	mediacrg_regulator_enable(ctx);
-	dpe_common_clk_enable(ctx);
-	dpe_inner_clk_enable(ctx);
-	#ifndef DSS_POWER_UP_ON_UEFI
-	dpe_regulator_enable(ctx);
-	#endif
-	dpe_set_clk_rate(ctx);
-#else
-	ret = clk_prepare_enable(ctx->dss_pxl0_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dss_pxl0_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dss_pri_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dss_pri_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dss_pclk_dss_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dss_pclk_dss_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dss_axi_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dss_axi_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dss_mmbuf_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dss_mmbuf_clk (%d)\n", ret);
-		return ret;
-	}
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		mediacrg_regulator_enable(ctx);
+		dpe_common_clk_enable(ctx);
+		dpe_inner_clk_enable(ctx);
+#ifndef DSS_POWER_UP_ON_UEFI
+		dpe_regulator_enable(ctx);
 #endif
+		dpe_set_clk_rate(ctx);
+	} else {
+		ret = clk_prepare_enable(ctx->dss_pxl0_clk);
+		if (ret) {
+			DRM_ERROR("failed to enable dss_pxl0_clk (%d)\n", ret);
+			return ret;
+		}
+
+		ret = clk_prepare_enable(ctx->dss_pri_clk);
+		if (ret) {
+			DRM_ERROR("failed to enable dss_pri_clk (%d)\n", ret);
+			return ret;
+		}
+
+		ret = clk_prepare_enable(ctx->dss_pclk_dss_clk);
+		if (ret) {
+			DRM_ERROR("failed to enable dss_pclk_dss_clk (%d)\n", ret);
+			return ret;
+		}
+
+		ret = clk_prepare_enable(ctx->dss_axi_clk);
+		if (ret) {
+			DRM_ERROR("failed to enable dss_axi_clk (%d)\n", ret);
+			return ret;
+		}
+
+		ret = clk_prepare_enable(ctx->dss_mmbuf_clk);
+		if (ret) {
+			DRM_ERROR("failed to enable dss_mmbuf_clk (%d)\n", ret);
+			return ret;
+		}
+	}
 
 	dss_inner_clk_common_enable(ctx);
 	dss_inner_clk_pdp_enable(ctx);
@@ -797,27 +787,25 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *np = NULL;
-	u32 dss_version_tag;
+	const char *compatible;
 	int ret = 0;
 
-	np = of_find_compatible_node(NULL, NULL, DTS_COMP_DSS_NAME);
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
+		compatible = "hisilicon,kirin970-dpe";
+	else
+		compatible = "hisilicon,hi3660-dpe";
+
+	np = of_find_compatible_node(NULL, NULL, compatible);
 	if (!np) {
-		DRM_ERROR("NOT FOUND device node %s!\n",
-			  DTS_COMP_DSS_NAME);
+		DRM_ERROR("NOT FOUND device node %s!\n", compatible);
 		return -ENXIO;
 	}
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	ret = of_property_read_u32(np, "dss_version_tag", &dss_version_tag);
-	if (ret)
-		DRM_ERROR("failed to get dss_version_tag.\n");
-
-	ctx->g_dss_version_tag = dss_version_tag;
-	DRM_INFO("dss_version_tag=0x%x.\n", ctx->g_dss_version_tag);
-#else
-	ctx->g_dss_version_tag = FB_ACCEL_HI366x;
-	DRM_INFO("dss_version_tag=0x%x.\n", ctx->g_dss_version_tag);
-#endif
+	/* Initialize version-specific data */
+	if (ctx->g_dss_version_tag == FB_ACCEL_HI366x)
+		kirin960_dpe_defs(ctx);
+	else
+		kirin970_dpe_defs(ctx);
 
 	ctx->base = of_iomap(np, 0);
 	if (!(ctx->base)) {
@@ -857,19 +845,19 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 		return -ENXIO;
 	}
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	ctx->pmctrl_base = of_iomap(np, 5);
-	if (!(ctx->pmctrl_base)) {
-		DRM_ERROR("failed to get dss pmctrl_base resource.\n");
-		return -ENXIO;
-	}
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		ctx->pmctrl_base = of_iomap(np, 5);
+		if (!(ctx->pmctrl_base)) {
+			DRM_ERROR("failed to get dss pmctrl_base resource.\n");
+			return -ENXIO;
+		}
 
-	ctx->media_crg_base = of_iomap(np, 6);
-	if (!(ctx->media_crg_base)) {
-		DRM_ERROR("failed to get dss media_crg_base resource.\n");
-		return -ENXIO;
+		ctx->media_crg_base = of_iomap(np, 6);
+		if (!(ctx->media_crg_base)) {
+			DRM_ERROR("failed to get dss media_crg_base resource.\n");
+			return -ENXIO;
+		}
 	}
-#endif
 
 	/* get irq no */
 	ctx->irq = irq_of_parse_and_map(np, 0);
@@ -880,13 +868,13 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 
 	DRM_INFO("dss irq = %d.\n", ctx->irq);
 
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-	ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
-	if (!ctx->dpe_regulator) {
-		DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
-		return -ENXIO;
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
+		ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
+		if (!ctx->dpe_regulator) {
+			DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
+			return -ENXIO;
+		}
 	}
-#endif
 
 	ctx->dss_mmbuf_clk = devm_clk_get(dev, "clk_dss_axi_mm");
 	if (!ctx->dss_mmbuf_clk) {
@@ -948,7 +936,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	return 0;
 }
 
-static int dss_drm_init(struct drm_device *dev)
+static int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 {
 	struct platform_device *pdev = to_platform_device(dev->dev);
 	struct dss_data *dss;
@@ -971,6 +959,7 @@ static int dss_drm_init(struct drm_device *dev)
 	acrtc->ctx = ctx;
 	acrtc->out_format = LCD_RGB888;
 	acrtc->bgr_fmt = LCD_RGB;
+	ctx->g_dss_version_tag = g_dss_version_tag;
 
 	ret = dss_dts_parse(pdev, ctx);
 	if (ret)
@@ -1049,8 +1038,25 @@ static int  dss_drm_resume(struct platform_device *pdev)
 	return 0;
 }
 
-const struct kirin_dc_ops dss_dc_ops = {
-	.init = dss_drm_init,
+static int kirin960_dss_drm_init(struct drm_device *dev)
+{
+	return dss_drm_init(dev, FB_ACCEL_HI366x);
+}
+
+const struct kirin_dc_ops kirin960_dss_dc_ops = {
+	.init = kirin960_dss_drm_init,
+	.cleanup = dss_drm_cleanup,
+	.suspend = dss_drm_suspend,
+	.resume = dss_drm_resume,
+};
+
+static int kirin970_dss_drm_init(struct drm_device *dev)
+{
+	return dss_drm_init(dev, FB_ACCEL_KIRIN970);
+}
+
+const struct kirin_dc_ops kirin970_dss_dc_ops = {
+	.init = kirin970_dss_drm_init,
 	.cleanup = dss_drm_cleanup,
 	.suspend = dss_drm_suspend,
 	.resume = dss_drm_resume,
