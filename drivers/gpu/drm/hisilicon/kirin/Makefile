@@ -5,6 +5,8 @@ kirin6220-drm-y := kirin_drm_drv.o \
 kirin9xx-drm-y := kirin9xx_drm_drv.o \
 		  kirin9xx_drm_dss.o \
 		  kirin9xx_drm_dpe_utils.o \
+		  kirin960_defs.o \
+		  kirin970_defs.o \
 		  kirin9xx_drm_overlay_utils.o
 
 obj-$(CONFIG_DRM_HISI_KIRIN6220) += kirin6220-drm.o

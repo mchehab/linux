@@ -16,18 +16,9 @@
 #include <drm/drm_mipi_dsi.h>
 
 #include "kirin9xx_drm_dpe_utils.h"
-
-#if defined(CONFIG_DRM_HISI_KIRIN970)
-#include "kirin970_dpe_reg.h"
-#else
-#include "kirin960_dpe_reg.h"
-#endif
-
-static int g_debug_set_reg_val;
+#include "kirin9xx_dpe.h"
 
 DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
-
-extern u32 g_dss_module_ovl_base[DSS_MCTL_IDX_MAX][MODULE_OVL_MAX];
 
 struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
 	/*single mipi*/
@@ -715,7 +706,7 @@ void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
 	writel(0x00000888, dss_base + DSS_DSC_OFFSET + DSC_MEM_CTRL);
 	writel(0x00000008, dss_base + DSS_LDI0_OFFSET + LDI_MEM_CTRL);
 	writel(0x00000008, dss_base + DSS_DBUF0_OFFSET + DBUF_MEM_CTRL);
-	writel(0x00000008, dss_base + DSS_DPP_DITHER_OFFSET + DITHER_MEM_CTRL);
+	writel(0x00000008, dss_base + DSS_DPP_DITHER_OFFSET + ctx->dither_mem_ctrl);
 }
 
 void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
@@ -737,7 +728,7 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 	writel(0x00000008,
 	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v0 ,scf mem*/
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG0_ARSR_OFFSET + ARSR2P_LB_MEM_CTRL);/*rch_v0 ,arsr2p mem*/
+	       dss_base + DSS_RCH_VG0_ARSR_OFFSET + ctx->arsr2p_lb_mem_ctrl);/*rch_v0 ,arsr2p mem*/
 	writel(0x00000008, dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL);/*rch_v0 ,vpp mem*/
 	writel(0x00000008,
 	       dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v0 ,dma_buf mem*/
@@ -796,10 +787,10 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 
 	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch0 DMA/AFBCE mem*/
 	writel(0x00000888, dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL);/*wch0 DMA/AFBCE mem*/
-	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + ROT_MEM_CTRL);/*wch0 rot mem*/
+	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + ctx->rot_mem_ctrl);/*wch0 rot mem*/
 	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch1 DMA/AFBCE mem*/
 	writel(0x00000888, dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL);/*wch1 DMA/AFBCE mem*/
-	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + ROT_MEM_CTRL);/*wch1 rot mem*/
+	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + ctx->rot_mem_ctrl);/*wch1 rot mem*/
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		writel(0x00000088,
 		       dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL);
@@ -810,7 +801,7 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 		writel(0x00000008,
 		       dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch2 DMA/AFBCE mem*/
 		writel(0x00000008,
-		       dss_base + DSS_WCH2_DMA_OFFSET + ROT_MEM_CTRL);/*wch2 rot mem*/
+		       dss_base + DSS_WCH2_DMA_OFFSET + ctx->rot_mem_ctrl);/*wch2 rot mem*/
 		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
 		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
 	}
@@ -1035,10 +1026,10 @@ int dpe_regulator_disable(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	#if defined(CONFIG_DRM_HISI_KIRIN970)
+	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		dpe_set_pixel_clk_rate_on_pll0(ctx);
 		dpe_set_common_clk_rate_on_pll0(ctx);
-	#endif
+	}
 
 	ret = regulator_disable(ctx->dpe_regulator);
 	if (ret != 0) {
@@ -1139,7 +1130,7 @@ int dpe_set_pixel_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	clk_rate = DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF;
+	clk_rate = ctx->pxl0_clk_rate_power_off;
 	ret = clk_set_rate(ctx->dss_pxl0_clk, clk_rate);
 	if (ret < 0) {
 		DRM_ERROR("dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
@@ -1163,7 +1154,7 @@ int dpe_set_common_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	clk_rate = DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF;
+	clk_rate = ctx->dss_mmbuf_clk_rate_power_off;
 	ret = clk_set_rate(ctx->dss_mmbuf_clk, clk_rate);
 	if (ret < 0) {
 		DRM_ERROR("dss_mmbuf clk_set_rate(%llu) failed, error=%d!\n",

@@ -47,7 +47,8 @@ struct kirin_fbdev {
 	int shared_fd;
 };
 
-extern const struct kirin_dc_ops dss_dc_ops;
+extern const struct kirin_dc_ops kirin960_dss_dc_ops;
+extern const struct kirin_dc_ops kirin970_dss_dc_ops;
 void dsi_set_output_client(struct drm_device *dev);
 
 struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
