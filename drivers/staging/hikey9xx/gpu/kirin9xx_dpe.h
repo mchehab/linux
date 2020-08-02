@@ -217,8 +217,6 @@ enum dss_axi_idx {
 	AXI_CHN_MAX,
 };
 
-
-
 enum dss_rdma_idx {
 	DSS_RDMA0 = 0,
 	DSS_RDMA1,
@@ -227,6 +225,29 @@ enum dss_rdma_idx {
 	DSS_RDMA4,
 	DSS_RDMA_MAX,
 };
+
+enum dss_chn_module {
+	MODULE_MIF_CHN,
+	MODULE_AIF0_CHN,
+	MODULE_AIF1_CHN,
+	MODULE_MCTL_CHN_MUTEX,
+	MODULE_MCTL_CHN_FLUSH_EN,
+	MODULE_MCTL_CHN_OV_OEN,
+	MODULE_MCTL_CHN_STARTY,
+	MODULE_MCTL_CHN_MOD_DBG,
+	MODULE_DMA,
+	MODULE_DFC,
+	MODULE_SCL,
+	MODULE_SCL_LUT,
+	MODULE_ARSR2P,
+	MODULE_ARSR2P_LUT,
+	MODULE_POST_CLIP,
+	MODULE_PCSC,
+	MODULE_CSC,
+	MODULE_POST_CLIP_ES,	/* Only for Kirin 970 */
+	MODULE_CHN_MAX,
+};
+
 
 /*****************************************************************************/
 
@@ -242,6 +263,11 @@ enum dss_rdma_idx {
 #define FB_ACCEL_KIRIN980  0x200
 #define FB_ACCEL_PLATFORM_TYPE_FPGA     0x10000000   //FPGA
 #define FB_ACCEL_PLATFORM_TYPE_ASIC     0x20000000   //ASIC
+
+/* Kirin 970 specific data from MPI DSI */
+
+#define KIRIN970_DSI_MEM_CTRL	(0x0194)
+#define KIRIN970_PHY_MODE	(0xFC)
 
 /******************************************************************************/
 
