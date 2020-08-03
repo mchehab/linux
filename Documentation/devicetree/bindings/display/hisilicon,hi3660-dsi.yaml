@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/hisilicon,hi3660-dsi.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: HiSilicon SPMI controller
+
+maintainers:
+  - Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+
+description: |
+  The HiSilicon Display Serial Interface (DSI) Host Controller for
+  Kirin 960 and 970 resides in the middle of display controller and
+  an external HDMI converter or panel.
+
+properties:
+  $nodename:
+    pattern: "dsi@[0-9a-f]+"
+
+  compatible:
+    enum:
+      - hisilicon,kirin960-dsi
+      - hisilicon,kirin970-dsi
+
+  reg:
+    minItems: 1
+    maxItems: 4
+
+  clocks:
+    minItems: 1
+    maxItems: 8
+    description: Clocks used by the ISP and by the display.
+
+  clock-names:
+    description: Names for the clock lines.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  mux-gpio:
+    description: GPIO used by the mux.
+
+  ports:
+    type: object
+    description: Display input and output ports.
+
+examples:
+  - |
+    dsi: dsi@e8601000 {
+      compatible = "hisilicon,kirin970-dsi";
+      reg = <0 0xE8601000 0 0x7F000>,
+        <0 0xFFF35000 0 0x1000>,
+        <0 0xE8A09000 0 0x1000>;
+
+      clocks = <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_REF>,
+        <&crg_ctrl HI3670_CLK_GATE_TXDPHY1_REF>,
+        <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_CFG>,
+        <&crg_ctrl HI3670_CLK_GATE_TXDPHY1_CFG>,
+        <&crg_ctrl HI3670_PCLK_GATE_DSI0>,
+        <&crg_ctrl HI3670_PCLK_GATE_DSI1>;
+      clock-names = "clk_txdphy0_ref",
+            "clk_txdphy1_ref",
+            "clk_txdphy0_cfg",
+            "clk_txdphy1_cfg",
+            "pclk_dsi0",
+            "pclk_dsi1";
+
+      #address-cells = <1>;
+      #size-cells = <0>;
+      mux-gpio = <&gpio25 7 0>;
+
+      ports {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        port@0 {
+          reg = <0>;
+          dsi_in: endpoint {
+            remote-endpoint = <&dpe_out>;
+          };
+        };
+
+        port@1 {
+          #address-cells = <1>;
+          #size-cells = <0>;
+          reg = <1>;
+
+          dsi_out0: endpoint@0 {
+            reg = <0>;
+            remote-endpoint = <&adv7533_in>;
+          };
+
+          dsi_out1: endpoint@1 {
+            reg = <1>;
+            remote-endpoint = <&panel0_in>;
+          };
+        };
+      };
