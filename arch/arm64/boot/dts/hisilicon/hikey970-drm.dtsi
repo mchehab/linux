@@ -87,44 +87,7 @@
 					reg = <0>;
 					remote-endpoint = <&adv7533_in>;
 				};
-
-				dsi_out1: endpoint@1 {
-					reg = <1>;
-					remote-endpoint = <&panel0_in>;
-				};
 			};
 		};
-
-		panel@1 {
-			compatible = "hisilicon,mipi-hikey";
-			#address-cells = <2>;
-			#size-cells = <2>;
-			reg = <1>;
-			panel-width-mm = <94>;
-			panel-height-mm = <151>;
-			vdd-supply = <&ldo3>;
-			pwr-en-gpio = <&gpio21 3 0>;//GPIO_171
-			bl-en-gpio = <&gpio6 4 0>;//GPIO_052
-			pwm-gpio = <&gpio23 1 0>;//GPIO_185
-
-			port {
-				panel0_in: endpoint {
-					remote-endpoint = <&dsi_out1>;
-				};
-			};
-		};
-	};
-
-	panel_pwm {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		compatible = "hisilicon,hisipwm";
-		reg = <0 0xE8A04000 0 0x1000>,
-			<0 0xFFF35000 0 0x1000>;
-		clocks = <&crg_ctrl HI3670_CLK_GATE_PWM>;
-		clock-names = "clk_pwm";
-		pinctrl-names = "default","idle";
-		pinctrl-0 = <&gpio185_pmx_func &gpio185_cfg_func>;
-		pinctrl-1 = <&gpio185_pmx_idle &gpio185_cfg_idle>;
 	};
 };
