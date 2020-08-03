@@ -12,5 +12,5 @@ kirin9xx-drm-y := kirin9xx_drm_drv.o \
 obj-$(CONFIG_DRM_HISI_KIRIN6220) += kirin6220-drm.o
 obj-$(CONFIG_DRM_HISI_KIRIN_DSI) += dw_drm_dsi.o
 
-obj-$(CONFIG_DRM_HISI_KIRIN9XX) += kirin9xx-drm.o kirin9xx_pwm.o
+obj-$(CONFIG_DRM_HISI_KIRIN9XX) += kirin9xx-drm.o
 obj-$(CONFIG_DRM_HISI_KIRIN9XX_DSI) += kirin9xx_dw_drm_dsi.o
