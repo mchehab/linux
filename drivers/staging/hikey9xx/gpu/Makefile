@@ -5,4 +5,4 @@ kirin9xx-drm-y := kirin9xx_drm_drv.o \
 		  kirin970_defs.o kirin960_defs.o \
 		  kirin9xx_drm_overlay_utils.o
 
-obj-$(CONFIG_DRM_HISI_KIRIN9XX) += kirin9xx-drm.o kirin9xx_dw_drm_dsi.o kirin9xx_pwm.o
+obj-$(CONFIG_DRM_HISI_KIRIN9XX) += kirin9xx-drm.o kirin9xx_dw_drm_dsi.o
