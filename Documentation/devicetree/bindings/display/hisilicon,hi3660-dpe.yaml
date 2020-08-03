@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/hisilicon,hi3660-dpe.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: HiSilicon SPMI controller
+
+maintainers:
+  - Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+
+description: |
+  The HiSilicon Display Engine (DPE) s the display controller which grab
+  image data from memory, do composition, do post image processing,
+  generate RGB timing stream and transfer to DSI.
+
+properties:
+  $nodename:
+    pattern: "dpe@[0-9a-f]+"
+
+  compatible:
+    enum:
+      - hisilicon,kirin960-dpe
+      - hisilicon,kirin970-dpe
+
+  reg:
+    minItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    minItems: 1
+    description: Clocks used by the ISP and by the display
+
+  clock-names:
+    description: Names for the clock lines
+
+  dma-coherent: true
+
+  port:
+    type: object
+    description: A port node pointing to the display output endpoint.
+
+
+  iommu-info:
+    type: object
+    description: IOMMU address and size to be used by GPU
+
+    properties:
+      start-addr:
+        const: start address for IOMMU
+      size:
+        const: size of the mapped region
+
+examples:
+  - |
+    dpe: dpe@e8600000 {
+      compatible = "hisilicon,kirin970-dpe";
+      memory-region = <&drm_dma_reserved>;
+      reg = <0 0xE8600000 0 0xC0000>,
+            <0 0xFFF35000 0 0x1000>,
+            <0 0xFFF0A000 0 0x1000>,
+            <0 0xE8A09000 0 0x1000>,
+            <0 0xE86C0000 0 0x10000>,
+            <0 0xFFF31000 0 0x1000>,
+            <0 0xE87FF000 0 0x1000>;
+
+      interrupts = <0 245 4>;
+
+      clocks = <&media1_crg HI3670_ACLK_GATE_DSS>,
+               <&media1_crg HI3670_PCLK_GATE_DSS>,
+               <&media1_crg HI3670_CLK_GATE_EDC0>,
+               <&media1_crg HI3670_CLK_GATE_LDI0>,
+               <&media1_crg HI3670_CLK_GATE_DSS_AXI_MM>,
+               <&media1_crg HI3670_PCLK_GATE_MMBUF>,
+               <&crg_ctrl   HI3670_PCLK_GATE_PCTRL>;
+
+      clock-names = "aclk_dss",
+                    "pclk_dss",
+                    "clk_edc0",
+                    "clk_ldi0",
+                    "clk_dss_axi_mm",
+                    "pclk_mmbuf",
+                    "pclk_pctrl";
+
+      dma-coherent;
+
+      port {
+        dpe_out: endpoint {
+          remote-endpoint = <&dsi_in>;
+        };
+      };
+
+      iommu_info {
+        start-addr = <0x8000>;
+        size = <0xbfff8000>;
+      };
+    };

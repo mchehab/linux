@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 / {
-	dpe: dpe@E8600000 {
+	dpe: dpe@e8600000 {
 		compatible = "hisilicon,kirin970-dpe";
 		memory-region = <&drm_dma_reserved>;
 		// DSS, PERI_CRG, SCTRL, PCTRL, NOC_DSS_Service_Target, PMCTRL, MEDIA_CRG
@@ -44,7 +44,7 @@
 		};
 	};
 
-	dsi: dsi@E8601000 {
+	dsi: dsi@e8601000 {
 		compatible = "hisilicon,kirin970-dsi";
 		reg = <0 0xE8601000 0 0x7F000>,
 			<0 0xFFF35000 0 0x1000>,
