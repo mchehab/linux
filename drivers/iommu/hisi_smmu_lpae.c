@@ -529,33 +529,14 @@ static bool hisi_smmu_capable(enum iommu_cap cap)
 	return false;
 }
 
-static int hisi_smmu_add_device(struct device *dev)
+static struct iommu_device *hisi_smmu_probe_device(struct device *dev)
 {
-	struct hisi_smmu_device_lpae *iommu = hisi_smmu_dev;
-	struct iommu_group *group;
-
-	if (iommu)
-		iommu_device_link(&iommu->iommu, dev);
-	else
-		return -ENODEV;
-
-	group = iommu_group_get_for_dev(dev);
-	if (IS_ERR(group))
-		return PTR_ERR(group);
-
-	iommu_group_put(group);
-
-	return 0;
+	return &hisi_smmu_dev->iommu;
 }
 
-static void hisi_smmu_remove_device(struct device *dev)
+static void hisi_smmu_release_device(struct device *dev)
 {
-	struct hisi_smmu_device_lpae *iommu = hisi_smmu_dev;
-
-	if (iommu)
-		iommu_device_unlink(&iommu->iommu, dev);
-
-	iommu_group_remove_device(dev);
+	/* As just one SMMU is possible, nothing to do here */
 }
 
 static struct iommu_ops hisi_smmu_ops = {
@@ -567,8 +548,8 @@ static struct iommu_ops hisi_smmu_ops = {
 	.map		= hisi_smmu_map_lpae,
 	.unmap		= hisi_smmu_unmap_lpae,
 	.iova_to_phys	= hisi_smmu_iova_to_phys_lpae,
-	.add_device	= hisi_smmu_add_device,
-	.remove_device	= hisi_smmu_remove_device,
+	.probe_device	= hisi_smmu_probe_device,
+	.release_device	= hisi_smmu_release_device,
 	.device_group	= generic_device_group,
 	.pgsize_bitmap	= SMMU_PAGE_SIZE,
 };
