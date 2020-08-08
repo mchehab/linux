@@ -2051,11 +2051,12 @@ static int module_enforce_rwx_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
 	const unsigned long shf_wx = SHF_WRITE|SHF_EXECINSTR;
 	int i;
 
+#if 0
 	for (i = 0; i < hdr->e_shnum; i++) {
 		if ((sechdrs[i].sh_flags & shf_wx) == shf_wx)
 			return -ENOEXEC;
 	}
-
+#endif
 	return 0;
 }
 
