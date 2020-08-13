@@ -13,6 +13,7 @@
 #include "hi3670.dtsi"
 #include "hikey970-pinctrl.dtsi"
 #include "hikey970-pmic.dtsi"
+#include "hikey970-drm.dtsi"
 
 / {
 	model = "HiKey970";
@@ -38,6 +39,14 @@
 		device_type = "memory";
 		/* expect bootloader to fill in this region */
 		reg = <0x0 0x0 0x0 0x0>;
+	};
+
+	fixed_3v3: regulator-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
 	};
 
 	wlan_en: wlan-en-1-8v {
@@ -429,4 +438,34 @@
 	/* On Low speed expansion header */
 	label = "LS-UART1";
 	status = "okay";
+};
+
+&i2c4 {
+	status = "okay";
+
+	adv7533: adv7533@39 {
+		compatible = "adi,adv7533";
+		reg = <0x39>, <0x3f>, <0x3c>, <0x38>;
+		reg-names = "main", "edid", "cec", "packet";
+		v1p2-supply = <&ldo3>;
+		avdd-supply = <&ldo3>;
+		dvdd-supply = <&ldo3>;
+		pvdd-supply = <&ldo3>;
+		a2vdd-supply = <&ldo3>;
+		v3p3-supply = <&fixed_3v3>;
+
+		interrupt-parent = <&gpio1>;
+		interrupts = <1 2>;
+		pd-gpio = <&gpio27 1 0>;
+		sel-gpio = <&gpio25 7 0>;
+		adi,dsi-lanes = <4>;
+		adi,disable-timing-generator;
+		#sound-dai-cells = <0>;
+
+		port {
+			adv7533_in: endpoint {
+				remote-endpoint = <&dsi_out0>;
+			};
+		};
+	};
 };
