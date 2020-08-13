@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: GPL-2.0
+/ {
+	dpe: dpe@e8600000 {
+		compatible = "hisilicon,hi3670-dpe";
+		// DSS, PERI_CRG, SCTRL, PCTRL, NOC_DSS_Service_Target, PMCTRL, MEDIA_CRG
+		reg = <0 0xE8600000 0 0xC0000>,
+		      <0 0xFFF35000 0 0x1000>,
+		      <0 0xFFF0A000 0 0x1000>,
+		      <0 0xE8A09000 0 0x1000>,
+		      <0 0xE86C0000 0 0x10000>,
+		      <0 0xFFF31000 0 0x1000>,
+		      <0 0xE87FF000 0 0x1000>;
+		// dss-pdp
+		interrupts = <0 245 4>;
+
+		clocks = <&media1_crg HI3670_ACLK_GATE_DSS>,
+			 <&media1_crg HI3670_PCLK_GATE_DSS>,
+			 <&media1_crg HI3670_CLK_GATE_EDC0>,
+			 <&media1_crg HI3670_CLK_GATE_LDI0>,
+			 <&media1_crg HI3670_CLK_GATE_DSS_AXI_MM>,
+			 <&media1_crg HI3670_PCLK_GATE_MMBUF>,
+			 <&crg_ctrl   HI3670_PCLK_GATE_PCTRL>;
+
+		clock-names = "aclk_dss",
+			      "pclk_dss",
+			      "clk_edc0",
+			      "clk_ldi0",
+			      "clk_dss_axi_mm",
+			      "pclk_mmbuf",
+			      "pclk_pctrl";
+
+		dma-coherent;
+
+		port {
+			dpe_out: endpoint {
+				remote-endpoint = <&dsi_in>;
+			};
+		};
+	};
+
+	dsi: dsi@e8601000 {
+		compatible = "hisilicon,hi3670-dsi";
+		reg = <0 0xE8601000 0 0x7F000>,
+		      <0 0xFFF35000 0 0x1000>,
+		      <0 0xE8A09000 0 0x1000>;
+
+		clocks = <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_REF>,
+			 <&crg_ctrl HI3670_CLK_GATE_TXDPHY1_REF>,
+			 <&crg_ctrl HI3670_CLK_GATE_TXDPHY0_CFG>,
+			 <&crg_ctrl HI3670_CLK_GATE_TXDPHY1_CFG>,
+			 <&crg_ctrl HI3670_PCLK_GATE_DSI0>,
+			 <&crg_ctrl HI3670_PCLK_GATE_DSI1>;
+		clock-names = "clk_txdphy0_ref",
+			      "clk_txdphy1_ref",
+			      "clk_txdphy0_cfg",
+			      "clk_txdphy1_cfg",
+			      "pclk_dsi0",
+			      "pclk_dsi1";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mux-gpio = <&gpio25 7 0>;//HDMI_SEL(GPIO_207)
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				dsi_in: endpoint {
+					remote-endpoint = <&dpe_out>;
+				};
+			};
+
+			port@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <1>;
+
+				dsi_out0: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&adv7533_in>;
+				};
+			};
+		};
+	};
+};
