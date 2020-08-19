@@ -769,6 +769,14 @@ static int dss_plane_init(struct drm_device *dev, struct dss_plane *aplane,
 
 static int dss_enable_iommu(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 {
+#if 0
+/*
+ * FIXME:
+ *
+ * Right now, the IOMMU support is actually disabled. See the caller of
+ * hisi_dss_smmu_config(). Yet, if we end enabling it, this should be
+ * ported to use io-pgtable directly.
+ */
 	struct device *dev = NULL;
 
 	dev = &pdev->dev;
@@ -781,7 +789,7 @@ static int dss_enable_iommu(struct platform_device *pdev, struct dss_hw_ctx *ctx
 	}
 
 	iommu_attach_device(ctx->mmu_domain, dev);
-
+#endif
 	return 0;
 }
 
@@ -934,7 +942,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 			 DSS_MAX_PXL0_CLK_144M, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 	}
 
-	/* regulator enable */
+	/* enable IOMMU */
 	dss_enable_iommu(pdev, ctx);
 
 	return 0;
