@@ -1333,8 +1333,17 @@ static void hisi_dss_mif_on(struct dss_hw_ctx *ctx)
 	set_reg(dss_base + MIF_CH11_OFFSET + MIF_CTRL0, 0x1, 1, 0);
 }
 
+
 void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 {
+#if 0
+/*
+ * FIXME:
+ *
+ * Right now, the IOMMU support is actually disabled. See the caller of
+ * hisi_dss_smmu_config(). Yet, if we end enabling it, this should be
+ * ported to use io-pgtable directly.
+ */
 	void __iomem *smmu_base;
 	struct iommu_domain_data *domain_data = NULL;
 	u32 phy_pgd_base = 0;
@@ -1374,6 +1383,7 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	phy_pgd_base = (uint32_t)(domain_data->phy_pgd_base);
 	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x \n", fama_phy_pgd_base, phy_pgd_base);
 	set_reg(smmu_base + SMMU_CB_TTBR0, phy_pgd_base, 32, 0);
+#endif
 }
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx)
