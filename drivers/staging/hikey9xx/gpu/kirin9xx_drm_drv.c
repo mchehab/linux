@@ -67,17 +67,6 @@ static const struct drm_mode_config_funcs kirin_drm_mode_config_funcs = {
 	.atomic_commit = drm_atomic_helper_commit,
 };
 
-static void kirin_drm_mode_config_init(struct drm_device *dev)
-{
-	dev->mode_config.min_width = 0;
-	dev->mode_config.min_height = 0;
-
-	dev->mode_config.max_width = 2048;
-	dev->mode_config.max_height = 2048;
-
-	dev->mode_config.funcs = &kirin_drm_mode_config_funcs;
-}
-
 static int kirin_drm_kms_init(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
@@ -91,9 +80,15 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	dev->dev_private = priv;
 	dev_set_drvdata(dev->dev, dev);
 
-	/* dev->mode_config initialization */
 	drm_mode_config_init(dev);
-	kirin_drm_mode_config_init(dev);
+
+	dev->mode_config.min_width = 0;
+	dev->mode_config.min_height = 0;
+	dev->mode_config.max_width = 2048;
+	dev->mode_config.max_height = 2048;
+	dev->mode_config.preferred_depth = 32;
+
+	dev->mode_config.funcs = &kirin_drm_mode_config_funcs;
 
 	/* display controller init */
 	dc_ops = of_device_get_match_data(dev->dev);
@@ -228,7 +223,7 @@ static int kirin_drm_bind(struct device *dev)
 	if (ret)
 		goto err_kms_cleanup;
 
-	drm_fbdev_generic_setup(drm_dev, 32);
+	drm_fbdev_generic_setup(drm_dev, 0);
 	priv = drm_dev->dev_private;
 
 	/* connectors should be registered after drm device register */
