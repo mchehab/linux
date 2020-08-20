@@ -440,11 +440,6 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 	isr_s1 &= ~(readl(dss_base + GLB_CPU_PDP_INT_MSK));
 	isr_s2 &= ~(readl(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK));
 
-	if (isr_s2 & BIT_VACTIVE0_END) {
-		ctx->vactive0_end_flag++;
-		wake_up_interruptible_all(&ctx->vactive0_end_wq);
-	}
-
 	if (isr_s2 & BIT_VSYNC) {
 		ctx->vsync_timestamp = ktime_get();
 		drm_crtc_handle_vblank(crtc);
