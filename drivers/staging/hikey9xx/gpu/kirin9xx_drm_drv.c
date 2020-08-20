@@ -30,20 +30,18 @@
 #include <drm/drm_probe_helper.h>
 #include <drm/drm_vblank.h>
 
+#include "kirin9xx_dpe.h"
 #include "kirin9xx_drm_drv.h"
 
 static int kirin_drm_kms_cleanup(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
-	static struct kirin_dc_ops const *dc_ops;
 
 	if (priv->fbdev)
 		priv->fbdev = NULL;
 
-	dc_ops = of_device_get_match_data(dev->dev);
-
 	drm_kms_helper_poll_fini(dev);
-	dc_ops->cleanup(dev);
+	kirin9xx_dss_drm_cleanup(dev);
 	drm_mode_config_cleanup(dev);
 	devm_kfree(dev->dev, priv);
 	dev->dev_private = NULL;
@@ -70,7 +68,7 @@ static const struct drm_mode_config_funcs kirin_drm_mode_config_funcs = {
 static int kirin_drm_kms_init(struct drm_device *dev)
 {
 	struct kirin_drm_private *priv = dev->dev_private;
-	static struct kirin_dc_ops const *dc_ops;
+	long kirin_type;
 	int ret;
 
 	priv = devm_kzalloc(dev->dev, sizeof(*priv), GFP_KERNEL);
@@ -91,8 +89,11 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	dev->mode_config.funcs = &kirin_drm_mode_config_funcs;
 
 	/* display controller init */
-	dc_ops = of_device_get_match_data(dev->dev);
-	ret = dc_ops->init(dev);
+	kirin_type = (long)of_device_get_match_data(dev->dev);
+	if (WARN_ON(!kirin_type))
+		return -ENODEV;
+
+	ret = dss_drm_init(dev, kirin_type);
 	if (ret)
 		goto err_mode_config_cleanup;
 
@@ -123,7 +124,7 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 err_unbind_all:
 	component_unbind_all(dev->dev, dev);
 err_dc_cleanup:
-	dc_ops->cleanup(dev);
+	kirin9xx_dss_drm_cleanup(dev);
 err_mode_config_cleanup:
 	drm_mode_config_cleanup(dev);
 	devm_kfree(dev->dev, priv);
@@ -267,78 +268,29 @@ static int kirin_drm_platform_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct component_match *match = NULL;
 	struct device_node *remote;
-	static struct kirin_dc_ops const *dc_ops;
-	int ret;
 
-	dc_ops = of_device_get_match_data(dev);
-	if (!dc_ops) {
-		DRM_ERROR("failed to get dt id data\n");
-		return -EINVAL;
-	}
-
-	DRM_INFO("the device node is %s\n", np->name);
 	remote = of_graph_get_remote_node(np, 0, 0);
 	if (!remote)
 		return -ENODEV;
 
-	DRM_INFO("the device remote node is %s\n", remote->name);
-
 	drm_of_component_match_add(dev, &match, compare_of, remote);
 	of_node_put(remote);
 
-	if (ret)
-		DRM_ERROR("cma device init failed!");
 	return component_master_add_with_match(dev, &kirin_drm_ops, match);
 }
 
 static int kirin_drm_platform_remove(struct platform_device *pdev)
 {
-	static struct kirin_dc_ops const *dc_ops;
-
-	dc_ops = of_device_get_match_data(&pdev->dev);
 	component_master_del(&pdev->dev, &kirin_drm_ops);
-	return 0;
-}
-
-static int kirin_drm_platform_suspend(struct platform_device *pdev, pm_message_t state)
-{
-	static struct kirin_dc_ops const *dc_ops;
-	struct device *dev = &pdev->dev;
-
-	dc_ops = of_device_get_match_data(dev);
-
-	DRM_INFO("+. pdev->name is %s, m_message is %d\n", pdev->name, state.event);
-	if (!dc_ops) {
-		DRM_ERROR("dc_ops is NULL\n");
-		return -EINVAL;
-	}
-	dc_ops->suspend(pdev, state);
-
-	return 0;
-}
-
-static int kirin_drm_platform_resume(struct platform_device *pdev)
-{
-	static struct kirin_dc_ops const *dc_ops;
-	struct device *dev = &pdev->dev;
-
-	dc_ops = of_device_get_match_data(dev);
-
-	if (!dc_ops) {
-		DRM_ERROR("dc_ops is NULL\n");
-		return -EINVAL;
-	}
-	dc_ops->resume(pdev);
-
 	return 0;
 }
 
 static const struct of_device_id kirin_drm_dt_ids[] = {
 	{ .compatible = "hisilicon,hi3660-dpe",
-	  .data = &kirin960_dss_dc_ops,
+	  .data = (void *)FB_ACCEL_HI366x,
 	},
 	{ .compatible = "hisilicon,kirin970-dpe",
-	  .data = &kirin970_dss_dc_ops,
+	  .data = (void *)FB_ACCEL_KIRIN970,
 	},
 	{ /* end node */ },
 };
@@ -347,8 +299,8 @@ MODULE_DEVICE_TABLE(of, kirin_drm_dt_ids);
 static struct platform_driver kirin_drm_platform_driver = {
 	.probe = kirin_drm_platform_probe,
 	.remove = kirin_drm_platform_remove,
-	.suspend = kirin_drm_platform_suspend,
-	.resume = kirin_drm_platform_resume,
+	.suspend = kirin9xx_dss_drm_suspend,
+	.resume = kirin9xx_dss_drm_resume,
 	.driver = {
 		.name = "kirin9xx-drm",
 		.of_match_table = kirin_drm_dt_ids,
