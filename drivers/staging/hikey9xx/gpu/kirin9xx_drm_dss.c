@@ -42,10 +42,6 @@
 #include "kirin9xx_drm_dpe_utils.h"
 #include "kirin9xx_dpe.h"
 
-/* #define DSS_POWER_UP_ON_UEFI */
-
-#define DSS_DEBUG	0
-
 static const struct dss_format dss_formats[] = {
 	/* 16bpp RGB: */
 	{ DRM_FORMAT_RGB565, HISI_FB_PIXEL_FORMAT_RGB_565 },
@@ -318,12 +314,8 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	int ret = 0;
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
-		mediacrg_regulator_enable(ctx);
 		dpe_common_clk_enable(ctx);
 		dpe_inner_clk_enable(ctx);
-#ifndef DSS_POWER_UP_ON_UEFI
-		dpe_regulator_enable(ctx);
-#endif
 		dpe_set_clk_rate(ctx);
 	} else {
 		ret = clk_prepare_enable(ctx->dss_pxl0_clk);
@@ -378,20 +370,11 @@ static void dss_power_down(struct dss_crtc *acrtc)
 	dpe_irq_disable(acrtc);
 	dpe_deinit(acrtc);
 
-	/* FIXME: */
 	dpe_check_itf_status(acrtc);
 	dss_inner_clk_pdp_disable(ctx);
 
-	if (ctx->g_dss_version_tag & FB_ACCEL_KIRIN970) {
-		dpe_regulator_disable(ctx);
-		dpe_inner_clk_disable(ctx);
-		dpe_common_clk_disable(ctx);
-		mediacrg_regulator_disable(ctx);
-	} else {
-		dpe_regulator_disable(ctx);
-		dpe_inner_clk_disable(ctx);
-		dpe_common_clk_disable(ctx);
-	}
+	dpe_inner_clk_disable(ctx);
+	dpe_common_clk_disable(ctx);
 
 	ctx->power_on = false;
 }
@@ -477,7 +460,6 @@ static bool dss_crtc_mode_fixup(struct drm_crtc *crtc,
 	 * dss_calculate_clock()
 	 */
 
-#if 0
 	/*
 	 * HACK: reports at Hikey 970 mailing lists with the downstream
 	 * Official Linaro 4.9 driver seem to indicate that some monitor
@@ -509,9 +491,7 @@ static bool dss_crtc_mode_fixup(struct drm_crtc *crtc,
 	    || (mode->hdisplay == 800  && mode->vdisplay == 600  && mode->clock ==  48907)
 	    || (mode->hdisplay == 800  && mode->vdisplay == 600  && mode->clock ==  40000)
 	    || (mode->hdisplay == 800  && mode->vdisplay == 480  && mode->clock ==  32000)
-	   )
-#endif
-	{
+	   ) {
 		clk_Hz = dss_calculate_clock(acrtc, mode);
 
 		/*
@@ -971,10 +951,6 @@ static int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 	ret = dss_dts_parse(pdev, ctx);
 	if (ret)
 		return ret;
-
-	ctx->screen_base = 0;
-	ctx->screen_size = 0;
-	ctx->smem_start = 0;
 
 	ctx->vactive0_end_flag = 0;
 	init_waitqueue_head(&ctx->vactive0_end_wq);

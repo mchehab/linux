@@ -17,7 +17,6 @@
 /* dts initial */
 #define DTS_FB_RESOURCE_INIT_READY	BIT(0)
 #define DTS_PWM_READY	BIT(1)
-/* #define DTS_BLPWM_READY	BIT(2) */
 #define DTS_SPI_READY	BIT(3)
 #define DTS_PANEL_PRIMARY_READY	BIT(4)
 #define DTS_PANEL_EXTERNAL_READY	BIT(5)
