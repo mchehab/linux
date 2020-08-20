@@ -23,6 +23,7 @@
 #define MAX_CRTC	2
 
 struct kirin_drm_private {
+	struct drm_device drm;
 	struct drm_fb_helper *fbdev;
 	struct drm_crtc *crtc[MAX_CRTC];
 };
@@ -39,5 +40,7 @@ int kirin9xx_dss_drm_resume(struct platform_device *pdev);
 int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag);
 
 void dsi_set_output_client(struct drm_device *dev);
+
+#define to_drm_private(d) container_of(d, struct kirin_drm_private, drm)
 
 #endif /* __KIRIN_DRM_DRV_H__ */

@@ -603,7 +603,7 @@ static const struct drm_crtc_funcs dss_crtc_funcs = {
 static int dss_crtc_init(struct drm_device *dev, struct drm_crtc *crtc,
 			 struct drm_plane *plane)
 {
-	struct kirin_drm_private *priv = dev->dev_private;
+	struct kirin_drm_private *priv = to_drm_private(dev);
 	struct device_node *port;
 	int ret;
 
