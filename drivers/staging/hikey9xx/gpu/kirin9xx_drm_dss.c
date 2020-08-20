@@ -923,7 +923,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	return 0;
 }
 
-static int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
+int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 {
 	struct platform_device *pdev = to_platform_device(dev->dev);
 	struct dss_data *dss;
@@ -991,7 +991,7 @@ static int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 	return 0;
 }
 
-static void dss_drm_cleanup(struct drm_device *dev)
+void kirin9xx_dss_drm_cleanup(struct drm_device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev->dev);
 	struct dss_data *dss = platform_get_drvdata(pdev);
@@ -1000,7 +1000,7 @@ static void dss_drm_cleanup(struct drm_device *dev)
 	drm_crtc_cleanup(crtc);
 }
 
-static int  dss_drm_suspend(struct platform_device *pdev, pm_message_t state)
+int kirin9xx_dss_drm_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct dss_data *dss = platform_get_drvdata(pdev);
 	struct drm_crtc *crtc = &dss->acrtc.base;
@@ -1010,7 +1010,7 @@ static int  dss_drm_suspend(struct platform_device *pdev, pm_message_t state)
 	return 0;
 }
 
-static int  dss_drm_resume(struct platform_device *pdev)
+int kirin9xx_dss_drm_resume(struct platform_device *pdev)
 {
 	struct dss_data *dss = platform_get_drvdata(pdev);
 	struct drm_crtc *crtc = &dss->acrtc.base;
@@ -1020,27 +1020,3 @@ static int  dss_drm_resume(struct platform_device *pdev)
 
 	return 0;
 }
-
-static int kirin960_dss_drm_init(struct drm_device *dev)
-{
-	return dss_drm_init(dev, FB_ACCEL_HI366x);
-}
-
-const struct kirin_dc_ops kirin960_dss_dc_ops = {
-	.init = kirin960_dss_drm_init,
-	.cleanup = dss_drm_cleanup,
-	.suspend = dss_drm_suspend,
-	.resume = dss_drm_resume,
-};
-
-static int kirin970_dss_drm_init(struct drm_device *dev)
-{
-	return dss_drm_init(dev, FB_ACCEL_KIRIN970);
-}
-
-const struct kirin_dc_ops kirin970_dss_dc_ops = {
-	.init = kirin970_dss_drm_init,
-	.cleanup = dss_drm_cleanup,
-	.suspend = dss_drm_suspend,
-	.resume = dss_drm_resume,
-};
