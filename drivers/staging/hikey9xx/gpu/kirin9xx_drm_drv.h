@@ -22,14 +22,6 @@
 
 #define MAX_CRTC	2
 
-/* display controller init/cleanup ops */
-struct kirin_dc_ops {
-	int (*init)(struct drm_device *dev);
-	void (*cleanup)(struct drm_device *dev);
-	int (*suspend)(struct platform_device *pdev, pm_message_t state);
-	int (*resume)(struct platform_device *pdev);
-};
-
 struct kirin_drm_private {
 	struct drm_fb_helper *fbdev;
 	struct drm_crtc *crtc[MAX_CRTC];
@@ -40,8 +32,12 @@ struct kirin_fbdev {
 	struct drm_framebuffer *fb;
 };
 
-extern const struct kirin_dc_ops kirin960_dss_dc_ops;
-extern const struct kirin_dc_ops kirin970_dss_dc_ops;
+/* provided by kirin9xx_drm_dss.c */
+void kirin9xx_dss_drm_cleanup(struct drm_device *dev);
+int kirin9xx_dss_drm_suspend(struct platform_device *pdev, pm_message_t state);
+int kirin9xx_dss_drm_resume(struct platform_device *pdev);
+int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag);
+
 void dsi_set_output_client(struct drm_device *dev);
 
 #endif /* __KIRIN_DRM_DRV_H__ */
