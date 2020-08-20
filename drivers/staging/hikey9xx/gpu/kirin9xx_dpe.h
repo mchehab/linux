@@ -48,7 +48,7 @@ enum dss_chn_idx {
 
 	DSS_CHN_MAX,
 
-	DSS_RCHN_V2 = DSS_CHN_MAX,  /*for copybit, only supported in chicago*/
+	DSS_RCHN_V2 = DSS_CHN_MAX,  /* for copybit, only supported in chicago */
 	DSS_WCHN_W2,
 
 	DSS_COPYBIT_MAX,
@@ -140,7 +140,7 @@ enum dss_dma_format {
 
 	DMA_PIXEL_FORMAT_RESERVED0,
 
-	DMA_PIXEL_FORMAT_YUYV_422_Pkg,
+	DMA_PIXEL_FORMAT_YUYV_422,
 	DMA_PIXEL_FORMAT_YUV_420_SP_HP,
 	DMA_PIXEL_FORMAT_YUV_420_P_HP,
 	DMA_PIXEL_FORMAT_YUV_422_SP_HP,
@@ -248,7 +248,6 @@ enum dss_chn_module {
 	MODULE_CHN_MAX,
 };
 
-
 /*****************************************************************************/
 
 #define FB_ACCEL_HI62xx	0x1
@@ -261,8 +260,8 @@ enum dss_chn_module {
 #define FB_ACCEL_KIRIN660  0x80
 #define FB_ACCEL_KIRIN980_ES  0x100
 #define FB_ACCEL_KIRIN980  0x200
-#define FB_ACCEL_PLATFORM_TYPE_FPGA     0x10000000   //FPGA
-#define FB_ACCEL_PLATFORM_TYPE_ASIC     0x20000000   //ASIC
+#define FB_ACCEL_PLATFORM_TYPE_FPGA     0x10000000   /* FPGA */
+#define FB_ACCEL_PLATFORM_TYPE_ASIC     0x20000000   /* ASIC */
 
 /* Kirin 970 specific data from MPI DSI */
 
@@ -313,7 +312,7 @@ enum dss_chn_module {
 #define DEFAULT_PCLK_PCTRL_RATE	(80000000UL)
 #define DSS_MAX_PXL0_CLK_288M (288000000UL)
 
-/*dss clk power off */
+/* dss clk power off  */
 #define DEFAULT_DSS_CORE_CLK_RATE_POWER_OFF	(277000000UL)
 #define DEFAULT_DSS_PXL1_CLK_RATE_POWER_OFF	(238000000UL)
 
@@ -351,8 +350,8 @@ enum dss_chn_module {
 #define DEFAULT_ACLK_DPCTRL_RATE_CS	207000000UL
 #define DEFAULT_MIDIA_PPLL7_CLOCK_FREQ	1782000000UL
 
-#define KIRIN970_VCO_MIN_FREQ_OUTPUT         1000000 /*Boston: 1000 * 1000*/
-#define KIRIN970_SYS_19M2   19200 /*Boston: 19.2f * 1000 */
+#define KIRIN970_VCO_MIN_FREQ_OUTPUT         1000000 /* Boston: 1000 * 1000 */
+#define KIRIN970_SYS_19M2   19200 /* Boston: 19.2f * 1000  */
 
 #define MIDIA_PPLL7_CTRL0	0x50c
 #define MIDIA_PPLL7_CTRL1	0x510
@@ -2207,7 +2206,7 @@ enum dss_mctl_idx {
 #define LDI_CLK_EN	(0x010C)
 #define LDI_IF_BYPASS	(0x0110)
 #define LDI_FRM_VALID_DBG (0x0118)
-/* LDI GLB*/
+/* LDI GLB */
 #define LDI_PXL0_DIV2_GT_EN (0x0210)
 #define LDI_PXL0_DIV4_GT_EN (0x0214)
 #define LDI_PXL0_GT_EN (0x0218)
@@ -2215,14 +2214,14 @@ enum dss_mctl_idx {
 #define LDI_PXL0_DIVXCFG (0x0220)
 #define LDI_DSI1_CLK_SEL (0x0224)
 #define LDI_VESA_CLK_SEL (0x0228)
-/* DSI1 RST*/
+/* DSI1 RST */
 #define LDI_DSI1_RST_SEL (0x0238)
-/* LDI INTERRUPT*/
+/* LDI INTERRUPT */
 #define LDI_MCU_ITF_INTS (0x0240)
 #define LDI_MCU_ITF_INT_MSK (0x0244)
 #define LDI_CPU_ITF_INTS (0x0248)
 #define LDI_CPU_ITF_INT_MSK (0x024C)
-/* LDI MODULE CLOCK GATING*/
+/* LDI MODULE CLOCK GATING */
 #define LDI_MODULE_CLK_SEL (0x0258)
 #define LDI_MODULE_CLK_EN (0x025C)
 
@@ -2422,14 +2421,6 @@ enum PXL0_DSI_GT_EN {
 };
 
 /*****************************************************************************/
-
-#ifndef ALIGN_DOWN
-#define ALIGN_DOWN(val, al)  ((val) & ~((al) - 1))
-#endif
-
-#ifndef ALIGN_UP
-#define ALIGN_UP(val, al)    (((val) + ((al) - 1)) & ~((al) - 1))
-#endif
 
 #define to_dss_crtc(crtc) container_of(crtc, struct dss_crtc, base)
 #define to_dss_plane(plane) container_of(plane, struct dss_plane, base)
