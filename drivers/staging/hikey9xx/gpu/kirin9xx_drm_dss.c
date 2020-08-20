@@ -42,7 +42,7 @@
 #include "kirin9xx_drm_dpe_utils.h"
 #include "kirin9xx_dpe.h"
 
-//#define DSS_POWER_UP_ON_UEFI
+/* #define DSS_POWER_UP_ON_UEFI */
 
 #define DSS_DEBUG	0
 
@@ -60,10 +60,14 @@ static const struct dss_format dss_formats[] = {
 };
 
 static const u32 channel_formats1[] = {
-	DRM_FORMAT_RGB565, DRM_FORMAT_BGR565,
-	DRM_FORMAT_XRGB8888, DRM_FORMAT_XBGR8888,
-	DRM_FORMAT_RGBA8888, DRM_FORMAT_BGRA8888,
-	DRM_FORMAT_ARGB8888, DRM_FORMAT_ABGR8888,
+	DRM_FORMAT_RGB565,
+	DRM_FORMAT_BGR565,
+	DRM_FORMAT_XRGB8888,
+	DRM_FORMAT_XBGR8888,
+	DRM_FORMAT_RGBA8888,
+	DRM_FORMAT_BGRA8888,
+	DRM_FORMAT_ARGB8888,
+	DRM_FORMAT_ABGR8888,
 };
 
 u32 dss_get_channel_formats(u8 ch, const u32 **formats)
@@ -117,7 +121,7 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	u64 sys_clock_fref = KIRIN970_SYS_19M2;
 	u64 ppll7_freq_divider;
 	u64 vco_freq_output;
-	u64 frac_range = 0x1000000;/*2^24*/
+	u64 frac_range = 0x1000000; /* 2^24 */
 	u64 pixel_clock_ori;
 	u64 pixel_clock_cur;
 	u32 ppll7ctrl0;
@@ -374,7 +378,7 @@ static void dss_power_down(struct dss_crtc *acrtc)
 	dpe_irq_disable(acrtc);
 	dpe_deinit(acrtc);
 
-	//FIXME:
+	/* FIXME: */
 	dpe_check_itf_status(acrtc);
 	dss_inner_clk_pdp_disable(ctx);
 
@@ -710,7 +714,7 @@ static void dss_plane_atomic_update(struct drm_plane *plane,
 static void dss_plane_atomic_disable(struct drm_plane *plane,
 				     struct drm_plane_state *old_state)
 {
-	// FIXME: Maybe this?
+	/* FIXME: Maybe this? */
 #if 0
 	struct dss_plane *aplane = to_dss_plane(plane);
 	struct dss_crtc *acrtc = aplane->acrtc;
@@ -983,7 +987,7 @@ static int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 	for (i = 0; i < DSS_CH_NUM; i++) {
 		aplane = &dss->aplane[i];
 		aplane->ch = i;
-		/*aplane->ctx = ctx;*/
+		/* aplane->ctx = ctx; */
 		aplane->acrtc = acrtc;
 		type = i == PRIMARY_CH ? DRM_PLANE_TYPE_PRIMARY :
 			DRM_PLANE_TYPE_OVERLAY;
