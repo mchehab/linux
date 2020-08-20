@@ -19,32 +19,32 @@
 #define CRGPERI_PLL3_CLK_RATE	(1200000000UL)
 #define CRGPERI_PLL7_CLK_RATE	(1782000000UL)
 
-/*core_clk: 0.65v-300M, 0.75-415M, 0.8-553.33M*/
+/* core_clk: 0.65v-300M, 0.75-415M, 0.8-553.33M */
 #define DEFAULT_DSS_CORE_CLK_RATE_L3	(554000000UL)
 #define DEFAULT_DSS_CORE_CLK_RATE_L2	(415000000UL)
 
 #define DEFAULT_DSS_CORE_CLK_RATE_ES	(400000000UL)
 
-/*pix0_clk: 0.65v-300M, 0.75-415M, 0.8-645M*/
+/* pix0_clk: 0.65v-300M, 0.75-415M, 0.8-645M */
 #define DEFAULT_DSS_PXL0_CLK_RATE_L3	(645000000UL)
 #define DEFAULT_DSS_PXL0_CLK_RATE_L2	(415000000UL)
 #define DEFAULT_DSS_PXL0_CLK_RATE_L1	(300000000UL)
 
-/*mmbuf_clk: 0.65v-237.14M, 0.75-332M, 0.8-480M*/
+/* mmbuf_clk: 0.65v-237.14M, 0.75-332M, 0.8-480M */
 #define DEFAULT_DSS_MMBUF_CLK_RATE_L3	(480000000UL)
 #define DEFAULT_DSS_MMBUF_CLK_RATE_L2	(332000000UL)
 
-/*pix1_clk: 0.65v-254.57M, 0.75-415M, 0.8-594M*/
+/* pix1_clk: 0.65v-254.57M, 0.75-415M, 0.8-594M */
 #define DEFAULT_DSS_PXL1_CLK_RATE_L3	(594000000UL)
 #define DEFAULT_DSS_PXL1_CLK_RATE_L2	(415000000UL)
 #define DEFAULT_DSS_PXL1_CLK_RATE_L1	(255000000UL)
 
-/*mdc_dvfs_clk: 0.65v-240M, 0.75-332M, 0.8-553.33M*/
+/* mdc_dvfs_clk: 0.65v-240M, 0.75-332M, 0.8-553.33M */
 #define DEFAULT_MDC_CORE_CLK_RATE_L3	(554000000UL)
 #define DEFAULT_MDC_CORE_CLK_RATE_L2	(332000000UL)
 #define DEFAULT_MDC_CORE_CLK_RATE_L1	(240000000UL)
 
-/*dss clk power off */
+/* dss clk power off  */
 #define DEFAULT_DSS_PXL0_CLK_RATE_POWER_OFF	(238000000UL)
 #define DEFAULT_DSS_MMBUF_CLK_RATE_POWER_OFF	(208000000UL)
 
@@ -57,7 +57,7 @@
 #define PEREN6	(0x410)
 #define PERDIS6	(0x414)
 
-//SYSCTRL
+/* SYSCTRL */
 #define SCISODIS	(0x044)
 #define SCPWREN	(0x060)
 #define SCPEREN1	(0x170)
@@ -66,18 +66,17 @@
 #define SCPERDIS4	(0x1B4)
 #define SCPERRSTDIS1	(0x210)
 
-//PCTRL
+/* PCTRL */
 #define PERI_CTRL33	(0x088)
 
 /*****************************************************************************/
 
-
 /* MODULE BASE ADDRESS */
 
-//SMMU
+/* SMMU */
 #define DSS_SMMU_OFFSET	(0x80000)
 
-// RCH_V
+/* RCH_V */
 #define DSS_RCH_VG0_POST_CLIP_OFFSET_ES	(0x203A0)
 #define DSS_RCH_VG0_POST_CLIP_OFFSET	(0x20480)
 
@@ -86,18 +85,18 @@
 
 #define DSS_RCH_VG2_POST_CLIP_OFFSET_ES	(0x303A0)
 #define DSS_RCH_VG2_POST_CLIP_OFFSET	(0x30480)
-#define DSS_RCH_VG2_SCL_LUT_OFFSET		(0x31000)   //ES
+#define DSS_RCH_VG2_SCL_LUT_OFFSET		(0x31000)   /* ES */
 
-// RCH_G
+/* RCH_G */
 #define DSS_RCH_G0_POST_CLIP_OFFSET_ES		(0x383A0)
 #define DSS_RCH_G0_POST_CLIP_OFFSET		(0x38480)
 
 #define DSS_RCH_G1_POST_CLIP_OFFSET_ES	(0x403A0)
 #define DSS_RCH_G1_POST_CLIP_OFFSET		(0x40480)
 
-// RCH_D
+/* RCH_D */
 
-// WCH
+/* WCH */
 #define DSS_WCH0_BITEXT_OFFSET		(0x5A140)
 #define DSS_WCH0_DITHER_OFFSET            (0x5A1D0)
 #define DSS_WCH0_PCSC_OFFSET			(0x5A400)
@@ -111,7 +110,7 @@
 #define DSS_WCH1_ROT_OFFSET			(0x5C530)
 #define DSS_WCH1_FBCE_CREG_CTRL_GATE	(0x5C964)
 
-// DPP
+/* DPP */
 #define DSS_DPP_CLIP_OFFSET	(0x70180)
 #define DSS_DPP_XCC_OFFSET	(0x70900)
 #define DSS_DPP_DEGAMMA_OFFSET	(0x70950)
@@ -122,21 +121,21 @@
 #define DSS_DPP_DEGAMMA_LUT_OFFSET	(0x78000)
 #define DSS_DPP_ARSR_POST_LUT_OFFSET	(0x7B000)
 
-//for boston es
+/* for boston es */
 #define DSS_DPP_LCP_OFFSET_ES	(0x70900)
 #define DSS_DPP_LCP_LUT_OFFSET_ES	(0x73000)
 
-// POST SCF
+/* POST SCF */
 #define DSS_POST_SCF_OFFSET	DSS_DPP_ARSR_POST_OFFSET
 #define DSS_POST_SCF_LUT_OFFSET	DSS_DPP_ARSR_POST_LUT_OFFSET
-//POST SCF for ES
+/* POST SCF for ES */
 #define DSS_POST_SCF_LUT_OFFSET_ES	(0x7B000)
 
 /* AIF */
 
-//(0x0004+0x20*n)
+/* (0x0004+0x20*n) */
 #define AIF_CH_HS	(0x0004)
-//(0x0008+0x20*n)
+/* (0x0008+0x20*n) */
 #define AIF_CH_LS	(0x0008)
 
 /* SMMU */
@@ -164,10 +163,10 @@
 /* SCF */
 
 /* MACROS */
-#define SCF_MIN_INPUT	(16) //SCF min input pix 16x16
-#define SCF_MIN_OUTPUT	(16) //SCF min output pix 16x16
+#define SCF_MIN_INPUT	(16) /* SCF min input pix 16x16 */
+#define SCF_MIN_OUTPUT	(16) /* SCF min output pix 16x16 */
 
-#define SCF_INC_FACTOR	BIT(18) //(262144)
+#define SCF_INC_FACTOR	BIT(18) /* (262144) */
 
 /* ARSR2P ES  v0 */
 #define ARSR2P_INPUT_WIDTH_HEIGHT_ES	(0x000)
@@ -278,11 +277,11 @@
 #define CSC_P22				(0x0030)
 #define CSC_ICG_MODULE		(0x0034)
 
-//AFBCE
+/* AFBCE */
 #define AFBCE_HREG_HDR_PTR_L0		(0x908)
 #define AFBCE_HREG_PLD_PTR_L0		(0x90C)
 
-//ROT
+/* ROT */
 #define ROT_MEM_CTRL_ES		(0x538)
 #define ROT_SIZE_ES			(0x53C)
 
@@ -290,21 +289,21 @@
 #define ROT_SIZE				(0x58C)
 #define ROT_422_MODE			(0x590)
 
-//REG_DEFAULT
+/* REG_DEFAULT */
 
 /* MACROS */
 
 /* DMA aligned limited:  128bits aligned */
 
-//16Bytes
-//32BPP:1024, 16BPP 512
+/* 16Bytes */
+/* 32BPP:1024, 16BPP 512 */
 
 #define AFBC_HEADER_ADDR_ALIGN	(16)
 #define AFBC_HEADER_STRIDE_ALIGN	(16)
 
-//16Pixels
+/* 16Pixels */
 
-#define MMBUF_BASE	(0x40) //(0xea800000)
+#define MMBUF_BASE	(0x40) /* (0xea800000) */
 #define MMBUF_BLOCK0_LINE_NUM	(8)
 #define MMBUF_BLOCK0_ROT_LINE_NUM	(64)
 #define MMBUF_BLOCK1_LINE_NUM	(16)
@@ -333,7 +332,7 @@
 #define HFBCD_BLOCK1_CROP_MAX	(15)
 
 /* MCTL  SYS */
-//SECU
+/* SECU */
 #define MCTL_RCH0_SECU_GATE		(0x0080)
 #define MCTL_RCH1_SECU_GATE		(0x0084)
 #define MCTL_RCH2_SECU_GATE		(0x0088)
@@ -349,25 +348,25 @@
 #define MCTL_DSI1_SECU_CFG			(0x00C4)
 #define MCTL_DP_SECU_GATE			(0x00C8)
 #define MCTL_DSI_MUX_SECU_GATE	(0x00CC)
-//FLUSH EN
-//SW FOR RCH
+/* FLUSH EN */
+/* SW FOR RCH */
 #define MCTL_RCH8_OV_OEN	(0x015C)
-//SW FOR OV
+/* SW FOR OV */
 #define MCTL_RCH_OV0_SEL1  (0x0190)
 #define MCTL_RCH_OV1_SEL1  (0x0194)
 #define MCTL_RCH_OV2_SEL1  (0x0198)
-//SW FOR WCH
-//SW FOR OV2/3 OUTPUT
-//SW
-//RCH STARTY
+/* SW FOR WCH */
+/* SW FOR OV2/3 OUTPUT */
+/* SW */
+/* RCH STARTY */
 #define MCTL_RCH8_STARTY	(0x01E0)
-//LP
+/* LP */
 
-//RCH
-#define MCTL_MOD_DBG_ADD_CH_NUM (2)  // copybit
+/* RCH */
+#define MCTL_MOD_DBG_ADD_CH_NUM (2)  /* copybit */
 
 /* SBL */
-//SBL FOR ES
+/* SBL FOR ES */
 #define SBL_REG_FRMT_MODE_ES                          (0x0000)
 #define SBL_REG_FRMT_DBUF_CTRL_ES                     (0x0008)
 #define SBL_REG_FRMT_FRAME_WIDTH_7_TO_0_ES            (0x0010)
@@ -594,7 +593,7 @@
 #define SBL_CORE1_REG_OUT1_7_TO_0_ES                  (0x0e60)
 #define SBL_CORE1_REG_OUT1_15_TO_8_ES                 (0x0e64)
 
-//SBL for 970
+/* SBL for 970 */
 #define SBL_REG_FRMT_MODE                                  (0x0000)
 #define SBL_REG_FRMT_FRAME_DIMEN                           (0x0004)
 #define SBL_REG_FRMT_HW_VERSION                            (0x0014)
@@ -684,12 +683,12 @@
 #define SBL_VC_ANTI_FLCKR_ALPHA                            (0x03ac)
 
 /* DPP */
-//DPP TOP
-//#define DPP_ARSR1P_MEM_CTRL	(0x01C)
+/* DPP TOP */
+/* #define DPP_ARSR1P_MEM_CTRL	(0x01C) */
 #define DPP_ARSR_POST_MEM_CTRL	(0x01C)
-//#define DPP_ARSR1P	(0x048)
+/* #define DPP_ARSR1P	(0x048) */
 
-//DITHER
+/* DITHER */
 #define DITHER_CTL1 (0x000)
 #define DITHER_CTL0 (0x004)
 #define DITHER_TRI_THD12_0 (0x008)
@@ -743,7 +742,7 @@
 #define DITHER_DBG2 (0x0C8)
 #define DITHER_CTRL2 (0x0CC)
 
-//Dither for ES
+/* Dither for ES */
 #define DITHER_PARA_ES (0x000)
 #define DITHER_CTL_ES (0x004)
 #define DITHER_MATRIX_PART1_ES (0x008)
@@ -760,14 +759,14 @@
 #define DITHER_DBG1_ES (0x034)
 #define DITHER_DBG2_ES (0x038)
 
-//CSC_RGB2YUV_10bits  CSC_YUV2RGB_10bits
+/* CSC_RGB2YUV_10bits  CSC_YUV2RGB_10bits */
 
-//GAMA
+/* GAMA */
 #define GAMA_LUT_SEL (0x008)
 #define GAMA_DBG0 (0x00C)
 #define GAMA_DBG1 (0x010)
 
-//ACM for ES
+/* ACM for ES */
 #define ACM_EN_ES            (0x000)
 #define ACM_SATA_OFFSET_ES   (0x004)
 #define ACM_HUESEL_ES        (0x008)
@@ -813,7 +812,7 @@
 #define ACM_DEBUG_CFG_ES     (0x0A8)
 #define ACM_DEBUG_W_ES       (0x0AC)
 
-//ACM
+/* ACM */
 #define ACM_HUE_RLH01 (0x040)
 #define ACM_HUE_RLH23 (0x044)
 #define ACM_HUE_RLH45 (0x048)
@@ -874,16 +873,16 @@
 #define ACM_INK_CTRL (0x1C0)
 #define ACM_INK_OUT (0x1C4)
 
-//ACE FOR ES
+/* ACE FOR ES */
 
-//LCP
+/* LCP */
 #define LCP_GMP_BYPASS_EN_ES	(0x030)
 #define LCP_XCC_BYPASS_EN_ES	(0x034)
 #define LCP_DEGAMA_EN_ES	(0x038)
 #define LCP_DEGAMA_MEM_CTRL_ES	(0x03C)
 #define LCP_GMP_MEM_CTRL_ES	(0x040)
 
-//XCC
+/* XCC */
 #define XCC_COEF_00 (0x000)
 #define XCC_COEF_01 (0x004)
 #define XCC_COEF_02 (0x008)
@@ -898,14 +897,14 @@
 #define XCC_COEF_23 (0x02C)
 #define XCC_EN (0x034)
 
-//DEGAMMA
+/* DEGAMMA */
 #define DEGAMA_EN (0x000)
 #define DEGAMA_MEM_CTRL (0x004)
 #define DEGAMA_LUT_SEL (0x008)
 #define DEGAMA_DBG0 (0x00C)
 #define DEGAMA_DBG1 (0x010)
 
-//GMP
+/* GMP */
 #define GMP_EN (0x000)
 #define GMP_MEM_CTRL (0x004)
 #define GMP_LUT_SEL (0x008)
@@ -914,7 +913,7 @@
 #define GMP_DBG_R1 (0x014)
 #define GMP_DBG_R2 (0x018)
 
-//ARSR1P ES
+/* ARSR1P ES */
 #define ARSR1P_IHLEFT_ES		(0x000)
 #define ARSR1P_IHRIGHT_ES          (0x004)
 #define ARSR1P_IHLEFT1_ES          (0x008)
@@ -950,7 +949,7 @@
 #define ARSR1P_LSC_CFG3_ES         (0x080)
 #define ARSR1P_FORCE_CLK_ON_CFG_ES	(0x084)
 
-//ARSR1P
+/* ARSR1P */
 
 #define ARSR_POST_IHLEFT (0x000)
 #define ARSR_POST_IHRIGHT (0x004)
@@ -1000,7 +999,7 @@
 
 /* BIT EXT */
 
-//GAMA PRE LUT
+/* GAMA PRE LUT */
 #define U_GAMA_PRE_R_COEF	(0x000)
 #define U_GAMA_PRE_G_COEF	(0x400)
 #define U_GAMA_PRE_B_COEF	(0x800)
@@ -1008,7 +1007,7 @@
 #define U_GAMA_PRE_G_LAST_COEF (0x600)
 #define U_GAMA_PRE_B_LAST_COEF (0xA00)
 
-//ACM LUT
+/* ACM LUT */
 #define ACM_U_ACM_SATR_FACE_COEF (0x500)
 #define ACM_U_ACM_LTA_COEF (0x580)
 #define ACM_U_ACM_LTR0_COEF (0x600)
@@ -1036,7 +1035,7 @@
 #define ACM_U_ACM_CH6_COFF (0xF00)
 #define ACM_U_ACM_CH7_COFF (0xF80)
 
-//LCP LUT
+/* LCP LUT */
 #define GMP_U_GMP_COEF	(0x0000)
 
 #define U_DEGAMA_R_COEF	(0x0000)
@@ -1046,28 +1045,28 @@
 #define U_DEGAMA_G_LAST_COEF (0x0600)
 #define U_DEGAMA_B_LAST_COEF (0x0A00)
 
-//ARSR1P LUT for ES
-#define ARSR1P_LSC_GAIN_ES		(0x084)  //0xB07C+0x4*range27
-#define ARSR1P_COEFF_H_Y0_ES	(0x0F0)  //0xB0E8+0x4*range9
-#define ARSR1P_COEFF_H_Y1_ES	(0x114)  //0xB10C+0x4*range9
-#define ARSR1P_COEFF_V_Y0_ES	(0x138)  //0xB130+0x4*range9
-#define ARSR1P_COEFF_V_Y1_ES	(0x15C)  //0xB154+0x4*range9
-#define ARSR1P_COEFF_H_UV0_ES	(0x180)  //0xB178+0x4*range9
-#define ARSR1P_COEFF_H_UV1_ES	(0x1A4)  //0xB19C+0x4*range9
-#define ARSR1P_COEFF_V_UV0_ES	(0x1C8)  //0xB1C0+0x4*range9
-#define ARSR1P_COEFF_V_UV1_ES	(0x1EC)  //0xB1E4+0x4*range9
+/* ARSR1P LUT for ES */
+#define ARSR1P_LSC_GAIN_ES		(0x084)  /* 0xB07C+0x4*range27 */
+#define ARSR1P_COEFF_H_Y0_ES	(0x0F0)  /* 0xB0E8+0x4*range9 */
+#define ARSR1P_COEFF_H_Y1_ES	(0x114)  /* 0xB10C+0x4*range9 */
+#define ARSR1P_COEFF_V_Y0_ES	(0x138)  /* 0xB130+0x4*range9 */
+#define ARSR1P_COEFF_V_Y1_ES	(0x15C)  /* 0xB154+0x4*range9 */
+#define ARSR1P_COEFF_H_UV0_ES	(0x180)  /* 0xB178+0x4*range9 */
+#define ARSR1P_COEFF_H_UV1_ES	(0x1A4)  /* 0xB19C+0x4*range9 */
+#define ARSR1P_COEFF_V_UV0_ES	(0x1C8)  /* 0xB1C0+0x4*range9 */
+#define ARSR1P_COEFF_V_UV1_ES	(0x1EC)  /* 0xB1E4+0x4*range9 */
 
-//ARSR1P LUT
-#define ARSR_POST_COEFF_H_Y0	(0x0F0)  //0xB0E8+0x4*range9
-#define ARSR_POST_COEFF_H_Y1	(0x114)  //0xB10C+0x4*range9
-#define ARSR_POST_COEFF_V_Y0	(0x138)  //0xB130+0x4*range9
-#define ARSR_POST_COEFF_V_Y1	(0x15C)  //0xB154+0x4*range9
-#define ARSR_POST_COEFF_H_UV0	(0x180)  //0xB178+0x4*range9
-#define ARSR_POST_COEFF_H_UV1	(0x1A4)  //0xB19C+0x4*range9
-#define ARSR_POST_COEFF_V_UV0	(0x1C8)  //0xB1C0+0x4*range9
-#define ARSR_POST_COEFF_V_UV1	(0x1EC)  //0xB1E4+0x4*range9
+/* ARSR1P LUT */
+#define ARSR_POST_COEFF_H_Y0	(0x0F0)  /* 0xB0E8+0x4*range9 */
+#define ARSR_POST_COEFF_H_Y1	(0x114)  /* 0xB10C+0x4*range9 */
+#define ARSR_POST_COEFF_V_Y0	(0x138)  /* 0xB130+0x4*range9 */
+#define ARSR_POST_COEFF_V_Y1	(0x15C)  /* 0xB154+0x4*range9 */
+#define ARSR_POST_COEFF_H_UV0	(0x180)  /* 0xB178+0x4*range9 */
+#define ARSR_POST_COEFF_H_UV1	(0x1A4)  /* 0xB19C+0x4*range9 */
+#define ARSR_POST_COEFF_V_UV0	(0x1C8)  /* 0xB1C0+0x4*range9 */
+#define ARSR_POST_COEFF_V_UV1	(0x1EC)  /* 0xB1E4+0x4*range9 */
 
-//DPE
+/* DPE */
 #define DPE_INT_STAT (0x0000)
 #define DPE_INT_UNMASK (0x0004)
 #define DPE_BYPASS_ACE (0x0008)
@@ -1170,7 +1169,7 @@
 
 /* MMBUF */
 
-//MEDIA_CRG
+/* MEDIA_CRG */
 #define MEDIA_PEREN0	(0x000)
 #define MEDIA_PERDIS0	(0x004)
 #define MEDIA_PERDIS1	(0x014)

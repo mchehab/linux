@@ -21,26 +21,26 @@
 DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
 
 struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
-	/*single mipi*/
+	/* single mipi */
 	{
-			/*none*/
+			/* none */
 		{
 			XRES_DIV_1, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_0, PXL0_DSI_GT_EN_1
 		}, {
-			/*orise2x*/
+			/* orise2x */
 			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
 		}, {
-			/*orise3x*/
+			/* orise3x */
 			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_1, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
 		}, {
-			/*himax2x*/
+			/* himax2x */
 			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_2, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
 		}, {
-			/*rsp2x*/
+			/* rsp2x */
 			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_3, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
 		}, {
@@ -52,63 +52,63 @@ struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
 			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_4, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa2x_1pipe*/
+			/* vesa2x_1pipe */
 			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa3x_1pipe*/
+			/* vesa3x_1pipe */
 			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa2x_2pipe*/
+			/* vesa2x_2pipe */
 			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa3x_2pipe*/
+			/* vesa3x_2pipe */
 			XRES_DIV_3, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_2, PXL0_DSI_GT_EN_3
 		}
 
-	/*dual mipi*/
+	/* dual mipi */
 	}, {
 		{
-			/*none*/
+			/* none */
 			XRES_DIV_2, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_1, PXL0_DSI_GT_EN_3
 		}, {
-			/*orise2x*/
+			/* orise2x */
 			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_0, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
 		}, {
-			/*orise3x*/
+			/* orise3x */
 			XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_1, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3
 		}, {
-			/*himax2x*/
+			/* himax2x */
 			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_2, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
 		}, {
-			/*rsp2x*/
+			/* rsp2x */
 			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_3, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
 		}, {
-			/*rsp3x*/
+			/* rsp3x */
 			XRES_DIV_3, YRES_DIV_2, IFBC_COMP_MODE_4, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_OPEN, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa2x_1pipe*/
+			/* vesa2x_1pipe */
 			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa3x_1pipe*/
+			/* vesa3x_1pipe */
 			XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_5, PXL0_DIV2_GT_EN_CLOSE,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa2x_2pipe*/
+			/* vesa2x_2pipe */
 			XRES_DIV_4, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_3, PXL0_DSI_GT_EN_3
 		}, {
-			/*vesa3x_2pipe*/
+			/* vesa3x_2pipe */
 			XRES_DIV_6, YRES_DIV_1, IFBC_COMP_MODE_6, PXL0_DIV2_GT_EN_OPEN,
 			PXL0_DIV4_GT_EN_CLOSE, PXL0_DIVCFG_5, 3
 		}
@@ -267,26 +267,26 @@ void init_ldi(struct dss_crtc *acrtc)
 	writel(vsync_plr | (hsync_plr << 1) | (pixelclk_plr << 2) | (data_en_plr << 3),
 	       ldi_base + LDI_PLR_CTRL);
 
-	/* bpp*/
+	/* bpp */
 	set_reg(ldi_base + LDI_CTRL, acrtc->out_format, 2, 3);
-	/* bgr*/
+	/* bgr */
 	set_reg(ldi_base + LDI_CTRL, acrtc->bgr_fmt, 1, 13);
 
-	/* for ddr pmqos*/
+	/* for ddr pmqos */
 	writel(vfp, ldi_base + LDI_VINACT_MSK_LEN);
 
-	/*cmd event sel*/
+	/* cmd event sel */
 	writel(0x1, ldi_base + LDI_CMD_EVENT_SEL);
 
-	/* for 1Hz LCD and mipi command LCD*/
+	/* for 1Hz LCD and mipi command LCD */
 	set_reg(ldi_base + LDI_DSI_CMD_MOD_CTRL, 0x1, 1, 1);
 
-	/*ldi_data_gate(ctx, true);*/
+	/* ldi_data_gate(ctx, true); */
 
-	/* normal*/
+	/* normal */
 	set_reg(ldi_base + LDI_WORK_MODE, 0x1, 1, 0);
 
-	/* ldi disable*/
+	/* ldi disable */
 	set_reg(ldi_base + LDI_CTRL, 0x0, 1, 0);
 }
 
@@ -303,7 +303,7 @@ void deinit_ldi(struct dss_crtc *acrtc)
 
 	ldi_base = ctx->base + DSS_LDI0_OFFSET;
 
-	/* ldi disable*/
+	/* ldi disable */
 	set_reg(ldi_base + LDI_CTRL, 0, 1, 0);
 }
 
@@ -402,7 +402,7 @@ void init_dbuf(struct dss_crtc *acrtc)
 	 * thd_cg_out = dfs_time / (Tp * K * 6);
 	 */
 	thd_cg_out = (dfs_time * adj_mode->clock * 1000UL * mode->hdisplay) /
-		(((hsw + hbp + hfp) + mode->hdisplay) * 6 * 1000000UL);
+		     (((hsw + hbp + hfp) + mode->hdisplay) * 6 * 1000000UL);
 
 	sram_valid_num = thd_cg_out / depth;
 	thd_cg_in = (sram_valid_num + 1) * depth - 1;
@@ -415,11 +415,11 @@ void init_dbuf(struct dss_crtc *acrtc)
 	thd_flux_req_befdfs_out = GET_FLUX_REQ_OUT(sram_max_mem_depth);
 
 	sram_min_support_depth = dfs_time_min * mode->hdisplay / (1000000 / 60 / (mode->vdisplay +
-		vbp + vfp + vsw) * (DBUF_WIDTH_BIT / 3 / BITS_PER_BYTE));
+				 vbp + vfp + vsw) * (DBUF_WIDTH_BIT / 3 / BITS_PER_BYTE));
 
-	/*thd_flux_req_aftdfs_in   =[(sram_valid_num+1)*depth - 50*HSIZE/((1000000/60/(VSIZE+VFP+VBP+VSW))*6)]/3*/
+	/* thd_flux_req_aftdfs_in   =[(sram_valid_num+1)*depth - 50*HSIZE/((1000000/60/(VSIZE+VFP+VBP+VSW))*6)]/3 */
 	thd_flux_req_aftdfs_in = (sram_max_mem_depth - sram_min_support_depth) / 3;
-	/*thd_flux_req_aftdfs_out  =  2*[(sram_valid_num+1)* depth - 50*HSIZE/((1000000/60/(VSIZE+VFP+VBP+VSW))*6)]/3*/
+	/* thd_flux_req_aftdfs_out  =  2*[(sram_valid_num+1)* depth - 50*HSIZE/((1000000/60/(VSIZE+VFP+VBP+VSW))*6)]/3 */
 	thd_flux_req_aftdfs_out = 2 * (sram_max_mem_depth - sram_min_support_depth) / 3;
 
 	thd_dfs_ok = thd_flux_req_befdfs_in;
@@ -458,12 +458,12 @@ void init_dbuf(struct dss_crtc *acrtc)
 	writel((thd_cg_out << 16) | thd_cg_in, dbuf_base + DBUF_THD_CG);
 	writel((thd_cg_hold << 16) | thd_wr_wait, dbuf_base + DBUF_THD_OTHER);
 	writel((thd_flux_req_befdfs_out << 16) | thd_flux_req_befdfs_in,
-               dbuf_base + DBUF_THD_FLUX_REQ_BEF);
+	       dbuf_base + DBUF_THD_FLUX_REQ_BEF);
 	writel((thd_flux_req_aftdfs_out << 16) | thd_flux_req_aftdfs_in,
-               dbuf_base + DBUF_THD_FLUX_REQ_AFT);
+	       dbuf_base + DBUF_THD_FLUX_REQ_AFT);
 	writel(thd_dfs_ok, dbuf_base + DBUF_THD_DFS_OK);
 	writel((dfs_ok_mask << 1) | thd_flux_req_sw_en,
-               dbuf_base + DBUF_FLUX_REQ_CTRL);
+	       dbuf_base + DBUF_FLUX_REQ_CTRL);
 
 	writel(0x1, dbuf_base + DBUF_DFS_LP_CTRL);
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
@@ -720,27 +720,27 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 
 	dss_base = ctx->base;
 
-	/*core/axi/mmbuf*/
-	writel(0x00000008, dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL);  /*cmd mem*/
+	/* core/axi/mmbuf */
+	writel(0x00000008, dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL);  /* cmd mem */
 
 	writel(0x00000088,
-	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_v0 ,scf mem*/
+	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_COEF_MEM_CTRL); /* rch_v0 ,scf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v0 ,scf mem*/
+	       dss_base + DSS_RCH_VG0_SCL_OFFSET + SCF_LB_MEM_CTRL); /* rch_v0 ,scf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG0_ARSR_OFFSET + ctx->arsr2p_lb_mem_ctrl);/*rch_v0 ,arsr2p mem*/
-	writel(0x00000008, dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL);/*rch_v0 ,vpp mem*/
+	       dss_base + DSS_RCH_VG0_ARSR_OFFSET + ctx->arsr2p_lb_mem_ctrl); /* rch_v0 ,arsr2p mem */
+	writel(0x00000008, dss_base + DSS_RCH_VG0_DMA_OFFSET + VPP_MEM_CTRL); /* rch_v0 ,vpp mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v0 ,dma_buf mem*/
-	writel(0x00008888, dss_base + DSS_RCH_VG0_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_v0 ,afbcd mem*/
+	       dss_base + DSS_RCH_VG0_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_v0 ,dma_buf mem */
+	writel(0x00008888, dss_base + DSS_RCH_VG0_DMA_OFFSET + AFBCD_MEM_CTRL); /* rch_v0 ,afbcd mem */
 
 	writel(0x00000088,
-	       dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_v1 ,scf mem*/
+	       dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_COEF_MEM_CTRL); /* rch_v1 ,scf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v1 ,scf mem*/
+	       dss_base + DSS_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL); /* rch_v1 ,scf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v1 ,dma_buf mem*/
-	writel(0x00008888, dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_v1 ,afbcd mem*/
+	       dss_base + DSS_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_v1 ,dma_buf mem */
+	writel(0x00008888, dss_base + DSS_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL); /* rch_v1 ,afbcd mem */
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		writel(0x88888888,
@@ -753,44 +753,44 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 		       dss_base + DSS_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1);
 	} else {
 		writel(0x00000088,
-		       dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_v2 ,scf mem*/
+		       dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL); /* rch_v2 ,scf mem */
 		writel(0x00000008,
-		       dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_v2 ,scf mem*/
+		       dss_base + DSS_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL); /* rch_v2 ,scf mem */
 	}
 
 	writel(0x00000008,
-	       dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_v2 ,dma_buf mem*/
+	       dss_base + DSS_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_v2 ,dma_buf mem */
 
 	writel(0x00000088,
-	       dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_g0 ,scf mem*/
-	writel(0x0000008, dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_g0 ,scf mem*/
+	       dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL); /* rch_g0 ,scf mem */
+	writel(0x0000008, dss_base + DSS_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL); /* rch_g0 ,scf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_G0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_g0 ,dma_buf mem*/
-	writel(0x00008888, dss_base + DSS_RCH_G0_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_g0 ,afbcd mem*/
+	       dss_base + DSS_RCH_G0_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_g0 ,dma_buf mem */
+	writel(0x00008888, dss_base + DSS_RCH_G0_DMA_OFFSET + AFBCD_MEM_CTRL); /* rch_g0 ,afbcd mem */
 
 	writel(0x00000088,
-	       dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_COEF_MEM_CTRL);/*rch_g1 ,scf mem*/
-	writel(0x0000008, dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL);/*rch_g1 ,scf mem*/
+	       dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_COEF_MEM_CTRL); /* rch_g1 ,scf mem */
+	writel(0x0000008, dss_base + DSS_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL); /* rch_g1 ,scf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_g1 ,dma_buf mem*/
-	writel(0x00008888, dss_base + DSS_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_g1 ,afbcd mem*/
+	       dss_base + DSS_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_g1 ,dma_buf mem */
+	writel(0x00008888, dss_base + DSS_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL); /* rch_g1 ,afbcd mem */
 
 	writel(0x00000008,
-	       dss_base + DSS_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d0 ,dma_buf mem*/
-	writel(0x00008888, dss_base + DSS_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL);/*rch_d0 ,afbcd mem*/
+	       dss_base + DSS_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_d0 ,dma_buf mem */
+	writel(0x00008888, dss_base + DSS_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL); /* rch_d0 ,afbcd mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d1 ,dma_buf mem*/
+	       dss_base + DSS_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_d1 ,dma_buf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_D2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d2 ,dma_buf mem*/
+	       dss_base + DSS_RCH_D2_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_d2 ,dma_buf mem */
 	writel(0x00000008,
-	       dss_base + DSS_RCH_D3_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*rch_d3 ,dma_buf mem*/
+	       dss_base + DSS_RCH_D3_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* rch_d3 ,dma_buf mem */
 
-	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch0 DMA/AFBCE mem*/
-	writel(0x00000888, dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL);/*wch0 DMA/AFBCE mem*/
-	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + ctx->rot_mem_ctrl);/*wch0 rot mem*/
-	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch1 DMA/AFBCE mem*/
-	writel(0x00000888, dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL);/*wch1 DMA/AFBCE mem*/
-	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + ctx->rot_mem_ctrl);/*wch1 rot mem*/
+	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* wch0 DMA/AFBCE mem */
+	writel(0x00000888, dss_base + DSS_WCH0_DMA_OFFSET + AFBCE_MEM_CTRL); /* wch0 DMA/AFBCE mem */
+	writel(0x00000008, dss_base + DSS_WCH0_DMA_OFFSET + ctx->rot_mem_ctrl); /* wch0 rot mem */
+	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* wch1 DMA/AFBCE mem */
+	writel(0x00000888, dss_base + DSS_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL); /* wch1 DMA/AFBCE mem */
+	writel(0x00000008, dss_base + DSS_WCH1_DMA_OFFSET + ctx->rot_mem_ctrl); /* wch1 rot mem */
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		writel(0x00000088,
 		       dss_base + DSS_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL);
@@ -799,11 +799,11 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 		writel(0x02605550, dss_base + GLB_DSS_MEM_CTRL);
 	} else {
 		writel(0x00000008,
-		       dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL);/*wch2 DMA/AFBCE mem*/
+		       dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* wch2 DMA/AFBCE mem */
 		writel(0x00000008,
-		       dss_base + DSS_WCH2_DMA_OFFSET + ctx->rot_mem_ctrl);/*wch2 rot mem*/
-		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
-		//outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008);
+		       dss_base + DSS_WCH2_DMA_OFFSET + ctx->rot_mem_ctrl); /* wch2 rot mem */
+		/* outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008); */
+		/* outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008); */
 	}
 }
 
@@ -836,7 +836,7 @@ int dpe_irq_disable(struct dss_crtc *acrtc)
 	if (ctx->irq)
 		disable_irq(ctx->irq);
 
-	/*disable_irq_nosync(ctx->irq);*/
+	/* disable_irq_nosync(ctx->irq); */
 
 	return 0;
 }
@@ -1049,7 +1049,7 @@ int mediacrg_regulator_enable(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	//ret = regulator_enable(ctx->mediacrg_regulator);
+	/* ret = regulator_enable(ctx->mediacrg_regulator); */
 	if (ret)
 		DRM_ERROR("mediacrg regulator_enable failed, error=%d!\n", ret);
 
@@ -1065,7 +1065,7 @@ int mediacrg_regulator_disable(struct dss_hw_ctx *ctx)
 		return -EINVAL;
 	}
 
-	//ret = regulator_disable(ctx->mediacrg_regulator);
+	/* ret = regulator_disable(ctx->mediacrg_regulator); */
 	if (ret != 0) {
 		DRM_ERROR("mediacrg regulator_disable failed, error=%d!\n", ret);
 		return -EINVAL;

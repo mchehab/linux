@@ -66,11 +66,11 @@ static int hisi_pixel_format_hal2dma(int format)
 		break;
 
 	case HISI_FB_PIXEL_FORMAT_YUV_422_I:
-	case HISI_FB_PIXEL_FORMAT_YUYV_422_Pkg:
-	case HISI_FB_PIXEL_FORMAT_YVYU_422_Pkg:
-	case HISI_FB_PIXEL_FORMAT_UYVY_422_Pkg:
-	case HISI_FB_PIXEL_FORMAT_VYUY_422_Pkg:
-		ret = DMA_PIXEL_FORMAT_YUYV_422_Pkg;
+	case HISI_FB_PIXEL_FORMAT_YUYV_422:
+	case HISI_FB_PIXEL_FORMAT_YVYU_422:
+	case HISI_FB_PIXEL_FORMAT_UYVY_422:
+	case HISI_FB_PIXEL_FORMAT_VYUY_422:
+		ret = DMA_PIXEL_FORMAT_YUYV_422;
 		break;
 
 	case HISI_FB_PIXEL_FORMAT_YCbCr_422_P:
@@ -150,16 +150,16 @@ static int hisi_pixel_format_hal2dfc(int format)
 		break;
 
 	case HISI_FB_PIXEL_FORMAT_YUV_422_I:
-	case HISI_FB_PIXEL_FORMAT_YUYV_422_Pkg:
+	case HISI_FB_PIXEL_FORMAT_YUYV_422:
 		ret = DFC_PIXEL_FORMAT_YUYV422;
 		break;
-	case HISI_FB_PIXEL_FORMAT_YVYU_422_Pkg:
+	case HISI_FB_PIXEL_FORMAT_YVYU_422:
 		ret = DFC_PIXEL_FORMAT_YVYU422;
 		break;
-	case HISI_FB_PIXEL_FORMAT_UYVY_422_Pkg:
+	case HISI_FB_PIXEL_FORMAT_UYVY_422:
 		ret = DFC_PIXEL_FORMAT_UYVY422;
 		break;
-	case HISI_FB_PIXEL_FORMAT_VYUY_422_Pkg:
+	case HISI_FB_PIXEL_FORMAT_VYUY_422:
 		ret = DFC_PIXEL_FORMAT_VYUY422;
 		break;
 
@@ -230,7 +230,7 @@ static int hisi_dss_smmu_config(struct dss_hw_ctx *ctx, int chn_idx, bool mmu_en
 		if (!mmu_enable) {
 			set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 1, 32, 0);
 		} else {
-			//set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 0x70, 32, 0);
+			/* set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 0x70, 32, 0); */
 			set_reg(smmu_base + SMMU_SMRx_NS + idx * 0x4, 0x1C, 32, 0);
 		}
 	}
@@ -310,7 +310,7 @@ static int hisi_dss_mctl_ov_config(struct dss_hw_ctx *ctx, int chn_idx)
 		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 
 	set_reg(mctl_base + MCTL_CTL_EN, 0x1, 32, 0);
-	set_reg(mctl_base + MCTL_CTL_TOP, 0x2, 32, 0); /*auto mode*/
+	set_reg(mctl_base + MCTL_CTL_TOP, 0x2, 32, 0); /* auto mode */
 	set_reg(mctl_base + MCTL_CTL_DBG, 0xB13A00, 32, 0);
 
 	set_reg(mctl_base + mctl_rch_offset, 0x1, 32, 0);
@@ -409,8 +409,8 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 	if (afbcd) {
 		mm_base_0 = 0;
 		mm_base_1 = mm_base_0 + rect->right * bpp * MMBUF_LINE_NUM;
-		mm_base_0 = ALIGN_UP(mm_base_0, MMBUF_ADDR_ALIGN);
-		mm_base_1 = ALIGN_UP(mm_base_1, MMBUF_ADDR_ALIGN);
+		mm_base_0 = ALIGN(mm_base_0, MMBUF_ADDR_ALIGN);
+		mm_base_1 = ALIGN(mm_base_1, MMBUF_ADDR_ALIGN);
 
 		if ((((rect->right - rect->left) + 1) & (ctx->afbc_header_addr_align - 1)) ||
 		    (((rect->bottom - rect->top) + 1) & (AFBC_BLOCK_ALIGN - 1))) {
@@ -424,11 +424,11 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 				  mm_base_0, MMBUF_ADDR_ALIGN,
 				  mm_base_1, MMBUF_ADDR_ALIGN);
 		}
-		/*header*/
+		/* header */
 		afbcd_header_stride = (((rect->right - rect->left) + 1) / AFBC_BLOCK_ALIGN) * AFBC_HEADER_STRIDE_BLOCK;
 		afbcd_header_addr = (uint32_t)(unsigned long)display_addr;
 
-		/*payload*/
+		/* payload */
 		if (bpp == 4)
 			stride_align = AFBC_PAYLOAD_STRIDE_ALIGN_32;
 		else if (bpp == 2)
@@ -438,7 +438,7 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 
 		afbcd_payload_stride = (((rect->right - rect->left) + 1) / AFBC_BLOCK_ALIGN) * stride_align;
 
-		afbcd_payload_addr = afbcd_header_addr + ALIGN_UP(16 * (((rect->right - rect->left) + 1) / 16) *
+		afbcd_payload_addr = afbcd_header_addr + ALIGN(16 * (((rect->right - rect->left) + 1) / 16) *
 				(((rect->bottom - rect->top) + 1) / 16), 1024);
 		afbcd_payload_addr = afbcd_payload_addr +
 			(rect->top / AFBC_BLOCK_ALIGN) * afbcd_payload_stride +
@@ -478,10 +478,10 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 		set_reg(rdma_base + DMA_OFT_Y0, rdma_oft_y0, 16, 0);
 		set_reg(rdma_base + DMA_OFT_X1, rdma_oft_x1, 12, 0);
 		set_reg(rdma_base + DMA_OFT_Y1, rdma_oft_y1, 16, 0);
-		//set_reg(rdma_base + DMA_CTRL, rdma_format, 5, 3);
-		//set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8);
+		/* set_reg(rdma_base + DMA_CTRL, rdma_format, 5, 3); */
+		/* set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8); */
 		set_reg(rdma_base + DMA_CTRL, 0x130, 32, 0);
-		//set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8);
+		/* set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8); */
 		set_reg(rdma_base + DMA_STRETCH_SIZE_VRT, stretch_size_vrt, 32, 0);
 		set_reg(rdma_base + DMA_DATA_ADDR0, display_addr, 32, 0);
 		set_reg(rdma_base + DMA_STRIDE0, rdma_stride, 13, 0);
@@ -523,7 +523,7 @@ static int hisi_dss_rdfc_config(struct dss_hw_ctx *ctx,
 
 	set_reg(rdfc_base + DFC_DISP_SIZE, (size_vrt | (size_hrz << 16)), 29, 0);
 	set_reg(rdfc_base + DFC_PIX_IN_NUM, dfc_pix_in_num, 1, 0);
-	//set_reg(rdfc_base + DFC_DISP_FMT, (bpp <= 2) ? 0x0 : 0x6, 5, 1);
+	/* set_reg(rdfc_base + DFC_DISP_FMT, (bpp <= 2) ? 0x0 : 0x6, 5, 1); */
 	set_reg(rdfc_base + DFC_DISP_FMT, dfc_fmt, 5, 1);
 	set_reg(rdfc_base + DFC_CTL_CLIP_EN, 0x1, 1, 0);
 	set_reg(rdfc_base + DFC_ICG_MODULE, 0x1, 1, 0);
@@ -609,8 +609,8 @@ static int hisi_dss_ovl_config(struct dss_hw_ctx *ctx,
 			((rect->top) << 16), 32, 0);
 		set_reg(ovl0_base + OV_LAYER0_SIZE, (rect->right) |
 			((rect->bottom) << 16), 32, 0);
-		set_reg(ovl0_base + OV_LAYER0_ALPHA_MODE, 0x1004000, 32, 0);///NEED CHECK??
-		//set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3fc03fc, 32, 0);
+		set_reg(ovl0_base + OV_LAYER0_ALPHA_MODE, 0x1004000, 32, 0);/* /NEED CHECK?? */
+		/* set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3fc03fc, 32, 0); */
 		set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3ff03ff, 32, 0);
 		set_reg(ovl0_base + OV_LAYER0_CFG, 0x1, 1, 0);
 	} else {
@@ -680,7 +680,6 @@ static void hisi_dss_mif_on(struct dss_hw_ctx *ctx)
 	set_reg(dss_base + MIF_CH11_OFFSET + MIF_CTRL0, 0x1, 1, 0);
 }
 
-
 void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 {
 #if 0
@@ -703,43 +702,43 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 
 	smmu_base = ctx->base + ctx->smmu_offset;
 
-	set_reg(smmu_base + SMMU_SCR, 0x0, 1, 0);  /*global bypass cancel*/
-	set_reg(smmu_base + SMMU_SCR, 0x1, 8, 20); /*ptw_mid*/
-	set_reg(smmu_base + SMMU_SCR, 0xf, 4, 16); /*pwt_pf*/
-	set_reg(smmu_base + SMMU_SCR, 0x7, 3, 3);  /*interrupt cachel1 cach3l2 en*/
-	set_reg(smmu_base + SMMU_LP_CTRL, 0x1, 1, 0);  /*auto_clk_gt_en*/
+	set_reg(smmu_base + SMMU_SCR, 0x0, 1, 0);  /* global bypass cancel */
+	set_reg(smmu_base + SMMU_SCR, 0x1, 8, 20); /* ptw_mid */
+	set_reg(smmu_base + SMMU_SCR, 0xf, 4, 16); /* pwt_pf */
+	set_reg(smmu_base + SMMU_SCR, 0x7, 3, 3);  /* interrupt cachel1 cach3l2 en */
+	set_reg(smmu_base + SMMU_LP_CTRL, 0x1, 1, 0);  /* auto_clk_gt_en */
 
-	/*Long Descriptor*/
+	/* Long Descriptor */
 	set_reg(smmu_base + SMMU_CB_TTBCR, 0x1, 1, 0);
 
 	set_reg(smmu_base + SMMU_ERR_RDADDR, 0x7FF00000, 32, 0);
 	set_reg(smmu_base + SMMU_ERR_WRADDR, 0x7FFF0000, 32, 0);
 
-	/*disable cmdlist, dbg, reload*/
+	/* disable cmdlist, dbg, reload */
 	set_reg(smmu_base + SMMU_RLD_EN0_NS, DSS_SMMU_RLD_EN0_DEFAULT_VAL, 32, 0);
 	set_reg(smmu_base + SMMU_RLD_EN1_NS, DSS_SMMU_RLD_EN1_DEFAULT_VAL, 32, 0);
 
-	/*cmdlist stream bypass*/
-	set_reg(smmu_base + SMMU_SMRx_NS + 36 * 0x4, 0x1, 32, 0); /*debug stream id*/
-	set_reg(smmu_base + SMMU_SMRx_NS + 37 * 0x4, 0x1, 32, 0); /*cmd unsec stream id*/
-	set_reg(smmu_base + SMMU_SMRx_NS + 38 * 0x4, 0x1, 32, 0); /*cmd sec stream id*/
+	/* cmdlist stream bypass */
+	set_reg(smmu_base + SMMU_SMRx_NS + 36 * 0x4, 0x1, 32, 0); /* debug stream id */
+	set_reg(smmu_base + SMMU_SMRx_NS + 37 * 0x4, 0x1, 32, 0); /* cmd unsec stream id */
+	set_reg(smmu_base + SMMU_SMRx_NS + 38 * 0x4, 0x1, 32, 0); /* cmd sec stream id */
 
-	/*TTBR0*/
+	/* TTBR0 */
 	domain_data = (struct iommu_domain_data *)(ctx->mmu_domain->priv);
 	fama_phy_pgd_base = domain_data->phy_pgd_base;
 	phy_pgd_base = (uint32_t)(domain_data->phy_pgd_base);
-	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x \n", fama_phy_pgd_base, phy_pgd_base);
+	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x\n", fama_phy_pgd_base, phy_pgd_base);
 	set_reg(smmu_base + SMMU_CB_TTBR0, phy_pgd_base, 32, 0);
 #endif
 }
 
 void hisifb_dss_on(struct dss_hw_ctx *ctx)
 {
-	/* dss qos on*/
+	/* dss qos on */
 	hisi_dss_qos_on(ctx);
-	/* mif on*/
+	/* mif on */
 	hisi_dss_mif_on(ctx);
-	/* smmu on*/
+	/* smmu on */
 	hisi_dss_smmu_on(ctx);
 }
 
@@ -867,7 +866,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	rect.right = src_w - 1;
 	rect.top = 0;
 	rect.bottom = src_h - 1;
-	hal_fmt = HISI_FB_PIXEL_FORMAT_BGRA_8888;//dss_get_format(fb->pixel_format);
+	hal_fmt = HISI_FB_PIXEL_FORMAT_BGRA_8888;/* dss_get_format(fb->pixel_format); */
 
 	DRM_DEBUG_DRIVER("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
 			 chn_idx, src_x, src_y, src_w, src_h,
@@ -932,7 +931,7 @@ void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane,
 	stride = layer->img.stride;
 
 	display_addr = layer->img.vir_addr;
-	hal_fmt = HISI_FB_PIXEL_FORMAT_RGBA_8888;//layer->img.format;
+	hal_fmt = HISI_FB_PIXEL_FORMAT_RGBA_8888;/* layer->img.format; */
 
 	rect.left = 0;
 	rect.right = src_w - 1;
