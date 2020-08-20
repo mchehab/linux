@@ -702,6 +702,13 @@ static int dss_plane_atomic_check(struct drm_plane *plane,
 static void dss_plane_atomic_update(struct drm_plane *plane,
 				    struct drm_plane_state *old_state)
 {
+	struct drm_plane_state *state = plane->state;
+
+	if (!state->fb) {
+		state->visible = false;
+		return;
+	}
+
 	hisi_fb_pan_display(plane);
 }
 
