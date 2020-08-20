@@ -38,20 +38,10 @@ struct kirin_drm_private {
 struct kirin_fbdev {
 	struct drm_fb_helper fb_helper;
 	struct drm_framebuffer *fb;
-
-	struct ion_client *ion_client;
-	struct ion_handle *ion_handle;
-	void *screen_base;
-	unsigned long smem_start;
-	unsigned long screen_size;
-	int shared_fd;
 };
 
 extern const struct kirin_dc_ops kirin960_dss_dc_ops;
 extern const struct kirin_dc_ops kirin970_dss_dc_ops;
 void dsi_set_output_client(struct drm_device *dev);
-
-struct drm_framebuffer *kirin_framebuffer_init(struct drm_device *dev,
-					       struct drm_mode_fb_cmd2 *mode_cmd);
 
 #endif /* __KIRIN_DRM_DRV_H__ */
