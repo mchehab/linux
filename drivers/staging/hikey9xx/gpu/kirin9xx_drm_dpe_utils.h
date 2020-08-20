@@ -63,10 +63,10 @@ enum hisi_fb_pixel_format {
 	HISI_FB_PIXEL_FORMAT_YCrCb_420_P,	/* HISI_FB_PIXEL_FORMAT_YV12 */
 
 	/* YUV Package */
-	HISI_FB_PIXEL_FORMAT_YUYV_422_Pkg,
-	HISI_FB_PIXEL_FORMAT_UYVY_422_Pkg,
-	HISI_FB_PIXEL_FORMAT_YVYU_422_Pkg,
-	HISI_FB_PIXEL_FORMAT_VYUY_422_Pkg,
+	HISI_FB_PIXEL_FORMAT_YUYV_422,
+	HISI_FB_PIXEL_FORMAT_UYVY_422,
+	HISI_FB_PIXEL_FORMAT_YVYU_422,
+	HISI_FB_PIXEL_FORMAT_VYUY_422,
 	HISI_FB_PIXEL_FORMAT_MAX,
 
 	HISI_FB_PIXEL_FORMAT_UNSUPPORT = 800
@@ -138,7 +138,7 @@ struct dss_clk_rate {
 	u64 dss_pclk_dss_rate;
 	u64 dss_pclk_pctrl_rate;
 	u64 dss_mmbuf_rate;
-	u32 dss_voltage_value; //0:0.7v, 2:0.8v
+	u32 dss_voltage_value; /* 0:0.7v, 2:0.8v */
 	u32 reserved;
 };
 
@@ -152,7 +152,7 @@ struct dss_crtc {
 
 struct dss_plane {
 	struct drm_plane base;
-	/*void *ctx;*/
+	/* void *ctx; */
 	void *acrtc;
 	u8 ch; /* channel */
 };
