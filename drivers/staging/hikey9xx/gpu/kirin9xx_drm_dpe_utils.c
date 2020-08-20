@@ -582,7 +582,7 @@ void dpe_interrupt_unmask(struct dss_crtc *acrtc)
 	writel(unmask, dss_base + GLB_CPU_PDP_INT_MSK);
 
 	unmask = ~0;
-	unmask &= ~(BIT_VSYNC | BIT_VACTIVE0_END | BIT_LDI_UNFLOW);
+	unmask &= ~(BIT_VSYNC | BIT_LDI_UNFLOW);
 
 	writel(unmask, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 }
