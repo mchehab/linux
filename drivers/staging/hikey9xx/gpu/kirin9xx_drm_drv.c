@@ -29,29 +29,27 @@
 #include <drm/drm_of.h>
 #include <drm/drm_probe_helper.h>
 #include <drm/drm_vblank.h>
+#include <drm/drm_managed.h>
 
 #include "kirin9xx_dpe.h"
 #include "kirin9xx_drm_drv.h"
 
 static int kirin_drm_kms_cleanup(struct drm_device *dev)
 {
-	struct kirin_drm_private *priv = dev->dev_private;
+	struct kirin_drm_private *priv = to_drm_private(dev);
 
 	if (priv->fbdev)
 		priv->fbdev = NULL;
 
 	drm_kms_helper_poll_fini(dev);
 	kirin9xx_dss_drm_cleanup(dev);
-	drm_mode_config_cleanup(dev);
-	devm_kfree(dev->dev, priv);
-	dev->dev_private = NULL;
 
 	return 0;
 }
 
 static void kirin_fbdev_output_poll_changed(struct drm_device *dev)
 {
-	struct kirin_drm_private *priv = dev->dev_private;
+	struct kirin_drm_private *priv = to_drm_private(dev);
 
 	dsi_set_output_client(dev);
 
@@ -67,18 +65,14 @@ static const struct drm_mode_config_funcs kirin_drm_mode_config_funcs = {
 
 static int kirin_drm_kms_init(struct drm_device *dev)
 {
-	struct kirin_drm_private *priv = dev->dev_private;
 	long kirin_type;
 	int ret;
 
-	priv = devm_kzalloc(dev->dev, sizeof(*priv), GFP_KERNEL);
-	if (!priv)
-		return -ENOMEM;
-
-	dev->dev_private = priv;
 	dev_set_drvdata(dev->dev, dev);
 
-	drm_mode_config_init(dev);
+	ret = drmm_mode_config_init(dev);
+	if (ret)
+		return ret;
 
 	dev->mode_config.min_width = 0;
 	dev->mode_config.min_height = 0;
@@ -95,20 +89,20 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 
 	ret = dss_drm_init(dev, kirin_type);
 	if (ret)
-		goto err_mode_config_cleanup;
+		return ret;
 
 	/* bind and init sub drivers */
 	ret = component_bind_all(dev->dev, dev);
 	if (ret) {
 		DRM_ERROR("failed to bind all component.\n");
-		goto err_dc_cleanup;
+		return ret;
 	}
 
 	/* vblank init */
 	ret = drm_vblank_init(dev, dev->mode_config.num_crtc);
 	if (ret) {
 		DRM_ERROR("failed to initialize vblank.\n");
-		goto err_unbind_all;
+		return ret;
 	}
 	/* with irq_enabled = true, we can use the vblank feature. */
 	dev->irq_enabled = true;
@@ -120,17 +114,6 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	drm_kms_helper_poll_init(dev);
 
 	return 0;
-
-err_unbind_all:
-	component_unbind_all(dev->dev, dev);
-err_dc_cleanup:
-	kirin9xx_dss_drm_cleanup(dev);
-err_mode_config_cleanup:
-	drm_mode_config_cleanup(dev);
-	devm_kfree(dev->dev, priv);
-	dev->dev_private = NULL;
-
-	return ret;
 }
 
 DEFINE_DRM_GEM_CMA_FOPS(kirin_drm_fops);
@@ -189,43 +172,44 @@ static int compare_of(struct device *dev, void *data)
 
 static int kirin_drm_bind(struct device *dev)
 {
-	struct drm_driver *driver = &kirin_drm_driver;
-	struct drm_device *drm_dev;
 	struct kirin_drm_private *priv;
+	struct drm_device *drm;
 	int ret;
 
-	drm_dev = drm_dev_alloc(driver, dev);
-	if (!drm_dev)
+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+	if (!priv)
 		return -ENOMEM;
 
-	ret = kirin_drm_kms_init(drm_dev);
-	if (ret)
-		goto err_drm_dev_unref;
+	drm = &priv->drm;
 
-	ret = drm_dev_register(drm_dev, 0);
-	if (ret)
-		goto err_kms_cleanup;
+	ret = devm_drm_dev_init(dev, drm, &kirin_drm_driver);
+	if (ret) {
+		kfree(priv);
+		return ret;
+	}
+	drmm_add_final_kfree(drm, priv);
 
-	drm_fbdev_generic_setup(drm_dev, 0);
-	priv = drm_dev->dev_private;
+	ret = kirin_drm_kms_init(drm);
+	if (ret)
+		return ret;
+
+	ret = drm_dev_register(drm, 0);
+	if (ret)
+		return ret;
+
+	drm_fbdev_generic_setup(drm, 0);
 
 	/* connectors should be registered after drm device register */
-	ret = kirin_drm_connectors_register(drm_dev);
+	ret = kirin_drm_connectors_register(drm);
 	if (ret)
 		goto err_drm_dev_unregister;
-
-	DRM_INFO("Initialized %s %d.%d.%d %s on minor %d\n",
-		 driver->name, driver->major, driver->minor, driver->patchlevel,
-		 driver->date, drm_dev->primary->index);
 
 	return 0;
 
 err_drm_dev_unregister:
-	drm_dev_unregister(drm_dev);
-err_kms_cleanup:
-	kirin_drm_kms_cleanup(drm_dev);
-err_drm_dev_unref:
-	drm_dev_put(drm_dev);
+	drm_dev_unregister(drm);
+	kirin_drm_kms_cleanup(drm);
+	drm_dev_put(drm);
 
 	return ret;
 }
@@ -235,6 +219,7 @@ static void kirin_drm_unbind(struct device *dev)
 	struct drm_device *drm_dev = dev_get_drvdata(dev);
 
 	drm_dev_unregister(drm_dev);
+	drm_atomic_helper_shutdown(drm_dev);
 	kirin_drm_kms_cleanup(drm_dev);
 	drm_dev_put(drm_dev);
 }
