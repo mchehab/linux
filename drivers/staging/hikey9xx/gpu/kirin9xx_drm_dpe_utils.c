@@ -18,8 +18,6 @@
 #include "kirin9xx_drm_dpe_utils.h"
 #include "kirin9xx_dpe.h"
 
-DEFINE_SEMAPHORE(hisi_fb_dss_regulator_sem);
-
 struct mipi_ifbc_division g_mipi_ifbc_division[MIPI_DPHY_NUM][IFBC_TYPE_MAX] = {
 	/* single mipi */
 	{
@@ -417,9 +415,7 @@ void init_dbuf(struct dss_crtc *acrtc)
 	sram_min_support_depth = dfs_time_min * mode->hdisplay / (1000000 / 60 / (mode->vdisplay +
 				 vbp + vfp + vsw) * (DBUF_WIDTH_BIT / 3 / BITS_PER_BYTE));
 
-	/* thd_flux_req_aftdfs_in   =[(sram_valid_num+1)*depth - 50*HSIZE/((1000000/60/(VSIZE+VFP+VBP+VSW))*6)]/3 */
 	thd_flux_req_aftdfs_in = (sram_max_mem_depth - sram_min_support_depth) / 3;
-	/* thd_flux_req_aftdfs_out  =  2*[(sram_valid_num+1)* depth - 50*HSIZE/((1000000/60/(VSIZE+VFP+VBP+VSW))*6)]/3 */
 	thd_flux_req_aftdfs_out = 2 * (sram_max_mem_depth - sram_min_support_depth) / 3;
 
 	thd_dfs_ok = thd_flux_req_befdfs_in;
@@ -802,8 +798,6 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 		       dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL); /* wch2 DMA/AFBCE mem */
 		writel(0x00000008,
 		       dss_base + DSS_WCH2_DMA_OFFSET + ctx->rot_mem_ctrl); /* wch2 rot mem */
-		/* outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008); */
-		/* outp32(dss_base + DSS_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL, 0x00000008); */
 	}
 }
 
@@ -835,8 +829,6 @@ int dpe_irq_disable(struct dss_crtc *acrtc)
 
 	if (ctx->irq)
 		disable_irq(ctx->irq);
-
-	/* disable_irq_nosync(ctx->irq); */
 
 	return 0;
 }
@@ -996,84 +988,6 @@ int dpe_inner_clk_disable(struct dss_hw_ctx *ctx)
 	return 0;
 }
 
-int dpe_regulator_enable(struct dss_hw_ctx *ctx)
-{
-	int ret = 0;
-
-	DRM_INFO("enabling DPE regulator\n");
-	if (!ctx) {
-		DRM_ERROR("NULL ptr.\n");
-		return -EINVAL;
-	}
-
-	ret = regulator_enable(ctx->dpe_regulator);
-	if (ret) {
-		DRM_ERROR(" dpe regulator_enable failed, error=%d!\n", ret);
-		return -EINVAL;
-	}
-
-	DRM_INFO("-.\n");
-
-	return ret;
-}
-
-int dpe_regulator_disable(struct dss_hw_ctx *ctx)
-{
-	int ret = 0;
-
-	if (!ctx) {
-		DRM_ERROR("NULL ptr.\n");
-		return -EINVAL;
-	}
-
-	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
-		dpe_set_pixel_clk_rate_on_pll0(ctx);
-		dpe_set_common_clk_rate_on_pll0(ctx);
-	}
-
-	ret = regulator_disable(ctx->dpe_regulator);
-	if (ret != 0) {
-		DRM_ERROR("dpe regulator_disable failed, error=%d!\n", ret);
-		return -EINVAL;
-	}
-
-	return ret;
-}
-
-int mediacrg_regulator_enable(struct dss_hw_ctx *ctx)
-{
-	int ret = 0;
-
-	if (!ctx) {
-		DRM_ERROR("NULL ptr.\n");
-		return -EINVAL;
-	}
-
-	/* ret = regulator_enable(ctx->mediacrg_regulator); */
-	if (ret)
-		DRM_ERROR("mediacrg regulator_enable failed, error=%d!\n", ret);
-
-	return ret;
-}
-
-int mediacrg_regulator_disable(struct dss_hw_ctx *ctx)
-{
-	int ret = 0;
-
-	if (!ctx) {
-		DRM_ERROR("NULL ptr.\n");
-		return -EINVAL;
-	}
-
-	/* ret = regulator_disable(ctx->mediacrg_regulator); */
-	if (ret != 0) {
-		DRM_ERROR("mediacrg regulator_disable failed, error=%d!\n", ret);
-		return -EINVAL;
-	}
-
-	return ret;
-}
-
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 {
 	u64 clk_rate;
@@ -1092,19 +1006,6 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 	}
 	DRM_INFO("dss_pri_clk:[%llu]->[%llu].\n",
 		 clk_rate, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
-
-#if 0 /* it will be set on dss_ldi_set_mode func */
-	ret = clk_set_rate(ctx->dss_pxl0_clk, pinfo->pxl_clk_rate);
-	if (ret < 0) {
-		DRM_ERROR("fb%d dss_pxl0_clk clk_set_rate(%llu) failed, error=%d!\n",
-			  ctx->index, pinfo->pxl_clk_rate, ret);
-		if (g_fpga_flag == 0)
-			return -EINVAL;
-	}
-
-	DRM_INFO("dss_pxl0_clk:[%llu]->[%llu].\n",
-		 pinfo->pxl_clk_rate, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
-#endif
 
 	clk_rate = DEFAULT_DSS_MMBUF_CLK_RATE_L1;
 	ret = clk_set_rate(ctx->dss_mmbuf_clk, DEFAULT_DSS_MMBUF_CLK_RATE_L1);

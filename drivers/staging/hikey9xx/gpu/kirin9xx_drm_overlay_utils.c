@@ -609,8 +609,7 @@ static int hisi_dss_ovl_config(struct dss_hw_ctx *ctx,
 			((rect->top) << 16), 32, 0);
 		set_reg(ovl0_base + OV_LAYER0_SIZE, (rect->right) |
 			((rect->bottom) << 16), 32, 0);
-		set_reg(ovl0_base + OV_LAYER0_ALPHA_MODE, 0x1004000, 32, 0);/* /NEED CHECK?? */
-		/* set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3fc03fc, 32, 0); */
+		set_reg(ovl0_base + OV_LAYER0_ALPHA_MODE, 0x1004000, 32, 0); /* NEED CHECK? */
 		set_reg(ovl0_base + OV_LAYER0_ALPHA_A, 0x3ff03ff, 32, 0);
 		set_reg(ovl0_base + OV_LAYER0_CFG, 0x1, 1, 0);
 	} else {
@@ -890,74 +889,6 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	hisi_dss_rdma_config(ctx, &rect, display_addr, hal_fmt, bpp, chn_idx, afbcd, mmu_enable);
 	hisi_dss_rdfc_config(ctx, &rect, hal_fmt, bpp, chn_idx);
 	hisi_dss_ovl_config(ctx, &rect, mode->hdisplay, mode->vdisplay);
-
-	hisi_dss_mctl_ov_config(ctx, chn_idx);
-	hisi_dss_mctl_sys_config(ctx, chn_idx);
-	hisi_dss_mctl_mutex_unlock(ctx);
-	hisi_dss_unflow_handler(ctx, true);
-
-	enable_ldi(acrtc);
-}
-
-void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane,
-			  struct drm_dss_layer *layer)
-{
-	struct drm_plane_state *state = plane->state;
-	struct drm_display_mode *mode;
-	struct drm_display_mode *adj_mode;
-
-	struct dss_plane *aplane = to_dss_plane(plane);
-	struct dss_crtc *acrtc = aplane->acrtc;
-	struct dss_hw_ctx *ctx = acrtc->ctx;
-
-	bool afbcd = false;
-	bool mmu_enable = false;
-	struct dss_rect_ltrb rect;
-	u32 bpp;
-	u32 stride;
-	u32 display_addr;
-
-	int chn_idx = DSS_RCHN_D2;
-	u32 hal_fmt = 0;
-	u32 src_w = state->src_w >> 16;
-	u32 src_h = state->src_h >> 16;
-
-	u32 hfp, hbp, hsw, vfp, vbp, vsw;
-
-	mode = &acrtc->base.state->mode;
-	adj_mode = &acrtc->base.state->adjusted_mode;
-
-	bpp = layer->img.bpp;
-	stride = layer->img.stride;
-
-	display_addr = layer->img.vir_addr;
-	hal_fmt = HISI_FB_PIXEL_FORMAT_RGBA_8888;/* layer->img.format; */
-
-	rect.left = 0;
-	rect.right = src_w - 1;
-	rect.top = 0;
-	rect.bottom = src_h - 1;
-
-	DRM_DEBUG("channel%d: src:(%dx%d) rect(%d,%d,%d,%d),pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
-		  chn_idx, src_w, src_h,
-		  rect.left, rect.top, rect.right, rect.bottom,
-		  hal_fmt, stride, display_addr, bpp);
-
-	hfp = mode->hsync_start - mode->hdisplay;
-	hbp = mode->htotal - mode->hsync_end;
-	hsw = mode->hsync_end - mode->hsync_start;
-	vfp = mode->vsync_start - mode->vdisplay;
-	vbp = mode->vtotal - mode->vsync_end;
-	vsw = mode->vsync_end - mode->vsync_start;
-
-	hisi_dss_mctl_mutex_lock(ctx);
-	hisi_dss_aif_ch_config(ctx, chn_idx);
-	hisi_dss_mif_config(ctx, chn_idx, mmu_enable);
-	hisi_dss_smmu_config(ctx, chn_idx, mmu_enable);
-
-	hisi_dss_rdma_config(ctx, &rect, display_addr, hal_fmt, bpp, chn_idx, afbcd, mmu_enable);
-	hisi_dss_rdfc_config(ctx, &rect, hal_fmt, bpp, chn_idx);
-	hisi_dss_ovl_config(ctx, &rect, src_w, src_h);
 
 	hisi_dss_mctl_ov_config(ctx, chn_idx);
 	hisi_dss_mctl_sys_config(ctx, chn_idx);

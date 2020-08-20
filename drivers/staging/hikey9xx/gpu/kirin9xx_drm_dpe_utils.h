@@ -254,10 +254,6 @@ int dpe_common_clk_enable(struct dss_hw_ctx *ctx);
 int dpe_common_clk_disable(struct dss_hw_ctx *ctx);
 int dpe_inner_clk_enable(struct dss_hw_ctx *ctx);
 int dpe_inner_clk_disable(struct dss_hw_ctx *ctx);
-int dpe_regulator_enable(struct dss_hw_ctx *ctx);
-int dpe_regulator_disable(struct dss_hw_ctx *ctx);
-int mediacrg_regulator_enable(struct dss_hw_ctx *ctx);
-int mediacrg_regulator_disable(struct dss_hw_ctx *ctx);
 int dpe_set_clk_rate(struct dss_hw_ctx *ctx);
 
 int dpe_irq_enable(struct dss_crtc *acrtc);
@@ -279,7 +275,6 @@ int hisi_dss_mctl_mutex_unlock(struct dss_hw_ctx *ctx);
 int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres);
 
 void hisi_fb_pan_display(struct drm_plane *plane);
-void hisi_dss_online_play(struct kirin_fbdev *fbdev, struct drm_plane *plane, struct drm_dss_layer *layer);
 
 u32 dss_get_format(u32 pixel_format);
 
