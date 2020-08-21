@@ -843,27 +843,39 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	}
 
 	ctx->dss_mmbuf_clk = devm_clk_get(dev, "clk_dss_axi_mm");
-	if (!ctx->dss_mmbuf_clk) {
-		DRM_ERROR("failed to parse dss_mmbuf_clk\n");
-		return -ENODEV;
+	ret = PTR_ERR_OR_ZERO(ctx->dss_mmbuf_clk);
+	if (ret == -EPROBE_DEFER) {
+		return ret;
+	} else if (ret) {
+		DRM_ERROR("failed to parse dss_mmbuf_clk: %d\n", ret);
+		return ret;
 	}
 
 	ctx->dss_axi_clk = devm_clk_get(dev, "aclk_dss");
-	if (!ctx->dss_axi_clk) {
-		DRM_ERROR("failed to parse dss_axi_clk\n");
-		return -ENODEV;
+	ret = PTR_ERR_OR_ZERO(ctx->dss_axi_clk);
+	if (ret == -EPROBE_DEFER) {
+		return ret;
+	} else if (ret) {
+		DRM_ERROR("failed to parse dss_axi_clk: %d\n", ret);
+		return ret;
 	}
 
 	ctx->dss_pclk_dss_clk = devm_clk_get(dev, "pclk_dss");
-	if (!ctx->dss_pclk_dss_clk) {
-		DRM_ERROR("failed to parse dss_pclk_dss_clk\n");
-		return -ENODEV;
+	ret = PTR_ERR_OR_ZERO(ctx->dss_pclk_dss_clk);
+	if (ret == -EPROBE_DEFER) {
+		return ret;
+	} else if (ret) {
+		DRM_ERROR("failed to parse dss_pclk_dss_clk: %d\n", ret);
+		return ret;
 	}
 
 	ctx->dss_pri_clk = devm_clk_get(dev, "clk_edc0");
-	if (!ctx->dss_pri_clk) {
-		DRM_ERROR("failed to parse dss_pri_clk\n");
-	return -ENODEV;
+	ret = PTR_ERR_OR_ZERO(ctx->dss_pri_clk);
+	if (ret == -EPROBE_DEFER) {
+		return ret;
+	} else if (ret) {
+		DRM_ERROR("failed to parse dss_pri_clk: %d\n", ret);
+		return ret;
 	}
 
 	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
@@ -879,9 +891,12 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	}
 
 	ctx->dss_pxl0_clk = devm_clk_get(dev, "clk_ldi0");
-	if (!ctx->dss_pxl0_clk) {
-		DRM_ERROR("failed to parse dss_pxl0_clk\n");
-		return -ENODEV;
+	ret = PTR_ERR_OR_ZERO(ctx->dss_pri_clk);
+	if (ret == -EPROBE_DEFER) {
+		return ret;
+	} else if (ret) {
+		DRM_ERROR("failed to parse dss_pxl0_clk: %d\n", ret);
+		return ret;
 	}
 
 	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
