@@ -34,9 +34,6 @@
 #include "kirin9xx_drm_drv.h"
 #include "kirin9xx_drm_dpe_utils.h"
 
-#define ROUND(x, y)		((x) / (y) + \
-				((x) % (y) * 10 / (y) >= 5 ? 1 : 0))
-#define ROUND1(x, y)	((x) / (y) + ((x) % (y)  ? 1 : 0))
 #define PHY_REF_CLK_RATE	19200000
 #define PHY_REF_CLK_PERIOD_PS	(1000000000 / (PHY_REF_CLK_RATE / 1000))
 
@@ -462,21 +459,21 @@ static void kirin970_get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	data_t_hs_zero = (uint32_t)(1450 * accuracy + 10 * ui +
 		3 * unit_tx_byte_clk_hs + mipi->data_t_hs_zero_adjust * ui - data_t_hs_prepare);
 
-	phy_ctrl->clk_pre_delay = ROUND1(clk_pre_delay, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_prepare = ROUND1(clk_t_hs_prepare, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_lpx = ROUND1(clk_t_lpx, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_zero = ROUND1(clk_t_hs_zero, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_trial = ROUND1(clk_t_hs_trial, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_pre_delay = DIV_ROUND_UP(clk_pre_delay, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_prepare = DIV_ROUND_UP(clk_t_hs_prepare, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_lpx = DIV_ROUND_UP(clk_t_lpx, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_zero = DIV_ROUND_UP(clk_t_hs_zero, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_trial = DIV_ROUND_UP(clk_t_hs_trial, unit_tx_byte_clk_hs);
 
-	phy_ctrl->data_post_delay = ROUND1(data_post_delay, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_prepare = ROUND1(data_t_hs_prepare, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_lpx = ROUND1(data_t_lpx, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_zero = ROUND1(data_t_hs_zero, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_trial = ROUND1(data_t_hs_trial, unit_tx_byte_clk_hs);
+	phy_ctrl->data_post_delay = DIV_ROUND_UP(data_post_delay, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_prepare = DIV_ROUND_UP(data_t_hs_prepare, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_lpx = DIV_ROUND_UP(data_t_lpx, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_zero = DIV_ROUND_UP(data_t_hs_zero, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_trial = DIV_ROUND_UP(data_t_hs_trial, unit_tx_byte_clk_hs);
 
-	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + ROUND1(clk_post, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + DIV_ROUND_UP(clk_post, unit_tx_byte_clk_hs);
 	phy_ctrl->data_pre_delay = phy_ctrl->clk_pre_delay + 2 + phy_ctrl->clk_t_lpx +
-		phy_ctrl->clk_t_hs_prepare + phy_ctrl->clk_t_hs_zero + 8 + ROUND1(clk_pre, unit_tx_byte_clk_hs);
+		phy_ctrl->clk_t_hs_prepare + phy_ctrl->clk_t_hs_zero + 8 + DIV_ROUND_UP(clk_pre, unit_tx_byte_clk_hs);
 
 	phy_ctrl->clk_lane_lp2hs_time = phy_ctrl->clk_pre_delay + phy_ctrl->clk_t_lpx + phy_ctrl->clk_t_hs_prepare +
 		phy_ctrl->clk_t_hs_zero + 5 + 7;
@@ -486,7 +483,7 @@ static void kirin970_get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 	phy_ctrl->data_lane_hs2lp_time = phy_ctrl->data_t_hs_trial + 8 + 5;
 
 	phy_ctrl->phy_stop_wait_time = phy_ctrl->clk_post_delay + 4 + phy_ctrl->clk_t_hs_trial +
-		ROUND1(clk_t_hs_exit, unit_tx_byte_clk_hs) - (phy_ctrl->data_post_delay + 4 + phy_ctrl->data_t_hs_trial) + 3;
+		DIV_ROUND_UP(clk_t_hs_exit, unit_tx_byte_clk_hs) - (phy_ctrl->data_post_delay + 4 + phy_ctrl->data_t_hs_trial) + 3;
 
 	phy_ctrl->lane_byte_clk = lane_clock / 8;
 	phy_ctrl->clk_division = (((phy_ctrl->lane_byte_clk / 2) % mipi->max_tx_esc_clk) > 0) ?
@@ -786,17 +783,17 @@ static void kirin960_get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	data_t_hs_zero = 1450 * accuracy + 10 * ui - data_t_hs_prepare +
 		3 * unit_tx_byte_clk_hs + mipi->data_t_hs_zero_adjust * ui;
 
-	phy_ctrl->clk_pre_delay = ROUND1(clk_pre_delay, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_prepare = ROUND1(clk_t_hs_prepare, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_lpx = ROUND1(clk_t_lpx, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_zero = ROUND1(clk_t_hs_zero, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_trial = ROUND1(clk_t_hs_trial, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_pre_delay = DIV_ROUND_UP(clk_pre_delay, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_prepare = DIV_ROUND_UP(clk_t_hs_prepare, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_lpx = DIV_ROUND_UP(clk_t_lpx, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_zero = DIV_ROUND_UP(clk_t_hs_zero, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_trial = DIV_ROUND_UP(clk_t_hs_trial, unit_tx_byte_clk_hs);
 
-	phy_ctrl->data_post_delay = ROUND1(data_post_delay, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_prepare = ROUND1(data_t_hs_prepare, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_lpx = ROUND1(data_t_lpx, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_zero = ROUND1(data_t_hs_zero, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_trial = ROUND1(data_t_hs_trial, unit_tx_byte_clk_hs);
+	phy_ctrl->data_post_delay = DIV_ROUND_UP(data_post_delay, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_prepare = DIV_ROUND_UP(data_t_hs_prepare, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_lpx = DIV_ROUND_UP(data_t_lpx, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_zero = DIV_ROUND_UP(data_t_hs_zero, unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_trial = DIV_ROUND_UP(data_t_hs_trial, unit_tx_byte_clk_hs);
 	phy_ctrl->data_t_ta_go = 4;
 	phy_ctrl->data_t_ta_get = 5;
 
@@ -805,9 +802,9 @@ static void kirin960_get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	data_t_hs_zero_reality = phy_ctrl->data_t_hs_zero + 4;
 	data_post_delay_reality = phy_ctrl->data_post_delay + 4;
 
-	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + ROUND1(clk_post, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + DIV_ROUND_UP(clk_post, unit_tx_byte_clk_hs);
 	phy_ctrl->data_pre_delay = clk_pre_delay_reality + phy_ctrl->clk_t_lpx +
-		phy_ctrl->clk_t_hs_prepare + clk_t_hs_zero_reality + ROUND1(clk_pre, unit_tx_byte_clk_hs);
+		phy_ctrl->clk_t_hs_prepare + clk_t_hs_zero_reality + DIV_ROUND_UP(clk_pre, unit_tx_byte_clk_hs);
 
 	clk_post_delay_reality = phy_ctrl->clk_post_delay + 4;
 	data_pre_delay_reality = phy_ctrl->data_pre_delay + 2;
@@ -819,7 +816,7 @@ static void kirin960_get_dsi_phy_ctrl(struct dw_dsi *dsi,
 		phy_ctrl->data_t_hs_prepare + data_t_hs_zero_reality + 3;
 	phy_ctrl->data_lane_hs2lp_time = data_post_delay_reality + phy_ctrl->data_t_hs_trial + 3;
 	phy_ctrl->phy_stop_wait_time = clk_post_delay_reality +
-		phy_ctrl->clk_t_hs_trial + ROUND1(clk_t_hs_exit, unit_tx_byte_clk_hs) -
+		phy_ctrl->clk_t_hs_trial + DIV_ROUND_UP(clk_t_hs_exit, unit_tx_byte_clk_hs) -
 		(data_post_delay_reality + phy_ctrl->data_t_hs_trial) + 3;
 
 	phy_ctrl->lane_byte_clk = lane_clock / 8;
@@ -1276,7 +1273,7 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base,
 	}
 	hsa_time = dsi->ldi.h_pulse_width * dsi->phy.lane_byte_clk / pixel_clk;
 	hbp_time = dsi->ldi.h_back_porch * dsi->phy.lane_byte_clk / pixel_clk;
-	hline_time = ROUND1((dsi->ldi.h_pulse_width + dsi->ldi.h_back_porch +
+	hline_time = DIV_ROUND_UP((dsi->ldi.h_pulse_width + dsi->ldi.h_back_porch +
 		rect.w + dsi->ldi.h_front_porch) * dsi->phy.lane_byte_clk, pixel_clk);
 
 	DRM_INFO("hsa_time=%d, hbp_time=%d, hline_time=%d\n",
