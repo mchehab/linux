@@ -135,13 +135,6 @@ err_mode_config_cleanup:
 
 DEFINE_DRM_GEM_CMA_FOPS(kirin_drm_fops);
 
-static int kirin_gem_cma_dumb_create(struct drm_file *file,
-				     struct drm_device *dev,
-				     struct drm_mode_create_dumb *args)
-{
-	return drm_gem_cma_dumb_create_internal(file, dev, args);
-}
-
 static int kirin_drm_connectors_register(struct drm_device *dev)
 {
 	struct drm_connector_list_iter conn_iter;
@@ -177,28 +170,17 @@ err:
 static struct drm_driver kirin_drm_driver = {
 	.driver_features	= DRIVER_GEM | DRIVER_MODESET |
 				  DRIVER_ATOMIC | DRIVER_RENDER,
-	.fops				= &kirin_drm_fops,
 
-	.gem_free_object	= drm_gem_cma_free_object,
-	.gem_vm_ops		= &drm_gem_cma_vm_ops,
-	.dumb_create		= kirin_gem_cma_dumb_create,
-
-	.prime_handle_to_fd	= drm_gem_prime_handle_to_fd,
-	.prime_fd_to_handle	= drm_gem_prime_fd_to_handle,
-	.gem_prime_export	= drm_gem_prime_export,
-	.gem_prime_import	= drm_gem_prime_import,
-	.gem_prime_get_sg_table = drm_gem_cma_prime_get_sg_table,
-	.gem_prime_import_sg_table = drm_gem_cma_prime_import_sg_table,
-	.gem_prime_vmap		= drm_gem_cma_prime_vmap,
-	.gem_prime_vunmap	= drm_gem_cma_prime_vunmap,
-	.gem_prime_mmap		= drm_gem_cma_prime_mmap,
-
+	.fops			= &kirin_drm_fops,
 	.name			= "kirin9xx",
 	.desc			= "Hisilicon Kirin9xx SoCs' DRM Driver",
 	.date			= "20170309",
 	.major			= 1,
 	.minor			= 0,
+
+	DRM_GEM_CMA_VMAP_DRIVER_OPS
 };
+
 
 static int compare_of(struct device *dev, void *data)
 {
