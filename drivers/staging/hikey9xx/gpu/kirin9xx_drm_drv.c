@@ -4,15 +4,10 @@
  *
  * Copyright (c) 2016 Linaro Limited.
  * Copyright (c) 2014-2016 Hisilicon Limited.
- *
+ * Copyright (c) 2014-2020, Huawei Technologies Co., Ltd
  * Author:
  *	<cailiwei@hisilicon.com>
  *	<zhengwanchun@hisilicon.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
  */
 
 #include <linux/of_platform.h>
