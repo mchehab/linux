@@ -90,20 +90,7 @@ u32 dss_get_format(u32 pixel_format)
 	return HISI_FB_PIXEL_FORMAT_UNSUPPORT;
 }
 
-/*******************************************************************************
- **
- */
-
-int hdmi_ceil(u64 a, uint64_t b)
-{
-	if (b == 0)
-		return -1;
-
-	if (a % b != 0)
-		return a / b + 1;
-	else
-		return a / b;
-}
+/*****************************************************************************/
 
 int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 {
@@ -161,12 +148,12 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	}
 
 	pixel_clock_cur = pixel_clock_cur / 1000;
-	ceil_temp = hdmi_ceil(vco_min_freq_output, pixel_clock_cur);
-
-	if (ceil_temp < 0) {
+	if (!pixel_clock_cur) {
 		DRM_ERROR("pixel_clock_cur can't be zero!\n");
 		return -EINVAL;
 	}
+
+	ceil_temp = DIV_ROUND_UP(vco_min_freq_output, pixel_clock_cur);
 
 	ppll7_freq_divider = (u64)ceil_temp;
 
@@ -190,11 +177,7 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 		return -EINVAL;
 	}
 
-	ceil_temp = hdmi_ceil(400000, vco_freq_output);
-	if (ceil_temp < 0) {
-		DRM_ERROR("Can't find a valid setting for PLL7!\n");
-		return -EINVAL;
-	}
+	ceil_temp = DIV_ROUND_UP(400000, vco_freq_output);
 
 	refdiv = ((vco_freq_output * ceil_temp) >= 494000) ? 1 : 2;
 	fbdiv = (vco_freq_output * ceil_temp) * refdiv / sys_clock_fref;
