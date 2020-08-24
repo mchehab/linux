@@ -25,6 +25,7 @@ enum dss_channel {
 #define HISI_FB_PIXEL_FORMAT_UNSUPPORT 800
 
 struct dss_hw_ctx {
+	struct drm_device *dev;
 	void __iomem *base;
 	struct regmap *noc_regmap;
 	struct reset_control *reset;
