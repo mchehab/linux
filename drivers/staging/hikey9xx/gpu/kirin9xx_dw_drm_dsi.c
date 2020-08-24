@@ -296,8 +296,8 @@ void dsi_set_output_client(struct drm_device *dev)
 
 		msleep(20);
 
-		DRM_INFO("client change to %s\n", client == OUT_HDMI ?
-				 "HDMI" : "panel");
+		drm_info(dev, "client change to %s\n",
+			 client == OUT_HDMI ? "HDMI" : "panel");
 	}
 
 	mutex_unlock(&dev->mode_config.mutex);
@@ -359,7 +359,7 @@ static void kirin970_get_dsi_dphy_ctrl(struct dw_dsi *dsi,
 		dphy_req_kHz = mode->clock * bpp / dsi->client[id].lanes;
 
 	lane_clock = dphy_req_kHz / 1000;
-	DRM_INFO("Expected : lane_clock = %llu M\n", lane_clock);
+	DRM_DEBUG("Expected : lane_clock = %llu M\n", lane_clock);
 
 	/************************  PLL parameters config  *********************/
 	/* chip spec : */
@@ -1520,11 +1520,11 @@ static int dw_drm_encoder_init(struct device *dev,
 	int ret;
 	u32 crtc_mask;
 
-	dev_info(dev, "%s:\n", __func__);
+	drm_info(drm_dev, "%s:\n", __func__);
 
 	/* Link drm_bridge to encoder */
 	if (!bridge) {
-		DRM_INFO("no dsi bridge to attach the encoder\n");
+		drm_info(drm_dev, "no dsi bridge to attach the encoder\n");
 		return 0;
 	}
 
@@ -1534,7 +1534,7 @@ static int dw_drm_encoder_init(struct device *dev,
 		return -EINVAL;
 	}
 
-	dev_info(dev, "Initializing CRTC encoder: %d\n",
+	drm_info(drm_dev, "Initializing CRTC encoder: %d\n",
 		 crtc_mask);
 
 	encoder->possible_crtcs = crtc_mask;
@@ -1542,7 +1542,7 @@ static int dw_drm_encoder_init(struct device *dev,
 	ret = drm_encoder_init(drm_dev, encoder, &dw_encoder_funcs,
 			       DRM_MODE_ENCODER_DSI, NULL);
 	if (ret) {
-		DRM_ERROR("failed to init dsi encoder\n");
+		drm_info(drm_dev, "failed to init dsi encoder\n");
 		return ret;
 	}
 
@@ -1551,7 +1551,7 @@ static int dw_drm_encoder_init(struct device *dev,
 	/* associate the bridge to dsi encoder */
 	ret = drm_bridge_attach(encoder, bridge, NULL, 0);
 	if (ret) {
-		DRM_ERROR("failed to attach external bridge\n");
+		drm_info(drm_dev, "failed to attach external bridge\n");
 		drm_encoder_cleanup(encoder);
 	}
 
@@ -1576,7 +1576,7 @@ static int dsi_host_attach(struct mipi_dsi_host *host,
 
 	dsi->attached_client = id;
 
-	DRM_INFO("host attach, client name=[%s], id=%d\n", mdsi->name, id);
+	DRM_DEBUG("host attach, client name=[%s], id=%d\n", mdsi->name, id);
 
 	return 0;
 }
@@ -1724,7 +1724,7 @@ static int dsi_host_init(struct device *dev, struct dw_dsi *dsi)
 
 	ret = mipi_dsi_host_register(host);
 	if (ret) {
-		DRM_ERROR("failed to register dsi host\n");
+		dev_info(dev, "failed to register dsi host\n");
 		return ret;
 	}
 
@@ -1804,7 +1804,7 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 	if (ret)
 		return ret;
 
-	dev_info(dev->dev, "Attaching CRTC encoder\n");
+	drm_dbg(dev, "Attaching CRTC encoder\n");
 	ret = drm_connector_attach_encoder(connector, encoder);
 	if (ret)
 		return ret;
@@ -1815,7 +1815,7 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 
 	drm_connector_register(&dsi->connector);
 
-	DRM_INFO("connector init\n");
+	drm_dbg(dev, "connector init\n");
 	return 0;
 }
 
@@ -1961,26 +1961,27 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 
 	np = of_find_compatible_node(NULL, NULL, compatible);
 	if (!np) {
-		DRM_ERROR("NOT FOUND device node %s!\n", compatible);
+		dev_err(&pdev->dev, "NOT FOUND device node %s!\n", compatible);
 		return -ENXIO;
 	}
 
 	ctx->base = of_iomap(np, 0);
 	if (!(ctx->base)) {
-		DRM_ERROR("failed to get dsi base resource.\n");
+		dev_err(&pdev->dev, "failed to get dsi base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->peri_crg_base = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
-		DRM_ERROR("failed to get peri_crg_base resource.\n");
+		dev_err(&pdev->dev, "failed to get peri_crg_base resource.\n");
 		return -ENXIO;
 	}
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		ctx->pctrl_base = of_iomap(np, 2);
 		if (!(ctx->pctrl_base)) {
-			DRM_ERROR("failed to get dss pctrl_base resource.\n");
+			dev_err(&pdev->dev,
+				"failed to get dss pctrl_base resource.\n");
 			return -ENXIO;
 		}
 	}
@@ -1993,20 +1994,21 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	dsi->cur_client = OUT_PANEL;
 	dsi->attached_client = dsi->cur_client;
 
-	DRM_INFO("dsi  cur_client is %d  <0->hdmi;1->panel>\n", dsi->cur_client);
+	DRM_INFO("dsi  cur_client is %d  <0->hdmi;1->panel>\n",
+		 dsi->cur_client);
 	/* dis-reset */
 	/* ip_reset_dis_dsi0, ip_reset_dis_dsi1 */
 	writel(0x30000000, ctx->peri_crg_base + PERRSTDIS3);
 
 	ctx->dss_dphy0_ref_clk = devm_clk_get(&pdev->dev, "clk_txdphy0_ref");
 	if (IS_ERR(ctx->dss_dphy0_ref_clk)) {
-		DRM_ERROR("failed to get dss_dphy0_ref_clk clock\n");
+		dev_err(&pdev->dev, "failed to get dss_dphy0_ref_clk clock\n");
 		return PTR_ERR(ctx->dss_dphy0_ref_clk);
 	}
 
 	ret = clk_set_rate(ctx->dss_dphy0_ref_clk, DEFAULT_MIPI_CLK_RATE);
 	if (ret < 0) {
-		DRM_ERROR("dss_dphy0_ref_clk clk_set_rate(%lu) failed, error=%d!\n",
+		dev_err(&pdev->dev, "dss_dphy0_ref_clk clk_set_rate(%lu) failed, error=%d!\n",
 			  DEFAULT_MIPI_CLK_RATE, ret);
 		return -EINVAL;
 	}
@@ -2016,13 +2018,13 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 
 	ctx->dss_dphy0_cfg_clk = devm_clk_get(&pdev->dev, "clk_txdphy0_cfg");
 	if (IS_ERR(ctx->dss_dphy0_cfg_clk)) {
-		DRM_ERROR("failed to get dss_dphy0_cfg_clk clock\n");
+		dev_err(&pdev->dev, "failed to get dss_dphy0_cfg_clk clock\n");
 		return PTR_ERR(ctx->dss_dphy0_cfg_clk);
 	}
 
 	ret = clk_set_rate(ctx->dss_dphy0_cfg_clk, DEFAULT_MIPI_CLK_RATE);
 	if (ret < 0) {
-		DRM_ERROR("dss_dphy0_cfg_clk clk_set_rate(%lu) failed, error=%d!\n",
+		dev_err(&pdev->dev, "dss_dphy0_cfg_clk clk_set_rate(%lu) failed, error=%d!\n",
 			  DEFAULT_MIPI_CLK_RATE, ret);
 		return -EINVAL;
 	}
@@ -2032,7 +2034,7 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 
 	ctx->dss_pclk_dsi0_clk = devm_clk_get(&pdev->dev, "pclk_dsi0");
 	if (IS_ERR(ctx->dss_pclk_dsi0_clk)) {
-		DRM_ERROR("failed to get dss_pclk_dsi0_clk clock\n");
+		dev_err(&pdev->dev, "failed to get dss_pclk_dsi0_clk clock\n");
 		return PTR_ERR(ctx->dss_pclk_dsi0_clk);
 	}
 
@@ -2050,7 +2052,7 @@ static int dsi_probe(struct platform_device *pdev)
 
 	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
 	if (!data) {
-		DRM_ERROR("failed to allocate dsi data.\n");
+		dev_err(&pdev->dev, "failed to allocate dsi data.\n");
 		return -ENOMEM;
 	}
 	dsi = &data->dsi;

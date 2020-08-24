@@ -129,13 +129,14 @@ u32 dpe_get_format(struct dss_hw_ctx *ctx, u32 pixel_format)
 
 	for (i = 0; i < size; i++) {
 		if (fmt[i].pixel_format == pixel_format) {
-			DRM_INFO("requested fourcc %x, dpe format %d",
+			drm_info(ctx->dev, "requested fourcc %x, dpe format %d",
 				 pixel_format, fmt[i].dpe_format);
 			return fmt[i].dpe_format;
 		}
 	}
 
-	DRM_ERROR("Not found pixel format! fourcc = %x\n", pixel_format);
+	drm_err(ctx->dev, "Not found pixel format! fourcc = %x\n",
+		pixel_format);
 
 	return HISI_FB_PIXEL_FORMAT_UNSUPPORT;
 }
@@ -151,11 +152,6 @@ static int hisi_dss_aif_ch_config(struct dss_hw_ctx *ctx, int chn_idx)
 	void __iomem *aif0_ch_base;
 	int mid = 0;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
-
 	mid = mid_array[chn_idx];
 	aif0_ch_base = ctx->base + ctx->g_dss_module_base[chn_idx][MODULE_AIF0_CHN];
 
@@ -169,11 +165,6 @@ static int hisi_dss_smmu_config(struct dss_hw_ctx *ctx, int chn_idx, bool mmu_en
 {
 	void __iomem *smmu_base;
 	u32 idx = 0, i = 0;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
 
 	smmu_base = ctx->base + ctx->smmu_offset;
 
@@ -195,11 +186,6 @@ static int hisi_dss_mif_config(struct dss_hw_ctx *ctx, int chn_idx, bool mmu_ena
 	void __iomem *mif_base;
 	void __iomem *mif_ch_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
-
 	mif_base = ctx->base + DSS_MIF_OFFSET;
 	mif_ch_base = ctx->base +
 		ctx->g_dss_module_base[chn_idx][MODULE_MIF_CHN];
@@ -216,11 +202,6 @@ int hisi_dss_mctl_mutex_lock(struct dss_hw_ctx *ctx)
 {
 	void __iomem *mctl_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
-
 	mctl_base = ctx->base +
 		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
 
@@ -233,10 +214,6 @@ int hisi_dss_mctl_mutex_unlock(struct dss_hw_ctx *ctx)
 {
 	void __iomem *mctl_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
 
 	mctl_base = ctx->base +
 		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
@@ -250,11 +227,6 @@ static int hisi_dss_mctl_ov_config(struct dss_hw_ctx *ctx, int chn_idx)
 {
 	void __iomem *mctl_base;
 	u32 mctl_rch_offset = 0;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
 
 	mctl_rch_offset = (uint32_t)(MCTL_CTL_MUTEX_RCH0 + chn_idx * 0x4);
 
@@ -281,10 +253,6 @@ static int hisi_dss_mctl_sys_config(struct dss_hw_ctx *ctx, int chn_idx)
 	u32 mctl_rch_ov_oen_offset = 0;
 	u32 mctl_rch_flush_en_offset = 0;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
 
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 	mctl_rch_ov_oen_offset = MCTL_RCH0_OV_OEN + chn_idx * 0x4;
@@ -351,15 +319,19 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 
 		if ((((rect->right - rect->left) + 1) & (ctx->afbc_header_addr_align - 1)) ||
 		    (((rect->bottom - rect->top) + 1) & (AFBC_BLOCK_ALIGN - 1))) {
-			DRM_ERROR("img width(%d) is not %d bytes aligned, or img heigh(%d) is not %d bytes aligned!\n",
-				  ((rect->right - rect->left) + 1), ctx->afbc_header_addr_align,
-				  ((rect->bottom - rect->top) + 1), AFBC_BLOCK_ALIGN);
+			drm_err(ctx->dev,
+				"img width(%d) is not %d bytes aligned, or img height (%d) is not %d bytes aligned!\n",
+				((rect->right - rect->left) + 1),
+				ctx->afbc_header_addr_align,
+				((rect->bottom - rect->top) + 1),
+				AFBC_BLOCK_ALIGN);
 		}
 
 		if ((mm_base_0 & (MMBUF_ADDR_ALIGN - 1)) || (mm_base_1 & (MMBUF_ADDR_ALIGN - 1))) {
-			DRM_ERROR("mm_base_0(0x%x) is not %d bytes aligned, or mm_base_1(0x%x) is not %d bytes aligned!\n",
-				  mm_base_0, MMBUF_ADDR_ALIGN,
-				  mm_base_1, MMBUF_ADDR_ALIGN);
+			drm_err(ctx->dev,
+				"mm_base_0(0x%x) is not %d bytes aligned, or mm_base_1(0x%x) is not %d bytes aligned!\n",
+				mm_base_0, MMBUF_ADDR_ALIGN,
+				mm_base_1, MMBUF_ADDR_ALIGN);
 		}
 		/* header */
 		afbcd_header_stride = (((rect->right - rect->left) + 1) / AFBC_BLOCK_ALIGN) * AFBC_HEADER_STRIDE_BLOCK;
@@ -371,7 +343,7 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 		else if (bpp == 2)
 			stride_align = AFBC_PAYLOAD_STRIDE_ALIGN_16;
 		else
-			DRM_ERROR("bpp(%d) not supported!\n", bpp);
+			drm_err(ctx->dev,"bpp(%d) not supported!\n", bpp);
 
 		afbcd_payload_stride = (((rect->right - rect->left) + 1) / AFBC_BLOCK_ALIGN) * stride_align;
 
@@ -464,11 +436,6 @@ int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres)
 	void __iomem *mctl_base;
 	void __iomem *ovl0_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
-
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 	mctl_base = ctx->base +
 		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_MCTL_BASE];
@@ -511,11 +478,6 @@ static int hisi_dss_ovl_config(struct dss_hw_ctx *ctx,
 			       const struct dss_rect_ltrb *rect, u32 xres, u32 yres)
 {
 	void __iomem *ovl0_base;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
 
 	ovl0_base = ctx->base +
 		ctx->g_dss_module_ovl_base[DSS_OVL0][MODULE_OVL_BASE];
@@ -564,11 +526,6 @@ static void hisi_dss_qos_on(struct dss_hw_ctx *ctx)
 {
 	char __iomem *noc_dss_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
-
 	noc_dss_base = ctx->noc_dss_base;
 
 	writel(0x2, noc_dss_base + 0xc);
@@ -581,11 +538,6 @@ static void hisi_dss_mif_on(struct dss_hw_ctx *ctx)
 {
 	char __iomem *dss_base;
 	char __iomem *mif_base;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	dss_base = ctx->base;
 	mif_base = ctx->base + DSS_MIF_OFFSET;
@@ -621,11 +573,6 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	u32 phy_pgd_base = 0;
 	u64 fama_phy_pgd_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
-
 	smmu_base = ctx->base + ctx->smmu_offset;
 
 	set_reg(smmu_base + SMMU_SCR, 0x0, 1, 0);  /* global bypass cancel */
@@ -653,7 +600,9 @@ void hisi_dss_smmu_on(struct dss_hw_ctx *ctx)
 	domain_data = (struct iommu_domain_data *)(ctx->mmu_domain->priv);
 	fama_phy_pgd_base = domain_data->phy_pgd_base;
 	phy_pgd_base = (uint32_t)(domain_data->phy_pgd_base);
-	DRM_DEBUG("fama_phy_pgd_base = %llu, phy_pgd_base =0x%x\n", fama_phy_pgd_base, phy_pgd_base);
+	drm_dbg(ctx->dev,
+		"fama_phy_pgd_base = %llu, phy_pgd_base =0x%x\n",
+		fama_phy_pgd_base, phy_pgd_base);
 	set_reg(smmu_base + SMMU_CB_TTBR0, phy_pgd_base, 32, 0);
 #endif
 }
@@ -673,10 +622,6 @@ void hisi_dss_mctl_on(struct dss_hw_ctx *ctx)
 	char __iomem *mctl_base = NULL;
 	char __iomem *mctl_sys_base = NULL;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 	mctl_base = ctx->base +
 		ctx->g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
 	mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
@@ -691,11 +636,6 @@ void hisi_dss_unflow_handler(struct dss_hw_ctx *ctx, bool unmask)
 {
 	void __iomem *dss_base;
 	u32 tmp = 0;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	dss_base = ctx->base;
 
@@ -716,14 +656,8 @@ void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
 	int delay_count = 0;
 	bool is_timeout;
 
-	DRM_INFO("+.\n");
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
-
 	mctl_base = ctx->base +
-		ctx->g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
+		    ctx->g_dss_module_ovl_base[DSS_MCTL0][MODULE_MCTL_BASE];
 
 	if (mctl_base)
 		set_reg(mctl_base + MCTL_CTL_CLEAR, 0x1, 1, 0);
@@ -741,7 +675,7 @@ void hisifb_mctl_sw_clr(struct dss_crtc *acrtc)
 	}
 
 	if (is_timeout)
-		DRM_ERROR("mctl_status =0x%x !\n", mctl_status);
+		drm_err(ctx->dev, "mctl_status =0x%x !\n", mctl_status);
 
 	enable_ldi(acrtc);
 	DRM_INFO("-.\n");
@@ -794,7 +728,8 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	rect.bottom = src_h - 1;
 	hal_fmt = dpe_get_format(ctx, fb->format->format);
 
-	DRM_DEBUG_DRIVER("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
+	drm_dbg(ctx->dev,
+		"channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
 			 chn_idx, src_x, src_y, src_w, src_h,
 			 crtc_x, crtc_y, crtc_w, crtc_h,
 			 rect.left, rect.top, rect.right, rect.bottom,

@@ -72,7 +72,7 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	};
 
 	if (!pixel_clock) {
-		DRM_ERROR("Pixel clock can't be zero!\n");
+		drm_err(ctx->dev, "Pixel clock can't be zero!\n");
 		return -EINVAL;
 	}
 
@@ -89,13 +89,13 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 		pixel_clock_cur *= 3;
 		dss_pxl0_clk /= 3;
 	} else {
-		DRM_ERROR("Clock not supported!\n");
+		drm_err(ctx->dev, "Clock not supported!\n");
 		return -EINVAL;
 	}
 
 	pixel_clock_cur = pixel_clock_cur / 1000;
 	if (!pixel_clock_cur) {
-		DRM_ERROR("pixel_clock_cur can't be zero!\n");
+		drm_err(ctx->dev, "pixel_clock_cur can't be zero!\n");
 		return -EINVAL;
 	}
 
@@ -113,13 +113,13 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 	}
 
 	if (i == ARRAY_SIZE(freq_divider_list)) {
-		DRM_ERROR("Can't find a valid setting for PLL7!\n");
+		drm_err(ctx->dev, "Can't find a valid setting for PLL7!\n");
 		return -EINVAL;
 	}
 
 	vco_freq_output = ppll7_freq_divider * pixel_clock_cur;
 	if (!vco_freq_output) {
-		DRM_ERROR("Can't find a valid setting for VCO_FREQ!\n");
+		drm_err(ctx->dev, "Can't find a valid setting for VCO_FREQ!\n");
 		return -EINVAL;
 	}
 
@@ -151,15 +151,16 @@ int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 
 	writel(ppll7ctrl1, ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
 
-	DRM_INFO("PLL7 set to (0x%0x, 0x%0x)\n", ppll7ctrl0, ppll7ctrl1);
+	drm_dbg(ctx->dev, "PLL7 set to (0x%0x, 0x%0x)\n",
+		ppll7ctrl0, ppll7ctrl1);
 
 	ret = clk_set_rate(ctx->dss_pxl0_clk, dss_pxl0_clk);
 	if (ret < 0)
-		DRM_ERROR("%s: clk_set_rate(dss_pxl0_clk, %llu) failed: %d!\n",
+		drm_err(ctx->dev, "%s: clk_set_rate(dss_pxl0_clk, %llu) failed: %d!\n",
 			  __func__, dss_pxl0_clk, ret);
 	else
-		DRM_INFO("dss_pxl0_clk:[%llu]->[%lu].\n",
-			 dss_pxl0_clk, clk_get_rate(ctx->dss_pxl0_clk));
+		drm_dbg(ctx->dev, "dss_pxl0_clk:[%llu]->[%lu].\n",
+			dss_pxl0_clk, clk_get_rate(ctx->dss_pxl0_clk));
 
 	return ret;
 }
@@ -211,8 +212,8 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 
 	clk_Hz = dss_calculate_clock(acrtc, mode);
 
-	DRM_INFO("Requested clock %u kHz, setting to %llu kHz\n",
-		 clock, clk_Hz / 1000);
+	drm_dbg(ctx->dev, "Requested clock %u kHz, setting to %llu kHz\n",
+		clock, clk_Hz / 1000);
 
 	if (acrtc->ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		ret = hdmi_pxl_ppll7_init(ctx, clk_Hz);
@@ -220,13 +221,13 @@ static void dss_ldi_set_mode(struct dss_crtc *acrtc)
 		ret = clk_set_rate(ctx->dss_pxl0_clk, clk_Hz);
 		if (!ret) {
 			clk_Hz = clk_get_rate(ctx->dss_pxl0_clk);
-			DRM_INFO("dss_pxl0_clk:[%llu]->[%lu].\n",
-				 clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
+			drm_dbg(ctx->dev, "dss_pxl0_clk:[%llu]->[%lu].\n",
+				clk_Hz, clk_get_rate(ctx->dss_pxl0_clk));
 		}
 	}
 
 	if (ret)
-		DRM_ERROR("failed to set pixel clock\n");
+		drm_err(ctx->dev, "failed to set pixel clock\n");
 	else
 		adj_mode->clock = clk_Hz / 1000;
 
@@ -245,31 +246,36 @@ static int dss_power_up(struct dss_crtc *acrtc)
 	} else {
 		ret = clk_prepare_enable(ctx->dss_pxl0_clk);
 		if (ret) {
-			DRM_ERROR("failed to enable dss_pxl0_clk (%d)\n", ret);
+			drm_err(ctx->dev,
+				"failed to enable dss_pxl0_clk (%d)\n", ret);
 			return ret;
 		}
 
 		ret = clk_prepare_enable(ctx->dss_pri_clk);
 		if (ret) {
-			DRM_ERROR("failed to enable dss_pri_clk (%d)\n", ret);
+			drm_err(ctx->dev,
+				"failed to enable dss_pri_clk (%d)\n", ret);
 			return ret;
 		}
 
 		ret = clk_prepare_enable(ctx->dss_pclk_dss_clk);
 		if (ret) {
-			DRM_ERROR("failed to enable dss_pclk_dss_clk (%d)\n", ret);
+			drm_err(ctx->dev,
+				"failed to enable dss_pclk_dss_clk (%d)\n", ret);
 			return ret;
 		}
 
 		ret = clk_prepare_enable(ctx->dss_axi_clk);
 		if (ret) {
-			DRM_ERROR("failed to enable dss_axi_clk (%d)\n", ret);
+			drm_err(ctx->dev,
+				"failed to enable dss_axi_clk (%d)\n", ret);
 			return ret;
 		}
 
 		ret = clk_prepare_enable(ctx->dss_mmbuf_clk);
 		if (ret) {
-			DRM_ERROR("failed to enable dss_mmbuf_clk (%d)\n", ret);
+			drm_err(ctx->dev,
+				"failed to enable dss_mmbuf_clk (%d)\n", ret);
 			return ret;
 		}
 	}
@@ -309,9 +315,9 @@ static int dss_enable_vblank(struct drm_crtc *crtc)
 	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
-	DRM_INFO("%s\n", __func__);
+	drm_dbg(ctx->dev, "%s\n", __func__);
 	if (!ctx->power_on) {
-		DRM_INFO("Enabling vblank\n");
+		drm_dbg(ctx->dev, "Enabling vblank\n");
 		(void)dss_power_up(acrtc);
 	}
 
@@ -323,9 +329,9 @@ static void dss_disable_vblank(struct drm_crtc *crtc)
 	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 	struct dss_hw_ctx *ctx = acrtc->ctx;
 
-	DRM_INFO("%s\n", __func__);
+	drm_dbg(ctx->dev, "%s\n", __func__);
 	if (!ctx->power_on) {
-		DRM_ERROR("power is down! vblank disable fail\n");
+		drm_err(ctx->dev, "power is down! vblank disable fail\n");
 		return;
 	}
 }
@@ -343,8 +349,6 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 
 	isr_s1 = readl(dss_base + GLB_CPU_PDP_INTS);
 	isr_s2 = readl(dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
-	DRM_INFO_ONCE("isr_s1 = 0x%x!\n", isr_s1);
-	DRM_INFO_ONCE("isr_s2 = 0x%x!\n", isr_s2);
 
 	writel(isr_s2, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INTS);
 	writel(isr_s1, dss_base + GLB_CPU_PDP_INTS);
@@ -362,7 +366,7 @@ static irqreturn_t dss_irq_handler(int irq, void *data)
 		mask |= BIT_LDI_UNFLOW;
 		writel(mask, dss_base + DSS_LDI0_OFFSET + LDI_CPU_ITF_INT_MSK);
 
-		DRM_ERROR("ldi underflow!\n");
+		drm_err(ctx->dev, "ldi underflow!\n");
 	}
 
 	return IRQ_HANDLED;
@@ -537,8 +541,8 @@ static int dss_crtc_init(struct drm_device *dev, struct drm_crtc *crtc,
 	 */
 	port = of_get_child_by_name(dev->dev->of_node, "port");
 	if (!port) {
-		DRM_ERROR("no port node found in %s\n",
-			  dev->dev->of_node->full_name);
+		drm_err(dev, "no port node found in %s\n",
+			dev->dev->of_node->full_name);
 		return -EINVAL;
 	}
 	of_node_put(port);
@@ -547,7 +551,7 @@ static int dss_crtc_init(struct drm_device *dev, struct drm_crtc *crtc,
 	ret = drm_crtc_init_with_planes(dev, crtc, plane, NULL,
 					&dss_crtc_funcs, NULL);
 	if (ret) {
-		DRM_ERROR("failed to init crtc.\n");
+		drm_err(dev, "failed to init crtc.\n");
 		return ret;
 	}
 
@@ -587,7 +591,7 @@ static int dss_plane_atomic_check(struct drm_plane *plane,
 		return PTR_ERR(crtc_state);
 
 	if (src_w != crtc_w || src_h != crtc_h) {
-		DRM_ERROR("Scale not support!!!\n");
+		drm_err(ctx->dev, "Scale not support!!!\n");
 		return -EINVAL;
 	}
 
@@ -662,7 +666,7 @@ static int dss_plane_init(struct drm_device *dev, struct dss_plane *aplane,
 				       fmts, fmts_cnt, NULL,
 				       type, NULL);
 	if (ret) {
-		DRM_ERROR("fail to init plane, ch=%d\n", aplane->ch);
+		drm_err(dev, "fail to init plane, ch=%d\n", aplane->ch);
 		return ret;
 	}
 
@@ -688,7 +692,7 @@ static int dss_enable_iommu(struct platform_device *pdev, struct dss_hw_ctx *ctx
 	/* create iommu domain */
 	ctx->mmu_domain = iommu_domain_alloc(dev->bus);
 	if (!ctx->mmu_domain) {
-		pr_err("iommu_domain_alloc failed!\n");
+		drm_err(ctx->dev, "iommu_domain_alloc failed!\n");
 		return -EINVAL;
 	}
 
@@ -711,7 +715,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 
 	np = of_find_compatible_node(NULL, NULL, compatible);
 	if (!np) {
-		DRM_ERROR("NOT FOUND device node %s!\n", compatible);
+		drm_err(ctx->dev, "NOT FOUND device node %s!\n", compatible);
 		return -ENXIO;
 	}
 
@@ -723,52 +727,56 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 
 	ctx->base = of_iomap(np, 0);
 	if (!(ctx->base)) {
-		DRM_ERROR("failed to get dss base resource.\n");
+		drm_err(ctx->dev, "failed to get dss base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->peri_crg_base  = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
-		DRM_ERROR("failed to get dss peri_crg_base resource.\n");
+		drm_err(ctx->dev, "failed to get dss peri_crg_base resource.\n");
 		return -ENXIO;
 	}
 
 	ctx->sctrl_base  = of_iomap(np, 2);
 	if (!(ctx->sctrl_base)) {
-		DRM_ERROR("failed to get dss sctrl_base resource.\n");
+		drm_err(ctx->dev, "failed to get dss sctrl_base resource.\n");
 		return -ENXIO;
 	}
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		ctx->pctrl_base = of_iomap(np, 3);
 		if (!(ctx->pctrl_base)) {
-			DRM_ERROR("failed to get dss pctrl_base resource.\n");
+			drm_err(ctx->dev,
+				"failed to get dss pctrl_base resource.\n");
 			return -ENXIO;
 		}
 	} else {
 		ctx->pmc_base = of_iomap(np, 3);
 		if (!(ctx->pmc_base)) {
-			DRM_ERROR("failed to get dss pmc_base resource.\n");
+			drm_err(ctx->dev,
+				"failed to get dss pmc_base resource.\n");
 			return -ENXIO;
 		}
 	}
 
 	ctx->noc_dss_base = of_iomap(np, 4);
 	if (!(ctx->noc_dss_base)) {
-		DRM_ERROR("failed to get noc_dss_base resource.\n");
+		drm_err(ctx->dev, "failed to get noc_dss_base resource.\n");
 		return -ENXIO;
 	}
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		ctx->pmctrl_base = of_iomap(np, 5);
 		if (!(ctx->pmctrl_base)) {
-			DRM_ERROR("failed to get dss pmctrl_base resource.\n");
+			drm_err(ctx->dev,
+				"failed to get dss pmctrl_base resource.\n");
 			return -ENXIO;
 		}
 
 		ctx->media_crg_base = of_iomap(np, 6);
 		if (!(ctx->media_crg_base)) {
-			DRM_ERROR("failed to get dss media_crg_base resource.\n");
+			drm_err(ctx->dev,
+				"failed to get dss media_crg_base resource.\n");
 			return -ENXIO;
 		}
 	}
@@ -776,16 +784,18 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	/* get irq no */
 	ctx->irq = irq_of_parse_and_map(np, 0);
 	if (ctx->irq <= 0) {
-		DRM_ERROR("failed to get irq_pdp resource.\n");
+		drm_err(ctx->dev, "failed to get irq_pdp resource.\n");
 		return -ENXIO;
 	}
 
-	DRM_INFO("dss irq = %d.\n", ctx->irq);
+	drm_dbg(ctx->dev, "dss irq = %d.\n", ctx->irq);
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970) {
 		ctx->dpe_regulator = devm_regulator_get(dev, REGULATOR_PDP_NAME);
 		if (!ctx->dpe_regulator) {
-			DRM_ERROR("failed to get dpe_regulator resource! ret=%d.\n", ret);
+			drm_err(ctx->dev,
+				"failed to get dpe_regulator resource! ret=%d.\n",
+				ret);
 			return -ENXIO;
 		}
 	}
@@ -795,7 +805,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	if (ret == -EPROBE_DEFER) {
 		return ret;
 	} else if (ret) {
-		DRM_ERROR("failed to parse dss_mmbuf_clk: %d\n", ret);
+		drm_err(ctx->dev, "failed to parse dss_mmbuf_clk: %d\n", ret);
 		return ret;
 	}
 
@@ -804,7 +814,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	if (ret == -EPROBE_DEFER) {
 		return ret;
 	} else if (ret) {
-		DRM_ERROR("failed to parse dss_axi_clk: %d\n", ret);
+		drm_err(ctx->dev, "failed to parse dss_axi_clk: %d\n", ret);
 		return ret;
 	}
 
@@ -813,7 +823,8 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	if (ret == -EPROBE_DEFER) {
 		return ret;
 	} else if (ret) {
-		DRM_ERROR("failed to parse dss_pclk_dss_clk: %d\n", ret);
+		drm_err(ctx->dev,
+			"failed to parse dss_pclk_dss_clk: %d\n", ret);
 		return ret;
 	}
 
@@ -822,20 +833,20 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	if (ret == -EPROBE_DEFER) {
 		return ret;
 	} else if (ret) {
-		DRM_ERROR("failed to parse dss_pri_clk: %d\n", ret);
+		drm_err(ctx->dev, "failed to parse dss_pri_clk: %d\n", ret);
 		return ret;
 	}
 
 	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
 		ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_07V_RATE);
 		if (ret < 0) {
-			DRM_ERROR("dss_pri_clk clk_set_rate(%lu) failed, error=%d!\n",
-				  DEFAULT_DSS_CORE_CLK_07V_RATE, ret);
+			drm_err(ctx->dev, "dss_pri_clk clk_set_rate(%lu) failed, error=%d!\n",
+				DEFAULT_DSS_CORE_CLK_07V_RATE, ret);
 			return -EINVAL;
 		}
 
-		DRM_INFO("dss_pri_clk:[%lu]->[%llu].\n",
-			 DEFAULT_DSS_CORE_CLK_07V_RATE, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
+		drm_dbg(ctx->dev, "dss_pri_clk:[%lu]->[%llu].\n",
+			DEFAULT_DSS_CORE_CLK_07V_RATE, (uint64_t)clk_get_rate(ctx->dss_pri_clk));
 	}
 
 	ctx->dss_pxl0_clk = devm_clk_get(dev, "clk_ldi0");
@@ -843,20 +854,22 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	if (ret == -EPROBE_DEFER) {
 		return ret;
 	} else if (ret) {
-		DRM_ERROR("failed to parse dss_pxl0_clk: %d\n", ret);
+		drm_err(ctx->dev, "failed to parse dss_pxl0_clk: %d\n", ret);
 		return ret;
 	}
 
 	if (ctx->g_dss_version_tag != FB_ACCEL_KIRIN970) {
 		ret = clk_set_rate(ctx->dss_pxl0_clk, DSS_MAX_PXL0_CLK_144M);
 		if (ret < 0) {
-			DRM_ERROR("dss_pxl0_clk clk_set_rate(%lu) failed, error=%d!\n",
-				  DSS_MAX_PXL0_CLK_144M, ret);
+			drm_err(ctx->dev,
+				"dss_pxl0_clk clk_set_rate(%lu) failed, error=%d!\n",
+				DSS_MAX_PXL0_CLK_144M, ret);
 			return -EINVAL;
 		}
 
-		DRM_INFO("dss_pxl0_clk:[%lu]->[%llu].\n",
-			 DSS_MAX_PXL0_CLK_144M, (uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
+		drm_dbg(ctx->dev, "dss_pxl0_clk:[%lu]->[%llu].\n",
+			DSS_MAX_PXL0_CLK_144M,
+			(uint64_t)clk_get_rate(ctx->dss_pxl0_clk));
 	}
 
 	/* enable IOMMU */
@@ -878,17 +891,19 @@ int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 
 	dss = devm_kzalloc(dev->dev, sizeof(*dss), GFP_KERNEL);
 	if (!dss) {
-		DRM_ERROR("failed to alloc dss_data\n");
+		drm_err(dev, "failed to alloc dss_data\n");
 		return -ENOMEM;
 	}
 	platform_set_drvdata(pdev, dss);
 
 	ctx = &dss->ctx;
+	ctx->dev = dev;
+	ctx->g_dss_version_tag = g_dss_version_tag;
+
 	acrtc = &dss->acrtc;
 	acrtc->ctx = ctx;
 	acrtc->out_format = LCD_RGB888;
 	acrtc->bgr_fmt = LCD_RGB;
-	ctx->g_dss_version_tag = g_dss_version_tag;
 
 	ret = dss_dts_parse(pdev, ctx);
 	if (ret)
@@ -924,7 +939,7 @@ int dss_drm_init(struct drm_device *dev, u32 g_dss_version_tag)
 	ret = devm_request_irq(dev->dev, ctx->irq, dss_irq_handler,
 			       IRQF_SHARED, dev->driver->name, acrtc);
 	if (ret) {
-		DRM_ERROR("fail to  devm_request_irq, ret=%d!", ret);
+		drm_err(dev, "fail to  devm_request_irq, ret=%d!", ret);
 		return ret;
 	}
 
