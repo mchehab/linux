@@ -147,7 +147,7 @@ static int mipi_ifbc_get_rect(struct dss_rect *rect)
 
 static void init_ldi_pxl_div(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *ldi_base;
 	struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
@@ -158,12 +158,6 @@ static void init_ldi_pxl_div(struct dss_crtc *acrtc)
 	u32 pxl0_div4_gt_en = 0;
 	u32 pxl0_divxcfg = 0;
 	u32 pxl0_dsi_gt_en = 0;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	mode = &acrtc->base.state->mode;
 	adj_mode = &acrtc->base.state->adjusted_mode;
@@ -187,16 +181,8 @@ static void init_ldi_pxl_div(struct dss_crtc *acrtc)
 
 void init_other(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
-	char __iomem *dss_base;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
-
-	dss_base = ctx->base;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
+	char __iomem *dss_base = ctx->base;
 
 	/**
 	 * VESA_CLK_SEL is set to 0 for initial,
@@ -207,7 +193,7 @@ void init_other(struct dss_crtc *acrtc)
 
 void init_ldi(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *ldi_base;
 	struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
@@ -218,12 +204,6 @@ void init_ldi(struct dss_crtc *acrtc)
 	u32 hsync_plr = 0;
 	u32 pixelclk_plr = 0;
 	u32 data_en_plr = 0;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	mode = &acrtc->base.state->mode;
 	adj_mode = &acrtc->base.state->adjusted_mode;
@@ -281,14 +261,8 @@ void init_ldi(struct dss_crtc *acrtc)
 
 void deinit_ldi(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *ldi_base;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	ldi_base = ctx->base + DSS_LDI0_OFFSET;
 
@@ -298,7 +272,7 @@ void deinit_ldi(struct dss_crtc *acrtc)
 
 void init_dbuf(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
 	char __iomem *dbuf_base;
@@ -328,12 +302,6 @@ void init_dbuf(struct dss_crtc *acrtc)
 	int dfs_time_min = 0;
 	int depth = 0;
 	int dfs_ram = 0;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	mode = &acrtc->base.state->mode;
 	adj_mode = &acrtc->base.state->adjusted_mode;
@@ -459,17 +427,11 @@ void init_dbuf(struct dss_crtc *acrtc)
 
 void init_dpp(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
 	char __iomem *dpp_base;
 	char __iomem *mctl_sys_base;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	mode = &acrtc->base.state->mode;
 	adj_mode = &acrtc->base.state->adjusted_mode;
@@ -485,14 +447,8 @@ void init_dpp(struct dss_crtc *acrtc)
 
 void enable_ldi(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *ldi_base;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	ldi_base = ctx->base + DSS_LDI0_OFFSET;
 
@@ -502,14 +458,8 @@ void enable_ldi(struct dss_crtc *acrtc)
 
 void disable_ldi(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *ldi_base;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	ldi_base = ctx->base + DSS_LDI0_OFFSET;
 
@@ -519,15 +469,9 @@ void disable_ldi(struct dss_crtc *acrtc)
 
 void dpe_interrupt_clear(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *dss_base;
 	u32 clear;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	dss_base = ctx->base;
 
@@ -552,15 +496,9 @@ void dpe_interrupt_clear(struct dss_crtc *acrtc)
 
 void dpe_interrupt_unmask(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *dss_base;
 	u32 unmask;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	dss_base = ctx->base;
 
@@ -576,15 +514,9 @@ void dpe_interrupt_unmask(struct dss_crtc *acrtc)
 
 void dpe_interrupt_mask(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	char __iomem *dss_base;
 	u32 mask;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 
 	dss_base = ctx->base;
 
@@ -644,21 +576,13 @@ int dpe_deinit(struct dss_crtc *acrtc)
 
 void dpe_check_itf_status(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
-	char __iomem *mctl_sys_base = NULL;
+	struct dss_hw_ctx *ctx = acrtc->ctx;
+	char __iomem *mctl_sys_base = ctx->base + DSS_MCTRL_SYS_OFFSET;
 	int tmp = 0;
 	int delay_count = 0;
 	bool is_timeout = true;
 	int itf_idx = 0;
 
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
-
-	itf_idx = 0;
-	mctl_sys_base =  ctx->base + DSS_MCTRL_SYS_OFFSET;
 
 	while (1) {
 		tmp = readl(mctl_sys_base + MCTL_MOD17_STATUS + itf_idx * 0x4);
@@ -683,10 +607,6 @@ void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
 {
 	char __iomem *dss_base;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return;
-	}
 	dss_base = ctx->base;
 
 	writel(0x00000088, dss_base + DSS_IFBC_OFFSET + IFBC_MEM_CTRL);
@@ -698,14 +618,7 @@ void dss_inner_clk_pdp_enable(struct dss_hw_ctx *ctx)
 
 void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 {
-	char __iomem *dss_base;
-
-	if (!ctx) {
-		DRM_ERROR("NULL Pointer!\n");
-		return;
-	}
-
-	dss_base = ctx->base;
+	char __iomem *dss_base = ctx->base;
 
 	/* core/axi/mmbuf */
 	writel(0x00000008, dss_base + DSS_CMDLIST_OFFSET + CMD_MEM_CTRL);  /* cmd mem */
@@ -794,13 +707,7 @@ void dss_inner_clk_common_enable(struct dss_hw_ctx *ctx)
 
 int dpe_irq_enable(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 
 	if (ctx->irq)
 		enable_irq(ctx->irq);
@@ -810,13 +717,7 @@ int dpe_irq_enable(struct dss_crtc *acrtc)
 
 int dpe_irq_disable(struct dss_crtc *acrtc)
 {
-	struct dss_hw_ctx *ctx;
-
-	ctx = acrtc->ctx;
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 
 	if (ctx->irq)
 		disable_irq(ctx->irq);
@@ -827,12 +728,7 @@ int dpe_irq_disable(struct dss_crtc *acrtc)
 int dpe_common_clk_enable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
-	struct clk *clk_tmp = NULL;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL point!\n");
-		return -EINVAL;
-	}
+	struct clk *clk_tmp;
 
 	clk_tmp = ctx->dss_mmbuf_clk;
 	if (clk_tmp) {
@@ -884,12 +780,7 @@ int dpe_common_clk_enable(struct dss_hw_ctx *ctx)
 
 int dpe_common_clk_disable(struct dss_hw_ctx *ctx)
 {
-	struct clk *clk_tmp = NULL;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL point!\n");
-		return -EINVAL;
-	}
+	struct clk *clk_tmp;
 
 	clk_tmp = ctx->dss_pclk_dss_clk;
 	if (clk_tmp) {
@@ -915,12 +806,7 @@ int dpe_common_clk_disable(struct dss_hw_ctx *ctx)
 int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
 {
 	int ret = 0;
-	struct clk *clk_tmp = NULL;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL point!\n");
-		return -EINVAL;
-	}
+	struct clk *clk_tmp;
 
 	clk_tmp = ctx->dss_pri_clk;
 	if (clk_tmp) {
@@ -957,12 +843,7 @@ int dpe_inner_clk_enable(struct dss_hw_ctx *ctx)
 
 int dpe_inner_clk_disable(struct dss_hw_ctx *ctx)
 {
-	struct clk *clk_tmp = NULL;
-
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL point!\n");
-		return -EINVAL;
-	}
+	struct clk *clk_tmp;
 
 	clk_tmp = ctx->dss_pxl0_clk;
 	if (clk_tmp) {
@@ -983,11 +864,6 @@ int dpe_set_clk_rate(struct dss_hw_ctx *ctx)
 {
 	u64 clk_rate;
 	int ret = 0;
-
-	if (!ctx) {
-		DRM_ERROR("NULL Pointer!\n");
-		return -EINVAL;
-	}
 
 	clk_rate = DEFAULT_DSS_CORE_CLK_RATE_L1;
 	ret = clk_set_rate(ctx->dss_pri_clk, DEFAULT_DSS_CORE_CLK_RATE_L1);
@@ -1016,12 +892,6 @@ int dpe_set_pixel_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 	int ret;
 	u64 clk_rate;
 
-	DRM_INFO("+.\n");
-	if (!ctx) {
-		DRM_ERROR("NULL Pointer!\n");
-		return -EINVAL;
-	}
-
 	clk_rate = ctx->pxl0_clk_rate_power_off;
 	ret = clk_set_rate(ctx->dss_pxl0_clk, clk_rate);
 	if (ret < 0) {
@@ -1039,12 +909,6 @@ int dpe_set_common_clk_rate_on_pll0(struct dss_hw_ctx *ctx)
 {
 	int ret;
 	u64 clk_rate;
-
-	DRM_INFO("+.\n");
-	if (!ctx) {
-		DRM_ERROR("NULL Pointer!\n");
-		return -EINVAL;
-	}
 
 	clk_rate = ctx->dss_mmbuf_clk_rate_power_off;
 	ret = clk_set_rate(ctx->dss_mmbuf_clk, clk_rate);
