@@ -38,60 +38,6 @@
 #include "kirin9xx_drm_dpe_utils.h"
 #include "kirin9xx_dpe.h"
 
-static const struct dss_format dss_formats[] = {
-	/* 16bpp RGB: */
-	{ DRM_FORMAT_RGB565, HISI_FB_PIXEL_FORMAT_RGB_565 },
-	{ DRM_FORMAT_BGR565, HISI_FB_PIXEL_FORMAT_BGR_565 },
-	/* 32bpp [A]RGB: */
-	{ DRM_FORMAT_XRGB8888, HISI_FB_PIXEL_FORMAT_RGBX_8888 },
-	{ DRM_FORMAT_XBGR8888, HISI_FB_PIXEL_FORMAT_BGRX_8888 },
-	{ DRM_FORMAT_RGBA8888, HISI_FB_PIXEL_FORMAT_RGBA_8888 },
-	{ DRM_FORMAT_BGRA8888, HISI_FB_PIXEL_FORMAT_BGRA_8888 },
-	{ DRM_FORMAT_ARGB8888, HISI_FB_PIXEL_FORMAT_RGBA_8888 },
-	{ DRM_FORMAT_ABGR8888, HISI_FB_PIXEL_FORMAT_BGRA_8888 },
-};
-
-static const u32 channel_formats1[] = {
-	DRM_FORMAT_RGB565,
-	DRM_FORMAT_BGR565,
-	DRM_FORMAT_XRGB8888,
-	DRM_FORMAT_XBGR8888,
-	DRM_FORMAT_RGBA8888,
-	DRM_FORMAT_BGRA8888,
-	DRM_FORMAT_ARGB8888,
-	DRM_FORMAT_ABGR8888,
-};
-
-u32 dss_get_channel_formats(u8 ch, const u32 **formats)
-{
-	switch (ch) {
-	case DSS_CH1:
-		*formats = channel_formats1;
-		return ARRAY_SIZE(channel_formats1);
-	default:
-		DRM_ERROR("no this channel %d\n", ch);
-		*formats = NULL;
-		return 0;
-	}
-}
-
-/* convert from fourcc format to dss format */
-u32 dss_get_format(u32 pixel_format)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(dss_formats); i++)
-		if (dss_formats[i].pixel_format == pixel_format)
-			return dss_formats[i].dss_format;
-
-	/* not found */
-	DRM_ERROR("Not found pixel format!!fourcc_format= %d\n",
-		  pixel_format);
-	return HISI_FB_PIXEL_FORMAT_UNSUPPORT;
-}
-
-/*****************************************************************************/
-
 int hdmi_pxl_ppll7_init(struct dss_hw_ctx *ctx, u64 pixel_clock)
 {
 	u64 vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUTPUT;
@@ -616,6 +562,8 @@ static int dss_plane_atomic_check(struct drm_plane *plane,
 {
 	struct drm_framebuffer *fb = state->fb;
 	struct drm_crtc *crtc = state->crtc;
+	struct dss_crtc *acrtc = to_dss_crtc(crtc);
+	struct dss_hw_ctx *ctx = acrtc->ctx;
 	struct drm_crtc_state *crtc_state;
 	u32 src_x = state->src_x >> 16;
 	u32 src_y = state->src_y >> 16;
@@ -630,7 +578,7 @@ static int dss_plane_atomic_check(struct drm_plane *plane,
 	if (!crtc || !fb)
 		return 0;
 
-	fmt = dss_get_format(fb->format->format);
+	fmt = dpe_get_format(ctx, fb->format->format);
 	if (fmt == HISI_FB_PIXEL_FORMAT_UNSUPPORT)
 		return -EINVAL;
 
@@ -706,7 +654,7 @@ static int dss_plane_init(struct drm_device *dev, struct dss_plane *aplane,
 	int ret = 0;
 
 	/* get properties */
-	fmts_cnt = dss_get_channel_formats(aplane->ch, &fmts);
+	fmts_cnt = hisi_dss_get_channel_formats(dev, aplane->ch, &fmts);
 	if (ret)
 		return ret;
 

@@ -22,168 +22,128 @@ static const int mid_array[DSS_CHN_MAX_DEFINE] = {
 	0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x2, 0x1, 0x3, 0x0
 };
 
-static int hisi_pixel_format_hal2dma(int format)
+struct dpe_format {
+	u32 pixel_format;
+	enum dpe_fb_format dpe_format;
+};
+
+/*
+ * FIXME: this driver was supposed to support 16 bpp with:
+ *
+ *       { DRM_FORMAT_RGB565, DPE_RGB_565 },
+ *       { DRM_FORMAT_BGR565, DPE_BGR_565 }
+ *
+ * However, those seem to be setting an YUYV mode.
+ * Using DRM_FORMAT_YUYV/DRM_FORMAT_UYVY doesn't currently work with X11,
+ * perhaps due to fb emulation. So, for now, let's just drop 16 bpp.
+ */
+
+static const struct dpe_format dpe_formats[] = {
+	/* 24 bpp */
+	{ DRM_FORMAT_XRGB8888, DPE_BGRX_8888 },
+	{ DRM_FORMAT_XBGR8888, DPE_RGBX_8888 },
+	/* 32 bpp */
+	{ DRM_FORMAT_RGBA8888, DPE_RGBA_8888 },
+	{ DRM_FORMAT_BGRA8888, DPE_BGRA_8888 },
+	{ DRM_FORMAT_ARGB8888, DPE_RGBA_8888 },
+	{ DRM_FORMAT_ABGR8888, DPE_BGRA_8888 },
+};
+
+static const u32 dpe_channel_formats[] = {
+	DRM_FORMAT_YUYV,
+	DRM_FORMAT_UYVY,
+	DRM_FORMAT_XRGB8888,
+	DRM_FORMAT_XBGR8888,
+	DRM_FORMAT_RGBA8888,
+	DRM_FORMAT_BGRA8888,
+	DRM_FORMAT_ARGB8888,
+	DRM_FORMAT_ABGR8888,
+};
+
+static u32 dpe_pixel_dma_format_map[] = {
+	DMA_PIXEL_FORMAT_RGB_565,
+	DMA_PIXEL_FORMAT_XRGB_4444,
+	DMA_PIXEL_FORMAT_ARGB_4444,
+	DMA_PIXEL_FORMAT_XRGB_5551,
+	DMA_PIXEL_FORMAT_ARGB_5551,
+	DMA_PIXEL_FORMAT_XRGB_8888,
+	DMA_PIXEL_FORMAT_ARGB_8888,
+	DMA_PIXEL_FORMAT_RGB_565,
+	DMA_PIXEL_FORMAT_XRGB_4444,
+	DMA_PIXEL_FORMAT_ARGB_4444,
+	DMA_PIXEL_FORMAT_XRGB_5551,
+	DMA_PIXEL_FORMAT_ARGB_5551,
+	DMA_PIXEL_FORMAT_XRGB_8888,
+	DMA_PIXEL_FORMAT_ARGB_8888,
+	DMA_PIXEL_FORMAT_YUYV_422,
+	DMA_PIXEL_FORMAT_YUV_422_SP_HP,
+	DMA_PIXEL_FORMAT_YUV_422_SP_HP,
+	DMA_PIXEL_FORMAT_YUV_420_SP_HP,
+	DMA_PIXEL_FORMAT_YUV_420_SP_HP,
+	DMA_PIXEL_FORMAT_YUV_422_P_HP,
+	DMA_PIXEL_FORMAT_YUV_422_P_HP,
+	DMA_PIXEL_FORMAT_YUV_420_P_HP,
+	DMA_PIXEL_FORMAT_YUV_420_P_HP,
+	DMA_PIXEL_FORMAT_YUYV_422,
+	DMA_PIXEL_FORMAT_YUYV_422,
+	DMA_PIXEL_FORMAT_YUYV_422,
+	DMA_PIXEL_FORMAT_YUYV_422,
+};
+
+static u32 dpe_pixel_dfc_format_map[] = {
+	DFC_PIXEL_FORMAT_RGB_565,
+	DFC_PIXEL_FORMAT_XBGR_4444,
+	DFC_PIXEL_FORMAT_ABGR_4444,
+	DFC_PIXEL_FORMAT_XBGR_5551,
+	DFC_PIXEL_FORMAT_ABGR_5551,
+	DFC_PIXEL_FORMAT_XBGR_8888,
+	DFC_PIXEL_FORMAT_ABGR_8888,
+	DFC_PIXEL_FORMAT_BGR_565,
+	DFC_PIXEL_FORMAT_XRGB_4444,
+	DFC_PIXEL_FORMAT_ARGB_4444,
+	DFC_PIXEL_FORMAT_XRGB_5551,
+	DFC_PIXEL_FORMAT_ARGB_5551,
+	DFC_PIXEL_FORMAT_XRGB_8888,
+	DFC_PIXEL_FORMAT_ARGB_8888,
+	DFC_PIXEL_FORMAT_YUYV422,
+	DFC_PIXEL_FORMAT_YUYV422,
+	DFC_PIXEL_FORMAT_YVYU422,
+	DFC_PIXEL_FORMAT_YUYV422,
+	DFC_PIXEL_FORMAT_YVYU422,
+	DFC_PIXEL_FORMAT_YUYV422,
+	DFC_PIXEL_FORMAT_YVYU422,
+	DFC_PIXEL_FORMAT_YUYV422,
+	DFC_PIXEL_FORMAT_YVYU422,
+	DFC_PIXEL_FORMAT_YUYV422,
+	DFC_PIXEL_FORMAT_UYVY422,
+	DFC_PIXEL_FORMAT_YVYU422,
+	DFC_PIXEL_FORMAT_VYUY422,
+};
+
+u32 dpe_get_format(struct dss_hw_ctx *ctx, u32 pixel_format)
 {
-	int ret = 0;
+	int i;
+	const struct dpe_format *fmt = dpe_formats;
+	u32 size = ARRAY_SIZE(dpe_formats);
 
-	switch (format) {
-	case HISI_FB_PIXEL_FORMAT_RGB_565:
-	case HISI_FB_PIXEL_FORMAT_BGR_565:
-		ret = DMA_PIXEL_FORMAT_RGB_565;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBX_4444:
-	case HISI_FB_PIXEL_FORMAT_BGRX_4444:
-		ret = DMA_PIXEL_FORMAT_XRGB_4444;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBA_4444:
-	case HISI_FB_PIXEL_FORMAT_BGRA_4444:
-		ret = DMA_PIXEL_FORMAT_ARGB_4444;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBX_5551:
-	case HISI_FB_PIXEL_FORMAT_BGRX_5551:
-		ret = DMA_PIXEL_FORMAT_XRGB_5551;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBA_5551:
-	case HISI_FB_PIXEL_FORMAT_BGRA_5551:
-		ret = DMA_PIXEL_FORMAT_ARGB_5551;
-		break;
 
-	case HISI_FB_PIXEL_FORMAT_RGBX_8888:
-	case HISI_FB_PIXEL_FORMAT_BGRX_8888:
-		ret = DMA_PIXEL_FORMAT_XRGB_8888;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBA_8888:
-	case HISI_FB_PIXEL_FORMAT_BGRA_8888:
-		ret = DMA_PIXEL_FORMAT_ARGB_8888;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_YUV_422_I:
-	case HISI_FB_PIXEL_FORMAT_YUYV_422:
-	case HISI_FB_PIXEL_FORMAT_YVYU_422:
-	case HISI_FB_PIXEL_FORMAT_UYVY_422:
-	case HISI_FB_PIXEL_FORMAT_VYUY_422:
-		ret = DMA_PIXEL_FORMAT_YUYV_422;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_YCbCr_422_P:
-	case HISI_FB_PIXEL_FORMAT_YCrCb_422_P:
-		ret = DMA_PIXEL_FORMAT_YUV_422_P_HP;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YCbCr_420_P:
-	case HISI_FB_PIXEL_FORMAT_YCrCb_420_P:
-		ret = DMA_PIXEL_FORMAT_YUV_420_P_HP;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_YCbCr_422_SP:
-	case HISI_FB_PIXEL_FORMAT_YCrCb_422_SP:
-		ret = DMA_PIXEL_FORMAT_YUV_422_SP_HP;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YCbCr_420_SP:
-	case HISI_FB_PIXEL_FORMAT_YCrCb_420_SP:
-		ret = DMA_PIXEL_FORMAT_YUV_420_SP_HP;
-		break;
-
-	default:
-		DRM_ERROR("not support format(%d)!\n", format);
-		ret = -1;
-		break;
+	for (i = 0; i < size; i++) {
+		if (fmt[i].pixel_format == pixel_format) {
+			DRM_INFO("requested fourcc %x, dpe format %d",
+				 pixel_format, fmt[i].dpe_format);
+			return fmt[i].dpe_format;
+		}
 	}
 
-	return ret;
+	DRM_ERROR("Not found pixel format! fourcc = %x\n", pixel_format);
+
+	return HISI_FB_PIXEL_FORMAT_UNSUPPORT;
 }
 
-static int hisi_pixel_format_hal2dfc(int format)
+u32 hisi_dss_get_channel_formats(struct drm_device *dev, u8 ch, const u32 **formats)
 {
-	int ret = 0;
-
-	switch (format) {
-	case HISI_FB_PIXEL_FORMAT_RGB_565:
-		ret = DFC_PIXEL_FORMAT_RGB_565;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBX_4444:
-		ret = DFC_PIXEL_FORMAT_XBGR_4444;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBA_4444:
-		ret = DFC_PIXEL_FORMAT_ABGR_4444;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBX_5551:
-		ret = DFC_PIXEL_FORMAT_XBGR_5551;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBA_5551:
-		ret = DFC_PIXEL_FORMAT_ABGR_5551;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBX_8888:
-		ret = DFC_PIXEL_FORMAT_XBGR_8888;
-		break;
-	case HISI_FB_PIXEL_FORMAT_RGBA_8888:
-		ret = DFC_PIXEL_FORMAT_ABGR_8888;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_BGR_565:
-		ret = DFC_PIXEL_FORMAT_BGR_565;
-		break;
-	case HISI_FB_PIXEL_FORMAT_BGRX_4444:
-		ret = DFC_PIXEL_FORMAT_XRGB_4444;
-		break;
-	case HISI_FB_PIXEL_FORMAT_BGRA_4444:
-		ret = DFC_PIXEL_FORMAT_ARGB_4444;
-		break;
-	case HISI_FB_PIXEL_FORMAT_BGRX_5551:
-		ret = DFC_PIXEL_FORMAT_XRGB_5551;
-		break;
-	case HISI_FB_PIXEL_FORMAT_BGRA_5551:
-		ret = DFC_PIXEL_FORMAT_ARGB_5551;
-		break;
-	case HISI_FB_PIXEL_FORMAT_BGRX_8888:
-		ret = DFC_PIXEL_FORMAT_XRGB_8888;
-		break;
-	case HISI_FB_PIXEL_FORMAT_BGRA_8888:
-		ret = DFC_PIXEL_FORMAT_ARGB_8888;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_YUV_422_I:
-	case HISI_FB_PIXEL_FORMAT_YUYV_422:
-		ret = DFC_PIXEL_FORMAT_YUYV422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YVYU_422:
-		ret = DFC_PIXEL_FORMAT_YVYU422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_UYVY_422:
-		ret = DFC_PIXEL_FORMAT_UYVY422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_VYUY_422:
-		ret = DFC_PIXEL_FORMAT_VYUY422;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_YCbCr_422_SP:
-		ret = DFC_PIXEL_FORMAT_YUYV422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YCrCb_422_SP:
-		ret = DFC_PIXEL_FORMAT_YVYU422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YCbCr_420_SP:
-		ret = DFC_PIXEL_FORMAT_YUYV422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YCrCb_420_SP:
-		ret = DFC_PIXEL_FORMAT_YVYU422;
-		break;
-
-	case HISI_FB_PIXEL_FORMAT_YCbCr_422_P:
-	case HISI_FB_PIXEL_FORMAT_YCbCr_420_P:
-		ret = DFC_PIXEL_FORMAT_YUYV422;
-		break;
-	case HISI_FB_PIXEL_FORMAT_YCrCb_422_P:
-	case HISI_FB_PIXEL_FORMAT_YCrCb_420_P:
-		ret = DFC_PIXEL_FORMAT_YVYU422;
-		break;
-
-	default:
-		DRM_ERROR("not support format(%d)!\n", format);
-		ret = -1;
-		break;
-	}
-
-	return ret;
+	*formats = dpe_channel_formats;
+	return ARRAY_SIZE(dpe_channel_formats);
 }
 
 static int hisi_dss_aif_ch_config(struct dss_hw_ctx *ctx, int chn_idx)
@@ -347,8 +307,10 @@ static int hisi_dss_mctl_sys_config(struct dss_hw_ctx *ctx, int chn_idx)
 }
 
 static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
-				const struct dss_rect_ltrb *rect, u32 display_addr, u32 hal_format,
-	u32 bpp, int chn_idx, bool afbcd, bool mmu_enable)
+				const struct dss_rect_ltrb *rect,
+				u32 display_addr, u32 hal_format,
+				u32 bpp, int chn_idx, bool afbcd,
+				bool mmu_enable)
 {
 	void __iomem *rdma_base;
 
@@ -358,7 +320,6 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 	u32 rdma_oft_x1 = 0;
 	u32 rdma_oft_y1 = 0;
 	u32 rdma_stride = 0;
-	u32 rdma_bpp = 0;
 	u32 rdma_format = 0;
 	u32 stretch_size_vrt = 0;
 
@@ -371,18 +332,6 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 	u32 afbcd_payload_addr = 0;
 	u32 afbcd_payload_stride = 0;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
-
-	if (bpp == 4)
-		rdma_bpp = 0x5;
-	else if (bpp == 2)
-		rdma_bpp = 0x0;
-	else
-		rdma_bpp = 0x0;
-
 	rdma_base = ctx->base +
 		ctx->g_dss_module_base[chn_idx][MODULE_DMA];
 
@@ -392,11 +341,7 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 	rdma_oft_x1 = rect->right / aligned_pixel;
 	rdma_oft_y1 = rect->bottom;
 
-	rdma_format = hisi_pixel_format_hal2dma(hal_format);
-	if (rdma_format < 0) {
-		DRM_ERROR("layer format(%d) not support !\n", hal_format);
-		return -EINVAL;
-	}
+	rdma_format = dpe_pixel_dma_format_map[hal_format];
 
 	if (afbcd) {
 		mm_base_0 = 0;
@@ -470,10 +415,9 @@ static int hisi_dss_rdma_config(struct dss_hw_ctx *ctx,
 		set_reg(rdma_base + DMA_OFT_Y0, rdma_oft_y0, 16, 0);
 		set_reg(rdma_base + DMA_OFT_X1, rdma_oft_x1, 12, 0);
 		set_reg(rdma_base + DMA_OFT_Y1, rdma_oft_y1, 16, 0);
-		/* set_reg(rdma_base + DMA_CTRL, rdma_format, 5, 3); */
-		/* set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8); */
+		set_reg(rdma_base + DMA_CTRL, rdma_format, 5, 3);
+		set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8);
 		set_reg(rdma_base + DMA_CTRL, 0x130, 32, 0);
-		/* set_reg(rdma_base + DMA_CTRL, (mmu_enable ? 0x1 : 0x0), 1, 8); */
 		set_reg(rdma_base + DMA_STRETCH_SIZE_VRT, stretch_size_vrt, 32, 0);
 		set_reg(rdma_base + DMA_DATA_ADDR0, display_addr, 32, 0);
 		set_reg(rdma_base + DMA_STRIDE0, rdma_stride, 13, 0);
@@ -495,11 +439,6 @@ static int hisi_dss_rdfc_config(struct dss_hw_ctx *ctx,
 	u32 size_vrt = 0;
 	u32 dfc_fmt = 0;
 
-	if (!ctx) {
-		DRM_ERROR("ctx is NULL!\n");
-		return -1;
-	}
-
 	rdfc_base = ctx->base +
 		ctx->g_dss_module_base[chn_idx][MODULE_DFC];
 
@@ -507,15 +446,11 @@ static int hisi_dss_rdfc_config(struct dss_hw_ctx *ctx,
 	size_hrz = rect->right - rect->left;
 	size_vrt = rect->bottom - rect->top;
 
-	dfc_fmt = hisi_pixel_format_hal2dfc(hal_format);
-	if (dfc_fmt < 0) {
-		DRM_ERROR("layer format (%d) not support !\n", hal_format);
-		return -EINVAL;
-	}
+	dfc_fmt = dpe_pixel_dfc_format_map[hal_format];
 
-	set_reg(rdfc_base + DFC_DISP_SIZE, (size_vrt | (size_hrz << 16)), 29, 0);
+	set_reg(rdfc_base + DFC_DISP_SIZE, (size_vrt | (size_hrz << 16)),
+		29, 0);
 	set_reg(rdfc_base + DFC_PIX_IN_NUM, dfc_pix_in_num, 1, 0);
-	/* set_reg(rdfc_base + DFC_DISP_FMT, (bpp <= 2) ? 0x0 : 0x6, 5, 1); */
 	set_reg(rdfc_base + DFC_DISP_FMT, dfc_fmt, 5, 1);
 	set_reg(rdfc_base + DFC_CTL_CLIP_EN, 0x1, 1, 0);
 	set_reg(rdfc_base + DFC_ICG_MODULE, 0x1, 1, 0);
@@ -857,7 +792,7 @@ void hisi_fb_pan_display(struct drm_plane *plane)
 	rect.right = src_w - 1;
 	rect.top = 0;
 	rect.bottom = src_h - 1;
-	hal_fmt = HISI_FB_PIXEL_FORMAT_BGRA_8888;/* dss_get_format(fb->pixel_format); */
+	hal_fmt = dpe_get_format(ctx, fb->format->format);
 
 	DRM_DEBUG_DRIVER("channel%d: src:(%d,%d, %dx%d) crtc:(%d,%d, %dx%d), rect(%d,%d,%d,%d),fb:%dx%d, pixel_format=%d, stride=%d, paddr=0x%x, bpp=%d.\n",
 			 chn_idx, src_x, src_y, src_w, src_h,
