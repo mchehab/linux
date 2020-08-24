@@ -22,46 +22,7 @@ enum dss_channel {
 
 #define PRIMARY_CH	DSS_CH1 /* primary plane */
 
-enum hisi_fb_pixel_format {
-	HISI_FB_PIXEL_FORMAT_RGB_565 = 0,
-	HISI_FB_PIXEL_FORMAT_RGBX_4444,
-	HISI_FB_PIXEL_FORMAT_RGBA_4444,
-	HISI_FB_PIXEL_FORMAT_RGBX_5551,
-	HISI_FB_PIXEL_FORMAT_RGBA_5551,
-	HISI_FB_PIXEL_FORMAT_RGBX_8888,
-	HISI_FB_PIXEL_FORMAT_RGBA_8888,
-
-	HISI_FB_PIXEL_FORMAT_BGR_565,
-	HISI_FB_PIXEL_FORMAT_BGRX_4444,
-	HISI_FB_PIXEL_FORMAT_BGRA_4444,
-	HISI_FB_PIXEL_FORMAT_BGRX_5551,
-	HISI_FB_PIXEL_FORMAT_BGRA_5551,
-	HISI_FB_PIXEL_FORMAT_BGRX_8888,
-	HISI_FB_PIXEL_FORMAT_BGRA_8888,
-
-	HISI_FB_PIXEL_FORMAT_YUV_422_I,
-
-	/* YUV Semi-planar */
-	HISI_FB_PIXEL_FORMAT_YCbCr_422_SP,	/* NV16 */
-	HISI_FB_PIXEL_FORMAT_YCrCb_422_SP,
-	HISI_FB_PIXEL_FORMAT_YCbCr_420_SP,
-	HISI_FB_PIXEL_FORMAT_YCrCb_420_SP,	/* NV21 */
-
-	/* YUV Planar */
-	HISI_FB_PIXEL_FORMAT_YCbCr_422_P,
-	HISI_FB_PIXEL_FORMAT_YCrCb_422_P,
-	HISI_FB_PIXEL_FORMAT_YCbCr_420_P,
-	HISI_FB_PIXEL_FORMAT_YCrCb_420_P,	/* HISI_FB_PIXEL_FORMAT_YV12 */
-
-	/* YUV Package */
-	HISI_FB_PIXEL_FORMAT_YUYV_422,
-	HISI_FB_PIXEL_FORMAT_UYVY_422,
-	HISI_FB_PIXEL_FORMAT_YVYU_422,
-	HISI_FB_PIXEL_FORMAT_VYUY_422,
-	HISI_FB_PIXEL_FORMAT_MAX,
-
-	HISI_FB_PIXEL_FORMAT_UNSUPPORT = 800
-};
+#define HISI_FB_PIXEL_FORMAT_UNSUPPORT 800
 
 struct dss_hw_ctx {
 	void __iomem *base;
@@ -152,12 +113,6 @@ struct dss_data {
 	struct dss_crtc acrtc;
 	struct dss_plane aplane[DSS_CH_NUM];
 	struct dss_hw_ctx ctx;
-};
-
-/* ade-format info: */
-struct dss_format {
-	u32 pixel_format;
-	enum hisi_fb_pixel_format dss_format;
 };
 
 struct dss_img {
@@ -265,8 +220,10 @@ int hisi_dss_mctl_mutex_lock(struct dss_hw_ctx *ctx);
 int hisi_dss_mctl_mutex_unlock(struct dss_hw_ctx *ctx);
 int hisi_dss_ovl_base_config(struct dss_hw_ctx *ctx, u32 xres, u32 yres);
 
+u32 hisi_dss_get_channel_formats(struct drm_device *dev, u8 ch, const u32 **formats);
+
 void hisi_fb_pan_display(struct drm_plane *plane);
 
-u32 dss_get_format(u32 pixel_format);
+u32 dpe_get_format(struct dss_hw_ctx *ctx, u32 pixel_format);
 
 #endif

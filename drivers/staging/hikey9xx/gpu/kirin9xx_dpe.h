@@ -144,6 +144,39 @@ enum dss_dma_format {
 	DMA_PIXEL_FORMAT_AYUV_4444,
 };
 
+enum dpe_fb_format {
+	DPE_RGB_565 = 0,
+	DPE_RGBX_4444,
+	DPE_RGBA_4444,
+	DPE_RGBX_5551,
+	DPE_RGBA_5551,
+	DPE_RGBX_8888,
+	DPE_RGBA_8888,
+	DPE_BGR_565,
+	DPE_BGRX_4444,
+	DPE_BGRA_4444,
+	DPE_BGRX_5551,
+	DPE_BGRA_5551,
+	DPE_BGRX_8888,
+	DPE_BGRA_8888,
+	DPE_YUV_422_I,
+	/* YUV Semi-planar */
+	DPE_YCbCr_422_SP,
+	DPE_YCrCb_422_SP,
+	DPE_YCbCr_420_SP,
+	DPE_YCrCb_420_SP,
+	/* YUV Planar */
+	DPE_YCbCr_422_P,
+	DPE_YCrCb_422_P,
+	DPE_YCbCr_420_P,
+	DPE_YCrCb_420_P,
+	/* YUV Package */
+	DPE_YUYV_422_Pkg,
+	DPE_UYVY_422_Pkg,
+	DPE_YVYU_422_Pkg,
+	DPE_VYUY_422_Pkg,
+};
+
 enum dss_buf_format {
 	DSS_BUF_LINEAR = 0,
 	DSS_BUF_TILE,
