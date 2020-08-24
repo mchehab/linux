@@ -89,14 +89,14 @@ static int kirin_drm_kms_init(struct drm_device *dev)
 	/* bind and init sub drivers */
 	ret = component_bind_all(dev->dev, dev);
 	if (ret) {
-		DRM_ERROR("failed to bind all component.\n");
+		drm_err(dev, "failed to bind all component.\n");
 		return ret;
 	}
 
 	/* vblank init */
 	ret = drm_vblank_init(dev, dev->mode_config.num_crtc);
 	if (ret) {
-		DRM_ERROR("failed to initialize vblank.\n");
+		drm_err(dev, "failed to initialize vblank.\n");
 		return ret;
 	}
 	/* with irq_enabled = true, we can use the vblank feature. */
