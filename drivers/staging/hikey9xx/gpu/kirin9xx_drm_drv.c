@@ -251,7 +251,7 @@ static const struct of_device_id kirin_drm_dt_ids[] = {
 	{ .compatible = "hisilicon,hi3660-dpe",
 	  .data = (void *)FB_ACCEL_HI366x,
 	},
-	{ .compatible = "hisilicon,kirin970-dpe",
+	{ .compatible = "hisilicon,hi3670-dpe",
 	  .data = (void *)FB_ACCEL_KIRIN970,
 	},
 	{ /* end node */ },
