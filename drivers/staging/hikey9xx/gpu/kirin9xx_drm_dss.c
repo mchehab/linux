@@ -709,7 +709,7 @@ static int dss_dts_parse(struct platform_device *pdev, struct dss_hw_ctx *ctx)
 	int ret = 0;
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
-		compatible = "hisilicon,kirin970-dpe";
+		compatible = "hisilicon,hi3670-dpe";
 	else
 		compatible = "hisilicon,hi3660-dpe";
 
