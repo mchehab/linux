@@ -1955,9 +1955,9 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	struct device_node *np = NULL;
 
 	if (ctx->g_dss_version_tag == FB_ACCEL_KIRIN970)
-		compatible = "hisilicon,kirin970-dsi";
+		compatible = "hisilicon,hi3670-dsi";
 	else
-		compatible = "hisilicon,kirin960-dsi";
+		compatible = "hisilicon,hi3660-dsi";
 
 	np = of_find_compatible_node(NULL, NULL, compatible);
 	if (!np) {
@@ -2101,10 +2101,10 @@ static int dsi_remove(struct platform_device *pdev)
 
 static const struct of_device_id dsi_of_match[] = {
 	{
-		.compatible = "hisilicon,kirin960-dsi",
+		.compatible = "hisilicon,hi3660-dsi",
 		.data = (void *)FB_ACCEL_HI366x
 	}, {
-		.compatible = "hisilicon,kirin970-dsi",
+		.compatible = "hisilicon,hi3670-dsi",
 		.data = (void *)FB_ACCEL_KIRIN970
 	},
 	{ }
