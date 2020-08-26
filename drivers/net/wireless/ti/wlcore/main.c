@@ -14,6 +14,7 @@
 #include <linux/irq.h>
 #include <linux/pm_runtime.h>
 #include <linux/pm_wakeirq.h>
+#include <linux/ctype.h>
 
 #include "wlcore.h"
 #include "debug.h"
@@ -1082,6 +1083,45 @@ out:
 	return ret;
 }
 
+static bool wl1271_check_aes_cmac_cypher(struct wl1271 *wl)
+{
+	int ver[5] = { };
+	int ret;
+	const char *p = wl->chip.fw_ver_str;
+
+
+	/* The string starts with "Rev ". Ignore it */
+	while (*p && !isdigit(*p))
+		p++;
+
+	ret = sscanf(p, "%d.%d.%d.%d.%d",
+		     &ver[0], &ver[1], &ver[2], &ver[3], &ver[4]);
+
+	if (ret != ARRAY_SIZE(ver)) {
+		wl1271_info("Parsed version: %d.%d.%d.%d.%d\n",
+			    ver[0], ver[1], ver[2], ver[3], ver[4]);
+		wl1271_error("Couldn't parse firmware version string: %d\n", ret);
+		return false;
+	}
+
+	/*
+	 * Only versions equal (and probably above) 8.9.0.0.83
+	 * supports such feature.
+	 */
+	if (ver[0] < 8)
+		return false;
+	if (ver[1] < 9)
+		return false;
+	if (ver[2] > 0)
+		return true;
+	if (ver[3] > 0)
+		return true;
+	if (ver[4] >= 83)
+		return true;
+
+	return false;
+}
+
 int wl1271_plt_start(struct wl1271 *wl, const enum plt_mode plt_mode)
 {
 	int retries = WL1271_BOOT_RETRIES;
@@ -1132,6 +1172,8 @@ int wl1271_plt_start(struct wl1271 *wl, const enum plt_mode plt_mode)
 		wiphy->hw_version = wl->chip.id;
 		strncpy(wiphy->fw_version, wl->chip.fw_ver_str,
 			sizeof(wiphy->fw_version));
+
+		wl->has_aes_cmac_cipher = wl1271_check_aes_cmac_cypher(wl);
 
 		goto out;
 
@@ -2358,6 +2400,8 @@ power_off:
 	strncpy(wiphy->fw_version, wl->chip.fw_ver_str,
 		sizeof(wiphy->fw_version));
 
+	wl->has_aes_cmac_cipher = wl1271_check_aes_cmac_cypher(wl);
+
 	/*
 	 * Now we know if 11a is supported (info from the NVS), so disable
 	 * 11a channels if not supported
@@ -3551,6 +3595,10 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		key_type = KEY_GEM;
 		break;
 	case WLAN_CIPHER_SUITE_AES_CMAC:
+		if (!wl->has_aes_cmac_cipher) {
+			wl1271_error("AEC CMAC cipher not available on this firmware version\n");
+			return -EOPNOTSUPP;
+		}
 		key_type = KEY_IGTK;
 		break;
 	default:

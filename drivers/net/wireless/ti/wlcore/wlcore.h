@@ -213,6 +213,8 @@ struct wl1271 {
 	void *nvs;
 	size_t nvs_len;
 
+	u32 has_aes_cmac_cipher:1;
+
 	s8 hw_pg_ver;
 
 	/* address read from the fuse ROM */
