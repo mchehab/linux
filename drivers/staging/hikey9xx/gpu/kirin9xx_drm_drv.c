@@ -156,7 +156,7 @@ static struct drm_driver kirin_drm_driver = {
 	.major			= 1,
 	.minor			= 0,
 
-	DRM_GEM_CMA_VMAP_DRIVER_OPS
+	DRM_GEM_CMA_DRIVER_OPS_VMAP
 };
 
 
