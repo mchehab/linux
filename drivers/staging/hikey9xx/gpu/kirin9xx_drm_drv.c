@@ -171,18 +171,12 @@ static int kirin_drm_bind(struct device *dev)
 	struct drm_device *drm;
 	int ret;
 
-	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-	if (!priv)
-		return -ENOMEM;
+	priv = devm_drm_dev_alloc(dev, &kirin_drm_driver,
+				  struct kirin_drm_private, drm);
+	if (IS_ERR(priv))
+		return PTR_ERR(priv);
 
 	drm = &priv->drm;
-
-	ret = devm_drm_dev_init(dev, drm, &kirin_drm_driver);
-	if (ret) {
-		kfree(priv);
-		return ret;
-	}
-	drmm_add_final_kfree(drm, priv);
 
 	ret = kirin_drm_kms_init(drm);
 	if (ret)
@@ -204,7 +198,6 @@ static int kirin_drm_bind(struct device *dev)
 err_drm_dev_unregister:
 	drm_dev_unregister(drm);
 	kirin_drm_kms_cleanup(drm);
-	drm_dev_put(drm);
 
 	return ret;
 }
@@ -216,7 +209,6 @@ static void kirin_drm_unbind(struct device *dev)
 	drm_dev_unregister(drm_dev);
 	drm_atomic_helper_shutdown(drm_dev);
 	kirin_drm_kms_cleanup(drm_dev);
-	drm_dev_put(drm_dev);
 }
 
 static const struct component_master_ops kirin_drm_ops = {
