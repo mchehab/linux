@@ -1809,10 +1809,6 @@ static int dsi_connector_init(struct drm_device *dev, struct dw_dsi *dsi)
 	if (ret)
 		return ret;
 
-	ret = drm_panel_attach(dsi->panel, connector);
-	if (ret)
-		return ret;
-
 	drm_connector_register(&dsi->connector);
 
 	drm_dbg(dev, "connector init\n");
