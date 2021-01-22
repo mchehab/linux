@@ -129,7 +129,7 @@ u32 dpe_get_format(struct dss_hw_ctx *ctx, u32 pixel_format)
 
 	for (i = 0; i < size; i++) {
 		if (fmt[i].pixel_format == pixel_format) {
-			drm_info(ctx->dev, "requested fourcc %x, dpe format %d",
+			DRM_DEBUG("requested fourcc %x, dpe format %d",
 				 pixel_format, fmt[i].dpe_format);
 			return fmt[i].dpe_format;
 		}
