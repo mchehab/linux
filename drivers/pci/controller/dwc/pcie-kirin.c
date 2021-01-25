@@ -325,7 +325,7 @@ static long kirin960_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 	kirin_pcie->gpio_id_reset[0] = of_get_named_gpio(dev->of_node,
 						      "reset-gpios", 0);
 	if (kirin_pcie->gpio_id_reset[0] < 0)
-		return -ENODEV;
+		return kirin_pcie->gpio_id_reset[0];
 
 	return 0;
 }
@@ -359,22 +359,22 @@ static long kirin970_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 	kirin_pcie->gpio_id_reset[0] = of_get_named_gpio(dev->of_node,
 						"switch,reset-gpios", 0);
 	if (kirin_pcie->gpio_id_reset[0] < 0)
-		return -ENODEV;
+		return kirin_pcie->gpio_id_reset[0];
 
 	kirin_pcie->gpio_id_reset[1] = of_get_named_gpio(dev->of_node,
 						"eth,reset-gpios", 0);
 	if (kirin_pcie->gpio_id_reset[1] < 0)
-		return -ENODEV;
+		return kirin_pcie->gpio_id_reset[1];
 
 	kirin_pcie->gpio_id_reset[2] = of_get_named_gpio(dev->of_node,
 						"m_2,reset-gpios", 0);
 	if (kirin_pcie->gpio_id_reset[2] < 0)
-		return -ENODEV;
+		return kirin_pcie->gpio_id_reset[2];
 
 	kirin_pcie->gpio_id_reset[3] = of_get_named_gpio(dev->of_node,
 						"mini1,reset-gpios", 0);
 	if (kirin_pcie->gpio_id_reset[3] < 0)
-		return -ENODEV;
+		return kirin_pcie->gpio_id_reset[3];
 
 	ret = devm_gpio_request(dev, kirin_pcie->gpio_id_reset[0],
 				    "pcie_switch_reset");
@@ -1202,11 +1202,7 @@ static int kirin_pcie_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	kirin_pcie->gpio_id_reset[0] = of_get_named_gpio(dev->of_node,
-						      "reset-gpios", 0);
-	if (kirin_pcie->gpio_id_reset[0] == -EPROBE_DEFER) {
-		return -EPROBE_DEFER;
-	} else if (!gpio_is_valid(kirin_pcie->gpio_id_reset[0])) {
+	if (!gpio_is_valid(kirin_pcie->gpio_id_reset[0])) {
 		dev_err(dev, "unable to get a valid gpio pin\n");
 		return -ENODEV;
 	}
