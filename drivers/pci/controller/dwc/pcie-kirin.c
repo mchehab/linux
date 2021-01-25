@@ -911,20 +911,28 @@ static int kirin970_pcie_power_on(struct kirin_pcie *kirin_pcie)
 	/* perst assert Endpoints */
 	usleep_range(21000, 23000);
 	ret = gpio_direction_output(kirin_pcie->gpio_id_reset[0], 1);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "Failed to pulse switch perst signal\n");
 		goto close_clk;
+	}
 
 	ret = gpio_direction_output(kirin_pcie->gpio_id_reset[1], 1);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "Failed to pulse eth perst signal\n");
 		goto close_clk;
+	}
 
 	ret = gpio_direction_output(kirin_pcie->gpio_id_reset[2], 1);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "Failed to pulse m.2 perst signal\n");
 		goto close_clk;
+	}
 
 	ret = gpio_direction_output(kirin_pcie->gpio_id_reset[3], 1);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "Failed to pulse mini1 perst signal\n");
 		goto close_clk;
+	}
 
 	usleep_range(10000, 11000);
 
