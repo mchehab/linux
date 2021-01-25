@@ -675,7 +675,7 @@
 		};
 
 		pcie@f4000000 {
-			compatible = "hisilicon,kirin970-pcie", "hisilicon,kirin960-pcie";
+			compatible = "hisilicon,kirin970-pcie";
 			reg = <0x0 0xf4000000 0x0 0x1000000>,
 			      <0x0 0xfc180000 0x0 0x1000>,
 			      <0x0 0xfc000000 0x0 0x80000>,
