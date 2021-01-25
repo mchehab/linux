@@ -22,6 +22,7 @@
 #include <linux/pci_regs.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
 #include <linux/resource.h>
 #include <linux/types.h>
 #include "pcie-designware.h"
@@ -334,6 +335,7 @@ static long kirin970_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 				      struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	struct regulator *ldo33;
 	int ret;
 
 	kirin_pcie->apb_base =
@@ -372,6 +374,16 @@ static long kirin970_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 						"mini1,reset-gpios", 0);
 	if (kirin_pcie->gpio_id_reset[3] < 0)
 		return kirin_pcie->gpio_id_reset[3];
+
+	ldo33 = devm_regulator_get(dev, "pci");
+	if(IS_ERR_OR_NULL(ldo33))
+		return PTR_ERR(ldo33);
+
+	ret = regulator_enable(ldo33);
+	if (ret) {
+		dev_err(dev, "Failed to enable ldo33\n");
+		return ret;
+	}
 
 	ret = devm_gpio_request(dev, kirin_pcie->gpio_id_reset[0],
 				    "pcie_switch_reset");
