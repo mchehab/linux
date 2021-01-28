@@ -246,21 +246,18 @@ static long kirin_pcie_get_clk(struct kirin_pcie *kirin_pcie,
 void kirin970_pcie_get_eyeparam(struct kirin_pcie *pcie)
 {
 	struct device *dev = pcie->pci->dev;
-	int i;
 	struct device_node *np;
+	int ret, i;
 
 	np = dev->of_node;
 
-	if (of_property_read_u32_array(np, "eye_param", pcie->eye_param, 5)) {
-		for (i = 0; i < 5; i++)
-		pcie->eye_param[i] = EYEPARAM_NOCFG;
-	}
+	ret = of_property_read_u32_array(np, "eye_param", pcie->eye_param, 5);
+	if (!ret)
+		return;
 
-	dev_dbg(dev, "eye_param_vboost = [0x%x]\n", pcie->eye_param[0]);
-	dev_dbg(dev, "eye_param_iboost = [0x%x]\n", pcie->eye_param[1]);
-	dev_dbg(dev, "eye_param_pre = [0x%x]\n", pcie->eye_param[2]);
-	dev_dbg(dev, "eye_param_post = [0x%x]\n", pcie->eye_param[3]);
-	dev_dbg(dev, "eye_param_main = [0x%x]\n", pcie->eye_param[4]);
+	/* There's no optional eye_param property. Set array to default */
+	for (i = 0; i < 5; i++)
+		pcie->eye_param[i] = EYEPARAM_NOCFG;
 }
 
 static void kirin970_pcie_set_eyeparam(struct kirin_pcie *kirin_pcie)
