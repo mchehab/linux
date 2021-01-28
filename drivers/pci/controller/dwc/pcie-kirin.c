@@ -22,6 +22,7 @@
 #include <linux/pci_regs.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
 #include <linux/resource.h>
 #include <linux/types.h>
 #include "pcie-designware.h"
@@ -335,7 +336,20 @@ static long kirin970_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 				      struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	struct regulator *reg;
 	int ret;
+
+	reg = devm_regulator_get(dev, "pcie_vdd");
+	if (IS_ERR_OR_NULL(reg)) {
+		if (PTR_ERR(reg) == -EPROBE_DEFER)
+		    return PTR_ERR(reg);
+	} else {
+		ret = regulator_enable(reg);
+		if (ret) {
+			dev_err(dev, "Failed to enable regulator\n");
+			return ret;
+		}
+	}
 
 	kirin970_pcie_get_eyeparam(kirin_pcie);
 
