@@ -40,9 +40,31 @@ properties:
   "#size-cells":
     const: 2
 
-  reset-gpios:
-    description: The GPIO to generate PCIe PERST# assert and deassert signal.
+  pci-supply:
+    description: Power supply regulator
     maxItems: 1
+
+  reset-gpios:
+    description: |
+      The GPIO to generate PCIe PERST# assert and deassert signal, plus
+      other reset pins that would be needed to initialize the PCI bridge
+      and associated hardware
+    minItems: 1
+    maxItems: 4
+
+  reset-names:
+    description: Names of the reset GPIOs
+    minItems: 1
+    maxItems: 4
+
+  clkreq-gpios:
+    description: CLKREQ signal GPIO pins to be enabled during PCI power on
+    minItems: 1
+    maxItems: 3
+
+  eye_param:
+    description: items to adjust the eye parameters
+    maxItems: 5
 
 required:
   - compatible
@@ -63,12 +85,13 @@ examples:
   - |
     #include <dt-bindings/interrupt-controller/arm-gic.h>
     #include <dt-bindings/clock/hi3660-clock.h>
+    #include <dt-bindings/clock/hi3670-clock.h>
 
     soc {
       #address-cells = <2>;
       #size-cells = <2>;
 
-      pcie: pcie@f4000000 {
+      pcie@f4000000 {
         compatible = "hisilicon,kirin960-pcie";
         reg = <0x0 0xf4000000 0x0 0x1000>,
               <0x0 0xff3fe000 0x0 0x1000>,
@@ -98,4 +121,53 @@ examples:
                       "pcie_apb_sys", "pcie_aclk";
         reset-gpios = <&gpio11 1 0 >;
       };
+
+      pcie@f5000000 {
+        compatible = "hisilicon,kirin970-pcie";
+        reg = <0x0 0xf4000000 0x0 0x1000000>,
+              <0x0 0xfc180000 0x0 0x1000>,
+              <0x0 0xfc000000 0x0 0x80000>,
+              <0x0 0xf5000000 0x0 0x2000>;
+        pci-supply = <&ldo33>;
+        reg-names = "dbi", "apb", "phy", "config";
+        bus-range = <0x0  0x1>;
+        #address-cells = <3>;
+        #size-cells = <2>;
+        device_type = "pci";
+        ranges = <0x02000000 0x0 0x00000000 0x0 0xf6000000 0x0 0x02000000>;
+        num-lanes = <1>;
+        #interrupt-cells = <1>;
+        interrupts = <0 283 4>;
+        interrupt-names = "msi";
+        interrupt-map-mask = <0 0 0 7>;
+        interrupt-map = <0x0 0 0 1 &gic GIC_SPI 282 IRQ_TYPE_LEVEL_HIGH>,
+                        <0x0 0 0 2 &gic GIC_SPI 283 IRQ_TYPE_LEVEL_HIGH>,
+                        <0x0 0 0 3 &gic GIC_SPI 284 IRQ_TYPE_LEVEL_HIGH>,
+                        <0x0 0 0 4 &gic GIC_SPI 285 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&crg_ctrl HI3670_CLK_GATE_PCIEPHY_REF>,
+                 <&crg_ctrl HI3670_CLK_GATE_PCIEAUX>,
+                 <&crg_ctrl HI3670_PCLK_GATE_PCIE_PHY>,
+                 <&crg_ctrl HI3670_PCLK_GATE_PCIE_SYS>,
+                 <&crg_ctrl HI3670_ACLK_GATE_PCIE>;
+
+        clock-names = "pcie_phy_ref", "pcie_aux",
+                      "pcie_apb_phy", "pcie_apb_sys",
+                      "pcie_aclk";
+        reset-gpios = <&gpio7 0 0 >, <&gpio25 2 0 >,
+                      <&gpio3 1 0 >, <&gpio27 4 0 >;
+
+        reset-names = "pcie_switch_reset", "pcie_eth_reset",
+                      "pcie_m_2_reset",    "pcie_mini1_reset";
+
+        clkreq-gpios = <&gpio20 6 0 >, <&gpio27 3 0 >, <&gpio17 0 0 >;
+
+        clkreq-names = "pcie_eth_clkreq", "pcie_m_2_clkreq", "pcie_mini1_clkreq";
+
+        /* vboost iboost pre post main */
+        eye_param = <0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
+        msi-parent = <&its_pcie>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pcie_clkreq_pmx_func &pcie_clkreq_cfg_func>;
+      };
+
     };
