@@ -292,11 +292,9 @@ static void kirin970_pcie_set_eyeparam(struct kirin_pcie *kirin_pcie)
 	kirin_apb_natural_phy_writel(kirin_pcie, val, LANEN_DIG_ASIC_TX_OVRD_IN_1);
 }
 
-static long kirin960_pcie_get_resource(struct kirin_pcie *kirin_pcie,
-				       struct platform_device *pdev)
+static long kirin_common_pcie_get_resource(struct kirin_pcie *kirin_pcie,
+					   struct platform_device *pdev)
 {
-	struct device *dev = &pdev->dev;
-
 	kirin_pcie->apb_base = devm_platform_ioremap_resource_byname(pdev,
 								     "apb");
 	if (IS_ERR(kirin_pcie->apb_base))
@@ -306,6 +304,14 @@ static long kirin960_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 								     "phy");
 	if (IS_ERR(kirin_pcie->phy_base))
 		return PTR_ERR(kirin_pcie->phy_base);
+
+	return 0;
+}
+
+static long kirin960_pcie_get_resource(struct kirin_pcie *kirin_pcie,
+				       struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
 
 	kirin_pcie->crgctrl =
 		syscon_regmap_lookup_by_compatible("hisilicon,hi3660-crgctrl");
@@ -330,21 +336,6 @@ static long kirin970_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 {
 	struct device *dev = &pdev->dev;
 	int ret;
-
-	kirin_pcie->apb_base = devm_platform_ioremap_resource_byname(pdev,
-								     "apb");
-	if (IS_ERR(kirin_pcie->apb_base))
-		return PTR_ERR(kirin_pcie->apb_base);
-
-	kirin_pcie->phy_base = devm_platform_ioremap_resource_byname(pdev,
-								     "phy");
-	if (IS_ERR(kirin_pcie->phy_base))
-		return PTR_ERR(kirin_pcie->phy_base);
-
-	kirin_pcie->pci->dbi_base = devm_platform_ioremap_resource_byname(pdev,
-									  "dbi");
-	if (IS_ERR(kirin_pcie->pci->dbi_base))
-		return PTR_ERR(kirin_pcie->pci->dbi_base);
 
 	kirin970_pcie_get_eyeparam(kirin_pcie);
 
@@ -1138,6 +1129,10 @@ static int kirin_pcie_probe(struct platform_device *pdev)
 	kirin_pcie->pci = pci;
 
 	ret = kirin_pcie_get_clk(kirin_pcie, pdev);
+	if (ret)
+		return ret;
+
+	ret = kirin_common_pcie_get_resource(kirin_pcie, pdev);
 	if (ret)
 		return ret;
 
