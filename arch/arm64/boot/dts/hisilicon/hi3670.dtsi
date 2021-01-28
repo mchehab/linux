@@ -673,11 +673,12 @@
 		};
 
 		pcie@f4000000 {
-			compatible = "hisilicon,kirin970-pcie", "hisilicon,kirin960-pcie";
+			compatible = "hisilicon,kirin970-pcie";
 			reg = <0x0 0xf4000000 0x0 0x1000000>,
 			      <0x0 0xfc180000 0x0 0x1000>,
 			      <0x0 0xfc000000 0x0 0x80000>,
 			      <0x0 0xf5000000 0x0 0x2000>;
+			pcie_vdd-supply = <&ldo33>;
 			reg-names = "dbi", "apb", "phy", "config";
 			bus-range = <0x0  0x1>;
 			msi-parent = <&its_pcie>;
@@ -705,19 +706,18 @@
 				 <&crg_ctrl HI3670_PCLK_GATE_PCIE_PHY>,
 				 <&crg_ctrl HI3670_PCLK_GATE_PCIE_SYS>,
 				 <&crg_ctrl HI3670_ACLK_GATE_PCIE>;
+
 			clock-names = "pcie_phy_ref", "pcie_aux",
 				      "pcie_apb_phy", "pcie_apb_sys",
 				      "pcie_aclk";
-			switch,reset-gpios = <&gpio7 0 0 >;
-			eth,reset-gpios = <&gpio25 2 0 >;
-			m_2,reset-gpios = <&gpio3 1 0 >;
-			mini1,reset-gpios = <&gpio27 4 0 >;
 
-			eth,clkreq-gpios = <&gpio20 6 0 >;
-			m_2,clkreq-gpios = <&gpio27 3 0 >;
-			mini1,clkreq-gpios = <&gpio17 0 0 >;
+			reset-gpios = <&gpio7 0 0 >, <&gpio25 2 0 >,
+				      <&gpio3 1 0 >, <&gpio27 4 0 >;
 
-			/*vboost iboost pre post main*/
+			clkreq-gpios = <&gpio20 6 0 >, <&gpio27 3 0 >,
+				       <&gpio17 0 0 >;
+
+			/* vboost iboost pre post main */
 			eye_param = <0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF>;
 
 			pinctrl-names = "default";
