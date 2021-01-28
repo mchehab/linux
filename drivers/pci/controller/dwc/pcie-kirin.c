@@ -140,6 +140,8 @@
 #define TIME_PHY_PD_MAX		11
 
 #define MAX_GPIO_RESETS		4
+#define MAX_GPIO_CLKREQ		3
+
 struct kirin_pcie {
 	struct dw_pcie	*pci;
 	void __iomem	*apb_base;
@@ -153,9 +155,11 @@ struct kirin_pcie {
 	struct clk	*pcie_aclk;
 	struct clk	*pcie_aux_clk;
 	int		n_gpio_resets;
-	int		gpio_id_clkreq[3];
+	int		n_gpio_clkreq;
 	int		gpio_id_reset[MAX_GPIO_RESETS];
 	const char	*reset_names[MAX_GPIO_RESETS];
+	int		gpio_id_clkreq[MAX_GPIO_CLKREQ];
+	const char	*clkreq_names[MAX_GPIO_CLKREQ];
 	u32		eye_param[5];
 };
 
@@ -356,6 +360,23 @@ static long kirin_common_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 		}
 	}
 
+	kirin_pcie->n_gpio_clkreq = of_gpio_named_count(np, "clkreq-gpios");
+	if (kirin_pcie->n_gpio_clkreq > MAX_GPIO_CLKREQ) {
+		dev_err(dev, "Too many GPIO clock requests!\n");
+		return -EINVAL;
+	}
+	for (i = 0; i < kirin_pcie->n_gpio_clkreq; i++) {
+		kirin_pcie->gpio_id_clkreq[i] = of_get_named_gpio(dev->of_node,
+							    "clkreq-gpios", i);
+		if (kirin_pcie->gpio_id_clkreq[i] < 0)
+			return kirin_pcie->gpio_id_clkreq[i];
+
+		ret = of_property_read_string_index(np, "clkreq-names", i,
+						    &kirin_pcie->clkreq_names[i]);
+		if (ret < 0)
+			return ret;
+	}
+
 	return 0;
 }
 
@@ -371,6 +392,12 @@ static int kirin_gpio_request(struct kirin_pcie *kirin_pcie,
 			return ret;
 	}
 
+	for (i = 0; i < kirin_pcie->n_gpio_clkreq; i++) {
+		ret = devm_gpio_request(dev, kirin_pcie->gpio_id_clkreq[i],
+					kirin_pcie->clkreq_names[i]);
+		if (ret)
+			return ret;
+	}
 
 	return ret;
 }
@@ -401,36 +428,6 @@ static long kirin970_pcie_get_resource(struct kirin_pcie *kirin_pcie,
 	kirin970_pcie_get_eyeparam(kirin_pcie);
 
 	ret = kirin_gpio_request(kirin_pcie, dev);
-	if (ret)
-		return ret;
-
-	kirin_pcie->gpio_id_clkreq[0] = of_get_named_gpio(dev->of_node,
-						"eth,clkreq-gpios", 0);
-	if (kirin_pcie->gpio_id_clkreq[0] < 0)
-		return -ENODEV;
-
-	kirin_pcie->gpio_id_clkreq[1] = of_get_named_gpio(dev->of_node,
-						"m_2,clkreq-gpios", 0);
-	if (kirin_pcie->gpio_id_clkreq[1] < 0)
-		return -ENODEV;
-
-	kirin_pcie->gpio_id_clkreq[2] = of_get_named_gpio(dev->of_node,
-						"mini1,clkreq-gpios", 0);
-	if (kirin_pcie->gpio_id_clkreq[2] < 0)
-		return -ENODEV;
-
-	ret = devm_gpio_request(dev, kirin_pcie->gpio_id_clkreq[0],
-				    "pcie_eth_clkreq");
-	if (ret)
-		return ret;
-
-	ret = devm_gpio_request(dev, kirin_pcie->gpio_id_clkreq[1],
-				    "pcie_m_2_clkreq");
-	if (ret)
-		return ret;
-
-	ret = devm_gpio_request(dev, kirin_pcie->gpio_id_clkreq[2],
-				    "pcie_mini1_clkreq");
 	if (ret)
 		return ret;
 
@@ -859,8 +856,7 @@ static int kirin970_pcie_noc_power(struct kirin_pcie *kirin_pcie, bool enable)
 
 static int kirin970_pcie_power_on(struct kirin_pcie *kirin_pcie)
 {
-	struct device *dev = kirin_pcie->pci->dev;
-	int ret;
+	int ret, i;
 	u32 val;
 
 	/* Power supply for Host */
@@ -869,17 +865,11 @@ static int kirin970_pcie_power_on(struct kirin_pcie *kirin_pcie)
 	usleep_range(TIME_CMOS_MIN, TIME_CMOS_MAX);
 	kirin_pcie_oe_enable(kirin_pcie);
 
-	ret = gpio_direction_output(kirin_pcie->gpio_id_clkreq[0], 0);
-	if (ret)
-		dev_err(dev, "Failed to pulse eth clkreq signal\n");
-
-	ret = gpio_direction_output(kirin_pcie->gpio_id_clkreq[1], 0);
-	if (ret)
-		dev_err(dev, "Failed to pulse m.2 clkreq signal\n");
-
-	ret = gpio_direction_output(kirin_pcie->gpio_id_clkreq[2], 0);
-	if (ret)
-		dev_err(dev, "Failed to pulse mini1 clkreq signal\n");
+	for (i = 0; i < kirin_pcie->n_gpio_clkreq; i++) {
+		ret = gpio_direction_output(kirin_pcie->gpio_id_clkreq[i], 0);
+		if (ret)
+			return ret;
+	}
 
 	ret = kirin_pcie_clk_ctrl(kirin_pcie, true);
 	if (ret)
