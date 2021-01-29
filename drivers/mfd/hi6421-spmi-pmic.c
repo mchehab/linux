@@ -38,6 +38,7 @@ enum hi6421_spmi_pmic_irq_list {
 
 #define HISI_IRQ_ARRAY			2
 #define HISI_IRQ_NUM			(HISI_IRQ_ARRAY * 8)
+#define HISI_IRQ_MASK			GENMASK(1, 0)
 
 #define HISI_IRQ_KEY_NUM		0
 
