@@ -439,7 +439,7 @@ static bool dss_crtc_mode_fixup(struct drm_crtc *crtc,
 }
 
 static void dss_crtc_enable(struct drm_crtc *crtc,
-			    struct drm_crtc_state *old_state)
+			    struct drm_atomic_state *state)
 {
 	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 	struct dss_hw_ctx *ctx = acrtc->ctx;
@@ -459,7 +459,7 @@ static void dss_crtc_enable(struct drm_crtc *crtc,
 }
 
 static void dss_crtc_disable(struct drm_crtc *crtc,
-			     struct drm_crtc_state *old_state)
+			     struct drm_atomic_state *state)
 {
 	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 
@@ -482,7 +482,7 @@ static void dss_crtc_mode_set_nofb(struct drm_crtc *crtc)
 }
 
 static void dss_crtc_atomic_begin(struct drm_crtc *crtc,
-				  struct drm_crtc_state *old_state)
+			     struct drm_atomic_state *state)
 {
 	struct dss_crtc *acrtc = to_dss_crtc(crtc);
 	struct dss_hw_ctx *ctx = acrtc->ctx;
@@ -492,7 +492,7 @@ static void dss_crtc_atomic_begin(struct drm_crtc *crtc,
 }
 
 static void dss_crtc_atomic_flush(struct drm_crtc *crtc,
-				  struct drm_crtc_state *old_state)
+				  struct drm_atomic_state *state)
 
 {
 	struct drm_pending_vblank_event *event = crtc->state->event;
