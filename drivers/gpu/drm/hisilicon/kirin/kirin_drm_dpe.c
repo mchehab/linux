@@ -1186,7 +1186,7 @@ static struct drm_driver dpe_driver = {
 	.prime_fd_to_handle	= drm_gem_prime_fd_to_handle,
 	.gem_prime_import	= drm_gem_prime_import,
 	.gem_prime_import_sg_table = drm_gem_cma_prime_import_sg_table,
-	.gem_prime_mmap		= drm_gem_cma_prime_mmap,
+	.gem_prime_mmap		= drm_gem_prime_mmap,
 
 	.name			= "kirin",
 	.desc			= "Hisilicon Kirin SoCs' DRM Driver",
