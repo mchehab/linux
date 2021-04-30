@@ -953,9 +953,10 @@ static void dpe_update_channel(struct kirin_plane *kplane,
 }
 
 static void dpe_plane_atomic_update(struct drm_plane *plane,
-				    struct drm_plane_state *old_state)
+				    struct drm_atomic_state *old_state)
 {
-	struct drm_plane_state *state = plane->state;
+	struct drm_plane_state *state = drm_atomic_get_new_plane_state(old_state,
+								       plane);
 	struct kirin_plane *kplane = to_kirin_plane(plane);
 
 	if (!state->fb) {
@@ -970,8 +971,10 @@ static void dpe_plane_atomic_update(struct drm_plane *plane,
 }
 
 static int dpe_plane_atomic_check(struct drm_plane *plane,
-				  struct drm_plane_state *state)
+				  struct drm_atomic_state *astate)
 {
+	struct drm_plane_state *state = drm_atomic_get_new_plane_state(astate,
+								       plane);
 	struct drm_framebuffer *fb = state->fb;
 	struct drm_crtc *crtc = state->crtc;
 	struct drm_crtc_state *crtc_state;
