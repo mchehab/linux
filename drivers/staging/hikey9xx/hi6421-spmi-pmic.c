@@ -233,7 +233,7 @@ static int hi6421_spmi_pmic_probe(struct spmi_device *pdev)
 
 	ddata->dev = dev;
 
-	ddata->gpio = of_get_gpio(np, 0);
+	ddata->gpio = of_get_named_gpio_flags(np, "interrupts", 0, NULL);
 	if (ddata->gpio < 0)
 		return ddata->gpio;
 
