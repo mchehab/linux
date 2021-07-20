@@ -36,7 +36,7 @@
 #include "../dw_dsi_reg.h"
 #include "../kirin_dpe_reg.h"
 
-#define DTS_COMP_DSI_NAME "hisilicon,hi3660-dsi"
+#define DTS_COMP_DSI_NAME "hisilicon,hi3670-dsi"
 #define DSS_REDUCE(x) ((x) > 0 ? ((x) - 1) : (x))
 
 #define DEFAULT_MIPI_CLK_RATE (192 * 100000L)
@@ -416,10 +416,11 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 static void dsi_set_burst_mode(void __iomem *base, unsigned long flags)
 {
 	u32 val;
-	u32 mode_mask = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+	u32 mode_mask = MIPI_DSI_MODE_VIDEO |
+			MIPI_DSI_MODE_VIDEO_BURST |
 			MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
-	u32 non_burst_sync_pulse =
-		MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
+	u32 non_burst_sync_pulse = MIPI_DSI_MODE_VIDEO |
+				   MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
 	u32 non_burst_sync_event = MIPI_DSI_MODE_VIDEO;
 
 	/*
@@ -455,6 +456,87 @@ static void dsi_phy_tst_set(void __iomem *base, u32 reg, u32 val)
 	writel(val, base + MIPIDSI_PHY_TST_CTRL1_OFFSET);
 	writel(0x02, base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 	writel(0x00, base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
+}
+
+
+static void mipi_config_dphy_spec1v2_parameter(struct dw_dsi *dsi,
+					       char __iomem *mipi_dsi_base,
+					       u32 id)
+{
+	u32 i;
+	u32 addr = 0;
+	u32 lanes;
+
+	lanes =  dsi->client[id].lanes - 1;
+	for (i = 0; i <= (lanes + 1); i++) {
+		/* Lane Transmission Property */
+		addr = MIPIDSI_PHY_TST_LANE_TRANSMISSION_PROPERTY + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, 0x43);
+	}
+
+	/* pre_delay of clock lane request setting */
+	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_PRE_DELAY, DSS_REDUCE(dsi->phy.clk_pre_delay));
+
+	/* post_delay of clock lane request setting */
+	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_POST_DELAY, DSS_REDUCE(dsi->phy.clk_post_delay));
+
+	/* clock lane timing ctrl - t_lpx */
+	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_TLPX, DSS_REDUCE(dsi->phy.clk_t_lpx));
+
+	/* clock lane timing ctrl - t_hs_prepare */
+	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_PREPARE, DSS_REDUCE(dsi->phy.clk_t_hs_prepare));
+
+	/* clock lane timing ctrl - t_hs_zero */
+	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_ZERO, DSS_REDUCE(dsi->phy.clk_t_hs_zero));
+
+	/* clock lane timing ctrl - t_hs_trial */
+	dsi_phy_tst_set(mipi_dsi_base, MIPIDSI_PHY_TST_CLK_TRAIL, DSS_REDUCE(dsi->phy.clk_t_hs_trial));
+
+	for (i = 0; i <= 4; i++) {
+		if (lanes == 2 && i == 1) /* init mipi dsi 3 lanes should skip lane3 */
+			i++;
+
+		if (i == 2) /* skip clock lane */
+			i++;  /* addr: lane0:0x60; lane1:0x80; lane2:0xC0; lane3:0xE0 */
+
+		/* data lane pre_delay */
+		addr = MIPIDSI_PHY_TST_DATA_PRE_DELAY + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_pre_delay));
+
+		/* data lane post_delay */
+		addr = MIPIDSI_PHY_TST_DATA_POST_DELAY + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_post_delay));
+
+		/* data lane timing ctrl - t_lpx */
+		addr = MIPIDSI_PHY_TST_DATA_TLPX + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_t_lpx));
+
+		/* data lane timing ctrl - t_hs_prepare */
+		addr = MIPIDSI_PHY_TST_DATA_PREPARE + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_t_hs_prepare));
+
+		/* data lane timing ctrl - t_hs_zero */
+		addr = MIPIDSI_PHY_TST_DATA_ZERO + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_t_hs_zero));
+
+		/* data lane timing ctrl - t_hs_trial */
+		addr = MIPIDSI_PHY_TST_DATA_TRAIL + (i << 5);
+		dsi_phy_tst_set(mipi_dsi_base, addr, DSS_REDUCE(dsi->phy.data_t_hs_trial));
+
+		DRM_DEBUG("DPHY spec1v2 config :\n"
+			"addr=0x%x\n"
+			"clk_pre_delay=%u\n"
+			"clk_t_hs_trial=%u\n"
+			"data_t_hs_zero=%u\n"
+			"data_t_lpx=%u\n"
+			"data_t_hs_prepare=%u\n",
+			addr,
+			dsi->phy.clk_pre_delay,
+			dsi->phy.clk_t_hs_trial,
+			dsi->phy.data_t_hs_zero,
+			dsi->phy.data_t_lpx,
+			dsi->phy.data_t_hs_prepare);
+	}
 }
 
 static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
@@ -506,99 +588,36 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	writel(0x00000001, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 	writel(0x00000000, mipi_dsi_base + MIPIDSI_PHY_TST_CTRL0_OFFSET);
 
-	/* physical configuration PLL I*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x14, (dsi->phy.pll_fbd_s << 4) +
-					     (dsi->phy.rg_pll_enswc << 3) +
-					     (dsi->phy.pll_enbwt << 2) +
-					     dsi->phy.rg_pll_chp);
+	dsi_phy_tst_set(mipi_dsi_base, 0x0042, 0x21);
+	/* PLL configuration I */
+	dsi_phy_tst_set(mipi_dsi_base, 0x0046,
+			dsi->phy.rg_cp + (dsi->phy.rg_lpf_r << 4));
 
-	/* physical configuration PLL II, M*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x15, dsi->phy.pll_fbd_p);
+	/* PLL configuration II */
+	dsi_phy_tst_set(mipi_dsi_base, 0x0048,
+			dsi->phy.rg_0p8v + (dsi->phy.rg_2p5g << 1) +
+			(dsi->phy.rg_320m << 2) + (dsi->phy.rg_band_sel << 3));
 
-	/* physical configuration PLL III*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x16, (dsi->phy.rg_pll_cp << 5) +
-					     (dsi->phy.pll_lpf_cs << 4) +
-					     dsi->phy.rg_pll_refsel);
+	/* PLL configuration III */
+	dsi_phy_tst_set(mipi_dsi_base, 0x0049, dsi->phy.rg_pre_div);
 
-	/* physical configuration PLL IV, N*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x17, dsi->phy.pll_pre_p);
+	/* PLL configuration IV */
+	dsi_phy_tst_set(mipi_dsi_base, 0x004A, dsi->phy.rg_div);
 
-	/* sets the analog characteristic of V reference in D-PHY TX*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x1D, dsi->phy.rg_vrefsel_vcm);
+	dsi_phy_tst_set(mipi_dsi_base, 0x004F, 0xf0);
+	dsi_phy_tst_set(mipi_dsi_base, 0x0050, 0xc0);
+	dsi_phy_tst_set(mipi_dsi_base, 0x0051, 0x22);
 
-	/* MISC AFE Configuration*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x1E, (dsi->phy.rg_pll_cp_p << 5) +
-					     (dsi->phy.reload_sel << 4) +
-					     (dsi->phy.rg_phase_gen_en << 3) +
-					     (dsi->phy.rg_band_sel << 2) +
-					     (dsi->phy.pll_power_down << 1) +
-					     dsi->phy.pll_register_override);
+	dsi_phy_tst_set(mipi_dsi_base, 0x0053, dsi->phy.rg_vrefsel_vcm);
 
-	/*reload_command*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x1F, dsi->phy.load_command);
+	/* enable BTA */
+	dsi_phy_tst_set(mipi_dsi_base, 0x0054, 0x03);
 
-	/* pre_delay of clock lane request setting*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x20,
-			DSS_REDUCE(dsi->phy.clk_pre_delay));
+	/* PLL update control */
+	dsi_phy_tst_set(mipi_dsi_base, 0x004B, 0x1);
 
-	/* post_delay of clock lane request setting*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x21,
-			DSS_REDUCE(dsi->phy.clk_post_delay));
-
-	/* clock lane timing ctrl - t_lpx*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x22, DSS_REDUCE(dsi->phy.clk_t_lpx));
-
-	/* clock lane timing ctrl - t_hs_prepare*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x23,
-			DSS_REDUCE(dsi->phy.clk_t_hs_prepare));
-
-	/* clock lane timing ctrl - t_hs_zero*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x24,
-			DSS_REDUCE(dsi->phy.clk_t_hs_zero));
-
-	/* clock lane timing ctrl - t_hs_trial*/
-	dsi_phy_tst_set(mipi_dsi_base, 0x25, dsi->phy.clk_t_hs_trial);
-
-	for (i = 0; i <= lanes; i++) {
-		/* data lane pre_delay*/
-		tmp = 0x30 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_pre_delay));
-
-		/*data lane post_delay*/
-		tmp = 0x31 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_post_delay));
-
-		/* data lane timing ctrl - t_lpx*/
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_t_lpx));
-
-		/* data lane timing ctrl - t_hs_prepare*/
-		tmp = 0x33 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_t_hs_prepare));
-
-		/* data lane timing ctrl - t_hs_zero*/
-		tmp = 0x34 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_t_hs_zero));
-
-		/* data lane timing ctrl - t_hs_trial*/
-		tmp = 0x35 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_t_hs_trial));
-
-		/* data lane timing ctrl - t_ta_go*/
-		tmp = 0x36 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_t_ta_go));
-
-		/* data lane timing ctrl - t_ta_get*/
-		tmp = 0x37 + (i << 4);
-		dsi_phy_tst_set(mipi_dsi_base, tmp,
-				DSS_REDUCE(dsi->phy.data_t_ta_get));
-	}
+	/* set dphy spec parameter */
+	mipi_config_dphy_spec1v2_parameter(dsi, mipi_dsi_base, id);
 
 	writel(0x00000007, mipi_dsi_base + MIPIDSI_PHY_RSTZ_OFFSET);
 
@@ -747,6 +766,11 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	set_reg(mipi_dsi_base + MIPIDSI_PHY_TMR_CFG_OFFSET,
 		dsi->phy.data_lane_hs2lp_time, 10, 16);
 
+	/* 16~19bit:pclk_en, pclk_sel, dpipclk_en, dpipclk_sel */
+	set_reg(mipi_dsi_base + MIPIDSI_CLKMGR_CFG_OFFSET, 0x5, 4, 16);
+	/* 0:dphy */
+	set_reg(mipi_dsi_base + KIRIN970_PHY_MODE, 0x0, 1, 0);
+
 	/* Waking up Core*/
 	set_reg(mipi_dsi_base + MIPIDSI_PWR_UP_OFFSET, 0x1, 1, 0);
 }
@@ -756,6 +780,8 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	/* mipi init */
 	dsi_mipi_init(dsi, mipi_dsi_base);
 	DRM_DEBUG("dsi_mipi_init ok\n");
+	/* dsi memory init */
+	writel(0x02600008, mipi_dsi_base + KIRIN970_DSI_MEM_CTRL);
 	/* switch to cmd mode */
 	set_reg(mipi_dsi_base + MIPIDSI_MODE_CFG_OFFSET, 0x1, 1, 0);
 	/* cmd mode: low power mode */
@@ -779,6 +805,15 @@ static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 
 	/* enable generate High Speed clock, continue clock */
 	set_reg(mipi_dsi_base + MIPIDSI_LPCLK_CTRL_OFFSET, 0x1, 2, 0);
+
+	/* init: wait DPHY 4 data lane stopstate */
+	pctrl_dphytx_stopcnt = (u64)(dsi->ldi.h_back_porch +
+		dsi->ldi.h_front_porch + dsi->ldi.h_pulse_width + dsi->cur_mode.hdisplay + 5) *
+		DEFAULT_PCLK_PCTRL_RATE / (dsi->cur_mode.clock * 1000);
+	DRM_DEBUG("pctrl_dphytx_stopcnt = %llu\n", pctrl_dphytx_stopcnt);
+
+	/* FIXME: */
+	writel(pctrl_dphytx_stopcnt, dsi->ctx->pctrl_base + PERI_CTRL29);
 
 	return 0;
 }
