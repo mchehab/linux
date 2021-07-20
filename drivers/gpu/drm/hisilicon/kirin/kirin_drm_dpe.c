@@ -322,8 +322,6 @@ static void dpe_clk_enable(struct dpe_hw_ctx *ctx)
 	writel(0x00000008, base + DPE_RCH_VG1_SCL_OFFSET + SCF_LB_MEM_CTRL);
 	writel(0x00000008, base + DPE_RCH_VG1_DMA_OFFSET + DMA_BUF_MEM_CTRL);
 	writel(0x00008888, base + DPE_RCH_VG1_DMA_OFFSET + AFBCD_MEM_CTRL);
-	writel(0x00000088, base + DPE_RCH_VG2_SCL_OFFSET + SCF_COEF_MEM_CTRL);
-	writel(0x00000008, base + DPE_RCH_VG2_SCL_OFFSET + SCF_LB_MEM_CTRL);
 	writel(0x00000008, base + DPE_RCH_VG2_DMA_OFFSET + DMA_BUF_MEM_CTRL);
 	writel(0x00000088, base + DPE_RCH_G0_SCL_OFFSET + SCF_COEF_MEM_CTRL);
 	writel(0x00000008, base + DPE_RCH_G0_SCL_OFFSET + SCF_LB_MEM_CTRL);
@@ -333,6 +331,10 @@ static void dpe_clk_enable(struct dpe_hw_ctx *ctx)
 	writel(0x00000008, base + DPE_RCH_G1_SCL_OFFSET + SCF_LB_MEM_CTRL);
 	writel(0x00000008, base + DPE_RCH_G1_DMA_OFFSET + DMA_BUF_MEM_CTRL);
 	writel(0x00008888, base + DPE_RCH_G1_DMA_OFFSET + AFBCD_MEM_CTRL);
+	writel(0x88888888, base + DPE_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL);
+	writel(0x00000888, base + DPE_RCH_VG0_DMA_OFFSET + HFBCD_MEM_CTRL_1);
+	writel(0x88888888, base + DPE_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL);
+	writel(0x00000888, base + DPE_RCH_VG1_DMA_OFFSET + HFBCD_MEM_CTRL_1);
 	writel(0x00000008, base + DPE_RCH_D0_DMA_OFFSET + DMA_BUF_MEM_CTRL);
 	writel(0x00008888, base + DPE_RCH_D0_DMA_OFFSET + AFBCD_MEM_CTRL);
 	writel(0x00000008, base + DPE_RCH_D1_DMA_OFFSET + DMA_BUF_MEM_CTRL);
@@ -344,8 +346,9 @@ static void dpe_clk_enable(struct dpe_hw_ctx *ctx)
 	writel(0x00000008, base + DPE_WCH1_DMA_OFFSET + DMA_BUF_MEM_CTRL);
 	writel(0x00000888, base + DPE_WCH1_DMA_OFFSET + AFBCE_MEM_CTRL);
 	writel(0x00000008, base + DPE_WCH1_DMA_OFFSET + ROT_MEM_CTRL);
-	writel(0x00000008, base + DPE_WCH2_DMA_OFFSET + DMA_BUF_MEM_CTRL);
-	writel(0x00000008, base + DPE_WCH2_DMA_OFFSET + ROT_MEM_CTRL);
+	writel(0x00000088, base + DPE_WCH1_DMA_OFFSET + WCH_SCF_COEF_MEM_CTRL);
+	writel(0x00000008, base + DPE_WCH1_DMA_OFFSET + WCH_SCF_LB_MEM_CTRL);
+	writel(0x02605550, base + GLB_DPE_MEM_CTRL);
 }
 
 static int dpe_power_up(struct dpe_hw_ctx *ctx)
@@ -496,6 +499,7 @@ static void dpe_dbuf_init(struct dpe_hw_ctx *ctx, struct drm_display_mode *mode,
 
 	int dfs_time_min = 0;
 	int depth = 0;
+	int dfs_ram = 0;
 
 	hfp = mode->hsync_start - mode->hdisplay;
 	hbp = mode->htotal - mode->hsync_end;
@@ -506,10 +510,13 @@ static void dpe_dbuf_init(struct dpe_hw_ctx *ctx, struct drm_display_mode *mode,
 
 	dbuf_base = ctx->base + DPE_DBUF0_OFFSET;
 
-	if (mode->hdisplay * mode->vdisplay >= RES_4K_PHONE)
+	if (mode->hdisplay * mode->vdisplay >= RES_4K_PHONE) {
 		dfs_time_min = DFS_TIME_MIN_4K;
-	else
+		dfs_ram = 0x0;
+	} else {
 		dfs_time_min = DFS_TIME_MIN;
+		dfs_ram = 0xF00;
+	}
 
 	depth = DBUF0_DEPTH;
 
@@ -552,6 +559,8 @@ static void dpe_dbuf_init(struct dpe_hw_ctx *ctx, struct drm_display_mode *mode,
 	       dbuf_base + DBUF_FLUX_REQ_CTRL);
 
 	writel(0x1, dbuf_base + DBUF_DFS_LP_CTRL);
+
+	writel(dfs_ram, dbuf_base + DBUF_DFS_RAM_MANAGE);
 }
 
 static void dpe_ldi_init(struct dpe_hw_ctx *ctx, struct drm_display_mode *mode,

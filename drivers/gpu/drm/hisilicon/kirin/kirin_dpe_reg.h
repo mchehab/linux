@@ -65,6 +65,7 @@
 #define GLB_CPU_PDP_INT_MSK              (DPE_GLB0_OFFSET + 0x228)
 #define GLB_CPU_SDP_INTS                 (DPE_GLB0_OFFSET + 0x22C)
 #define GLB_CPU_SDP_INT_MSK              (DPE_GLB0_OFFSET + 0x230)
+#define GLB_DPE_MEM_CTRL                 (DPE_GLB0_OFFSET + 0x600)
 
 #define DBG_MCTL_INTS                    (0x023C)
 #define DBG_MCTL_INT_MSK                 (0x0240)
@@ -194,6 +195,7 @@
 #define DBUF_THD_DFS_OK                  (0x0068)
 #define DBUF_FLUX_REQ_CTRL               (0x006C)
 #define DBUF_REG_DEFAULT                 (0x00A4)
+#define DBUF_DFS_RAM_MANAGE              (0x00A8)
 
 #define DPP_IMG_SIZE_BEF_SR              (0x000C)
 #define DPP_IMG_SIZE_AFT_SR              (0x0010)
@@ -206,12 +208,16 @@
 #define DSC_MEM_CTRL                     (0x0084)
 #define ARSR2P_LB_MEM_CTRL               (0x0084)
 #define SCF_LB_MEM_CTRL                  (0x0090)
+#define WCH_SCF_COEF_MEM_CTRL            (0x0218)
+#define WCH_SCF_LB_MEM_CTRL              (0x0290)
 #define ROT_MEM_CTRL                     (0x0538)
 #define VPP_MEM_CTRL                     (0x0704)
 #define CMD_MEM_CTRL                     (0x073C)
 #define DMA_BUF_MEM_CTRL                 (0x0854)
 #define AFBCD_MEM_CTRL                   (0x093C)
 #define AFBCE_MEM_CTRL                   (0x0924)
+#define HFBCD_MEM_CTRL                   (0x0984)
+#define HFBCD_MEM_CTRL_1                 (0x0988)
 
 #define LDI_DPI0_HRZ_CTRL0               (0x0000)
 #define LDI_DPI0_HRZ_CTRL1               (0x0004)
