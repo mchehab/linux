@@ -41,6 +41,9 @@
 
 #define DEFAULT_MIPI_CLK_RATE (192 * 100000L)
 #define DEFAULT_PCLK_DSI_RATE (120 * 1000000L)
+#define DEFAULT_PCLK_PCTRL_RATE     (80000000UL)
+
+#define PERI_CTRL29	(0x078)
 
 struct dss_rect {
 	s32 x;
@@ -545,7 +548,6 @@ static void dsi_mipi_init(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	u32 hsa_time = 0;
 	u32 hbp_time = 0;
 	u64 pixel_clk = 0;
-	u32 i = 0;
 	u32 id = 0;
 	unsigned long dw_jiffies = 0;
 	u32 tmp = 0;
@@ -797,6 +799,8 @@ static int mipi_dsi_on_sub1(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 
 static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 {
+	u64 pctrl_dphytx_stopcnt = 0;
+
 	/* switch to video mode */
 	set_reg(mipi_dsi_base + MIPIDSI_MODE_CFG_OFFSET, 0x0, 1, 0);
 
@@ -807,9 +811,12 @@ static int mipi_dsi_on_sub2(struct dw_dsi *dsi, char __iomem *mipi_dsi_base)
 	set_reg(mipi_dsi_base + MIPIDSI_LPCLK_CTRL_OFFSET, 0x1, 2, 0);
 
 	/* init: wait DPHY 4 data lane stopstate */
-	pctrl_dphytx_stopcnt = (u64)(dsi->ldi.h_back_porch +
-		dsi->ldi.h_front_porch + dsi->ldi.h_pulse_width + dsi->cur_mode.hdisplay + 5) *
-		DEFAULT_PCLK_PCTRL_RATE / (dsi->cur_mode.clock * 1000);
+	pctrl_dphytx_stopcnt = (dsi->ldi.h_back_porch +
+			        dsi->ldi.h_front_porch +
+			        dsi->ldi.h_pulse_width +
+			        dsi->cur_mode.hdisplay + 5) *
+			       DEFAULT_PCLK_PCTRL_RATE /
+			       (dsi->cur_mode.clock * 1000);
 	DRM_DEBUG("pctrl_dphytx_stopcnt = %llu\n", pctrl_dphytx_stopcnt);
 
 	/* FIXME: */
@@ -1148,6 +1155,13 @@ static int dsi_parse_dt(struct platform_device *pdev, struct dw_dsi *dsi)
 	ctx->peri_crg_base = of_iomap(np, 1);
 	if (!(ctx->peri_crg_base)) {
 		DRM_ERROR("failed to get peri_crg_base resource.\n");
+		return -ENXIO;
+	}
+
+	ctx->pctrl_base = of_iomap(np, 2);
+	if (!(ctx->pctrl_base)) {
+		dev_err(&pdev->dev,
+			"failed to get dss pctrl_base resource.\n");
 		return -ENXIO;
 	}
 

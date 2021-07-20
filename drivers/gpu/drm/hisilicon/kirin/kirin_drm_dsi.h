@@ -52,6 +52,7 @@ static const struct dsi_phy_range dphy_range_info[] = {
 struct dsi_hw_ctx {
 	void __iomem *base;
 	char __iomem *peri_crg_base;
+	void __iomem *pctrl_base;
 
 	struct clk *pclk;
 	struct clk *dss_dphy0_ref_clk;
