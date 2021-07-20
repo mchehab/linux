@@ -687,9 +687,6 @@
 				      "apb_phy", "apb_sys",
 				      "aclk";
 
-			reset-gpios = <&gpio7 0 0 >, <&gpio25 2 0 >,
-				      <&gpio3 1 0 >, <&gpio27 4 0 >;
-
 			clkreq-gpios = <&gpio20 6 0 >, <&gpio27 3 0 >,
 				       <&gpio17 0 0 >;
 
@@ -729,6 +726,8 @@
 					 &gic GIC_SPI 284 IRQ_TYPE_LEVEL_HIGH>,
 					<0x0 0 0 4
 					 &gic GIC_SPI 285 IRQ_TYPE_LEVEL_HIGH>;
+			reset-gpios = <&gpio7 0 0 >, <&gpio25 2 0 >,
+				      <&gpio3 1 0 >, <&gpio27 4 0 >;
 		};
 
 		/* UFS */

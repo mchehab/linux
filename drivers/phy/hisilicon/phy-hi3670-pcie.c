@@ -553,11 +553,13 @@ static int hi3670_pcie_noc_power(struct hi3670_pcie_phy *phy, bool enable)
 	return 0;
 }
 
-static int hi3670_pcie_get_apb(struct hi3670_pcie_phy *phy)
+static int hi3670_pcie_get_resources_from_pcie(struct hi3670_pcie_phy *phy)
 {
 	struct device_node *pcie_port;
 	struct device *dev = phy->dev;
 	struct device *pcie_dev;
+	char name[32];
+	int i;
 
 	pcie_port = of_get_child_by_name(dev->parent->of_node, "pcie");
 	if (!pcie_port) {
@@ -584,6 +586,27 @@ static int hi3670_pcie_get_apb(struct hi3670_pcie_phy *phy)
 	if (!phy->apb) {
 		dev_err(dev, "Failed to get APB regmap\n");
 		return -ENODEV;
+	}
+
+	/* perst reset gpios */
+	phy->n_gpio_resets = of_gpio_named_count(pcie_dev->of_node,
+						 "reset-gpios");
+	if (phy->n_gpio_resets > MAX_GPIO_RESETS) {
+		dev_err(dev, "Too many GPIO resets!\n");
+		return -EINVAL;
+	}
+	for (i = 0; i < phy->n_gpio_resets; i++) {
+		phy->gpio_id_reset[i] = of_get_named_gpio(pcie_dev->of_node,
+							  "reset-gpios", i);
+		if (phy->gpio_id_reset[i] < 0)
+			return phy->gpio_id_reset[i];
+
+		sprintf(name, "pcie_perst_%d", i);
+
+		phy->reset_names[i] = devm_kstrdup_const(dev, name,
+							 GFP_KERNEL);
+		if (!phy->reset_names[i])
+			return -ENOMEM;
 	}
 
 	return 0;
@@ -644,16 +667,17 @@ static int hi3670_pcie_phy_init(struct phy *generic_phy)
 	int ret;
 
 	/*
-	 * The code under hi3670_pcie_get_apb() need to access the
-	 * DWC APB registers. So, get them from
-	 * the pcie driver's regmap (see pcie-kirin regmap).
+	 * The code under hi3670_pcie_get_resources_from_pcie() need to
+	 * access the reset-gpios and the APB registers, both from the
+	 * pcie-kirin driver.
 	 *
+	 * The APB is obtained via the pcie driver's regmap
 	 * Such kind of resource can only be obtained during the PCIe
 	 * power_on sequence, as the code inside pcie-kirin needs to
 	 * be already probed, as it needs to register the APB regmap.
 	 */
 
-	ret = hi3670_pcie_get_apb(phy);
+	ret = hi3670_pcie_get_resources_from_pcie(phy);
 	if (ret)
 		return ret;
 
@@ -799,26 +823,6 @@ static int hi3670_pcie_phy_get_resources(struct hi3670_pcie_phy *phy,
 	phy->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(phy->base))
 		return PTR_ERR(phy->base);
-
-	/* perst reset gpios */
-	phy->n_gpio_resets = of_gpio_named_count(np, "reset-gpios");
-	if (phy->n_gpio_resets > MAX_GPIO_RESETS) {
-		dev_err(dev, "Too many GPIO resets!\n");
-		return -EINVAL;
-	}
-	for (i = 0; i < phy->n_gpio_resets; i++) {
-		phy->gpio_id_reset[i] = of_get_named_gpio(dev->of_node,
-							  "reset-gpios", i);
-		if (phy->gpio_id_reset[i] < 0)
-			return phy->gpio_id_reset[i];
-
-		sprintf(name, "pcie_perst_%d", i);
-
-		phy->reset_names[i] = devm_kstrdup_const(dev, name,
-							 GFP_KERNEL);
-		if (!phy->reset_names[i])
-			return -ENOMEM;
-	}
 
 	/* clock request gpios */
 	phy->n_gpio_clkreq = of_gpio_named_count(np, "clkreq-gpios");

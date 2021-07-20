@@ -42,10 +42,6 @@ properties:
       - const: apb_sys
       - const: aclk
 
-  reset-gpios:
-    description: PCI PERST reset GPIOs
-    maxItems: 4
-
   clkreq-gpios:
     description: Clock request GPIOs
     maxItems: 3
