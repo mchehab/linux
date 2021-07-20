@@ -229,7 +229,8 @@ struct dsi_data {
 
 enum kirin_dsi_version {
 	KIRIN620_DSI = 0,
-	KIRIN960_DSI
+	KIRIN960_DSI,
+	KIRIN970_DSI,
 };
 
 /* display controller init/cleanup ops */

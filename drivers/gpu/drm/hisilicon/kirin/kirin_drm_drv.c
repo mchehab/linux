@@ -300,7 +300,12 @@ static const struct of_device_id kirin_drm_dt_ids[] = {
 #endif
 #ifdef CONFIG_DRM_HISI_KIRIN960
 	{ .compatible = "hisilicon,hi3660-dpe",
-	  .data = &dpe_driver_data,
+	  .data = &dpe960_driver_data,
+	},
+#endif
+#ifdef CONFIG_DRM_HISI_KIRIN970
+	{ .compatible = "hisilicon,hi3670-dpe",
+	  .data = &dpe970_driver_data,
 	},
 #endif
 	{ /* end node */ },

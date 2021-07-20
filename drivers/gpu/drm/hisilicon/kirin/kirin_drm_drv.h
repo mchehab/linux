@@ -56,7 +56,10 @@ struct kirin_drm_data {
 extern struct kirin_drm_data ade_driver_data;
 #endif
 #ifdef CONFIG_DRM_HISI_KIRIN960
-extern const struct kirin_drm_data dpe_driver_data;
+extern const struct kirin_drm_data dpe960_driver_data;
+#endif
+#ifdef CONFIG_DRM_HISI_KIRIN970
+extern const struct kirin_drm_data dpe970_driver_data;
 #endif
 
 #endif /* __KIRIN_DRM_DRV_H__ */

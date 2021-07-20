@@ -1197,7 +1197,28 @@ static struct drm_driver dpe_driver = {
 	.minor			= 0,
 };
 
-const struct kirin_drm_data dpe_driver_data = {
+const struct kirin_drm_data dpe960_driver_data = {
+	.num_planes = DPE_CH_NUM,
+	.prim_plane = DPE_CH0,
+
+	.channel_formats = dpe_channel_formats,
+	.channel_formats_cnt = ARRAY_SIZE(dpe_channel_formats),
+	.config_max_width = 4096,
+	.config_max_height = 4096,
+
+	.driver = &dpe_driver,
+
+	.crtc_helper_funcs = &dpe_crtc_helper_funcs,
+	.crtc_funcs = &dpe_crtc_funcs,
+	.plane_helper_funcs = &dpe_plane_helper_funcs,
+	.plane_funcs = &dpe_plane_funcs,
+	.mode_config_funcs = &dpe_mode_config_funcs,
+
+	.alloc_hw_ctx = dpe_hw_ctx_alloc,
+	.cleanup_hw_ctx = dpe_hw_ctx_cleanup,
+};
+
+const struct kirin_drm_data dpe970_driver_data = {
 	.num_planes = DPE_CH_NUM,
 	.prim_plane = DPE_CH0,
 
