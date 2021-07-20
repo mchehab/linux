@@ -155,10 +155,10 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	u32 ui = 0;
 	u32 m_pll = 0;
 	u32 n_pll = 0;
-	u64 lane_clock = 0;
-	u64 vco_div = 1;
 	u32 m_n_fract = 0;
 	u32 m_n_int = 0;
+	u64 lane_clock = 0;
+	u64 vco_div = 1;
 
 	u32 accuracy = 0;
 	u32 unit_tx_byte_clk_hs = 0;
@@ -189,12 +189,10 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	bpp = mipi_dsi_pixel_format_to_bpp(dsi->client[id].format);
 	if (bpp < 0)
 		return;
-
 	if (mode->clock > 80000)
 		dsi->client[id].lanes = 4;
 	else
 		dsi->client[id].lanes = 3;
-
 	if (dsi->client[id].phy_clock)
 		dphy_req_kHz = dsi->client[id].phy_clock;
 	else
@@ -204,22 +202,28 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	DRM_DEBUG("Expected : lane_clock = %llu M\n", lane_clock);
 
 	/************************  PLL parameters config  *********************/
-	/* chip spec : */
-	/* If the output data rate is below 320 Mbps, RG_BNAD_SEL should be set to 1. */
-	/* At this mode a post divider of 1/4 will be applied to VCO. */
-	if ((lane_clock >= 320) && (lane_clock <= 2500)) {
-		phy_ctrl->rg_band_sel = 0;
+	/*
+	 * chip spec :
+	 *	If the output data rate is below 320 Mbps,
+	 *	RG_BNAD_SEL should be set to 1.
+	 *	At this mode a post divider of 1/4 will be applied to VCO.
+	 */
+	if (lane_clock >= 320 && lane_clock <= 2500) {
+		phy_ctrl->rg_band_sel = 0; /*0x1E[2]*/
 		vco_div = 1;
-	} else if ((lane_clock >= 80) && (lane_clock < 320)) {
+	} else if (lane_clock >= 80 && lane_clock < 320) {
 		phy_ctrl->rg_band_sel = 1;
 		vco_div = 4;
 	} else {
-		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M.\n",
+		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M\n",
 			  lane_clock);
 	}
 
 	m_n_int = lane_clock * vco_div * 1000000UL / DEFAULT_MIPI_CLK_RATE;
-	m_n_fract = ((lane_clock * vco_div * 1000000UL * 1000UL / DEFAULT_MIPI_CLK_RATE) % 1000) * 10 / 1000;
+	m_n_fract = ((lane_clock * vco_div * 1000000UL * 1000UL /
+		      DEFAULT_MIPI_CLK_RATE) %
+		     1000) *
+		    10 / 1000;
 
 	n_pll = 2;
 
@@ -231,7 +235,7 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	else if ((lane_clock >= 80000000) && (lane_clock <= 750000000))
 		phy_ctrl->rg_cp = 1;
 	else
-		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M.\n",
+		DRM_ERROR("80M <= lane_clock< = 2500M, not support lane_clock = %llu M\n",
 			  lane_clock);
 
 	/* chip spec : */
@@ -247,7 +251,7 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 
 	/********************  clock/data lane parameters config  ******************/
 	accuracy = 10;
-	ui =  (u32)(10 * 1000000000UL * accuracy / lane_clock);
+	ui = 10 * 1000000000UL * accuracy / lane_clock;
 	/* unit of measurement */
 	unit_tx_byte_clk_hs = 8 * ui;
 
@@ -265,7 +269,8 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 
 	/* D-PHY Specification : clk_t_hs_trial >= 60ns */
 	/* clocked by TXBYTECLKHS */
-	clk_t_hs_trial = 600 * accuracy + 3 * unit_tx_byte_clk_hs + mipi->clk_t_hs_trial_adjust * ui;
+	clk_t_hs_trial = 600 * accuracy + 3 * unit_tx_byte_clk_hs +
+			 mipi->clk_t_hs_trial_adjust * ui;
 
 	/* D-PHY Specification : 38ns <= clk_t_hs_prepare <= 95ns */
 	/* clocked by TXBYTECLKHS */
@@ -276,8 +281,11 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 
 	/* D-PHY Specification : data_t_hs_trial >= max( n*8*UI, 60ns + n*4*UI ), n = 1 */
 	/* clocked by TXBYTECLKHS */
-	data_t_hs_trial = ((600 * accuracy + 4 * ui) >= (8 * ui) ? (600 * accuracy + 4 * ui) : (8 * ui)) +
-		2 * unit_tx_byte_clk_hs + mipi->data_t_hs_trial_adjust * ui;
+	data_t_hs_trial = ((600 * accuracy + 4 * ui) >= (8 * ui) ?
+				   (600 * accuracy + 4 * ui) :
+				   (8 * ui)) +
+			  2 * unit_tx_byte_clk_hs +
+			  mipi->data_t_hs_trial_adjust * ui;
 
 	/* D-PHY Specification : 40ns + 4*UI <= data_t_hs_prepare <= 85ns + 6*UI */
 	/* clocked by TXBYTECLKHS */
@@ -285,52 +293,80 @@ static void get_dsi_phy_ctrl(struct dw_dsi *dsi,
 	/* D-PHY chip spec : clk_t_lpx + clk_t_hs_prepare > 200ns */
 	/* D-PHY Specification : clk_t_lpx >= 50ns */
 	/* clocked by TXBYTECLKHS */
-	clk_t_lpx = (uint32_t)(2000 * accuracy + 10 * accuracy + mipi->clk_t_lpx_adjust * ui - clk_t_hs_prepare);
+	clk_t_lpx = 2000 * accuracy + 10 * accuracy +
+		    mipi->clk_t_lpx_adjust * ui - clk_t_hs_prepare;
 
 	/* D-PHY Specification : clk_t_hs_zero + clk_t_hs_prepare >= 300 ns */
 	/* clocked by TXBYTECLKHS */
-	clk_t_hs_zero = (uint32_t)(3000 * accuracy + 3 * unit_tx_byte_clk_hs + mipi->clk_t_hs_zero_adjust * ui - clk_t_hs_prepare);
+	clk_t_hs_zero = 3000 * accuracy + 3 * unit_tx_byte_clk_hs +
+		        mipi->clk_t_hs_zero_adjust * ui - clk_t_hs_prepare;
 
 	/* D-PHY chip spec : data_t_lpx + data_t_hs_prepare > 200ns */
 	/* D-PHY Specification : data_t_lpx >= 50ns */
 	/* clocked by TXBYTECLKHS */
-	data_t_lpx = (uint32_t)(2000 * accuracy + 10 * accuracy + mipi->data_t_lpx_adjust * ui - data_t_hs_prepare);
+	data_t_lpx = 2000 * accuracy + 10 * accuracy +
+		     mipi->data_t_lpx_adjust * ui - data_t_hs_prepare;
 
 	/* D-PHY Specification : data_t_hs_zero + data_t_hs_prepare >= 145ns + 10*UI */
 	/* clocked by TXBYTECLKHS */
-	data_t_hs_zero = (uint32_t)(1450 * accuracy + 10 * ui +
-		3 * unit_tx_byte_clk_hs + mipi->data_t_hs_zero_adjust * ui - data_t_hs_prepare);
+	data_t_hs_zero = 1450 * accuracy + 10 * ui +
+		         3 * unit_tx_byte_clk_hs +
+		         mipi->data_t_hs_zero_adjust * ui - data_t_hs_prepare;
 
-	phy_ctrl->clk_pre_delay = DIV_ROUND_UP(clk_pre_delay, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_prepare = DIV_ROUND_UP(clk_t_hs_prepare, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_lpx = DIV_ROUND_UP(clk_t_lpx, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_zero = DIV_ROUND_UP(clk_t_hs_zero, unit_tx_byte_clk_hs);
-	phy_ctrl->clk_t_hs_trial = DIV_ROUND_UP(clk_t_hs_trial, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_pre_delay = DIV_ROUND_UP(clk_pre_delay,
+					       unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_prepare = DIV_ROUND_UP(clk_t_hs_prepare,
+						  unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_lpx = DIV_ROUND_UP(clk_t_lpx,
+					   unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_zero = DIV_ROUND_UP(clk_t_hs_zero,
+					       unit_tx_byte_clk_hs);
+	phy_ctrl->clk_t_hs_trial = DIV_ROUND_UP(clk_t_hs_trial,
+						unit_tx_byte_clk_hs);
 
-	phy_ctrl->data_post_delay = DIV_ROUND_UP(data_post_delay, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_prepare = DIV_ROUND_UP(data_t_hs_prepare, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_lpx = DIV_ROUND_UP(data_t_lpx, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_zero = DIV_ROUND_UP(data_t_hs_zero, unit_tx_byte_clk_hs);
-	phy_ctrl->data_t_hs_trial = DIV_ROUND_UP(data_t_hs_trial, unit_tx_byte_clk_hs);
+	phy_ctrl->data_post_delay = DIV_ROUND_UP(data_post_delay,
+						 unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_prepare = DIV_ROUND_UP(data_t_hs_prepare,
+						   unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_lpx = DIV_ROUND_UP(data_t_lpx,
+					    unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_zero = DIV_ROUND_UP(data_t_hs_zero,
+						unit_tx_byte_clk_hs);
+	phy_ctrl->data_t_hs_trial = DIV_ROUND_UP(data_t_hs_trial,
+						 unit_tx_byte_clk_hs);
 
-	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial + DIV_ROUND_UP(clk_post, unit_tx_byte_clk_hs);
-	phy_ctrl->data_pre_delay = phy_ctrl->clk_pre_delay + 2 + phy_ctrl->clk_t_lpx +
-		phy_ctrl->clk_t_hs_prepare + phy_ctrl->clk_t_hs_zero + 8 + DIV_ROUND_UP(clk_pre, unit_tx_byte_clk_hs);
+	phy_ctrl->clk_post_delay = phy_ctrl->data_t_hs_trial +
+				   DIV_ROUND_UP(clk_post, unit_tx_byte_clk_hs);
+	phy_ctrl->data_pre_delay = phy_ctrl->clk_pre_delay + 2 +
+				   phy_ctrl->clk_t_lpx +
+				   phy_ctrl->clk_t_hs_prepare +
+				   phy_ctrl->clk_t_hs_zero + 8 +
+				   DIV_ROUND_UP(clk_pre, unit_tx_byte_clk_hs);
 
-	phy_ctrl->clk_lane_lp2hs_time = phy_ctrl->clk_pre_delay + phy_ctrl->clk_t_lpx + phy_ctrl->clk_t_hs_prepare +
-		phy_ctrl->clk_t_hs_zero + 5 + 7;
-	phy_ctrl->clk_lane_hs2lp_time = phy_ctrl->clk_t_hs_trial + phy_ctrl->clk_post_delay + 8 + 4;
-	phy_ctrl->data_lane_lp2hs_time = phy_ctrl->data_pre_delay + phy_ctrl->data_t_lpx + phy_ctrl->data_t_hs_prepare +
-		phy_ctrl->data_t_hs_zero + 5 + 7;
+	phy_ctrl->clk_lane_lp2hs_time = phy_ctrl->clk_pre_delay +
+					phy_ctrl->clk_t_lpx +
+					phy_ctrl->clk_t_hs_prepare +
+					phy_ctrl->clk_t_hs_zero + 5 + 7;
+	phy_ctrl->clk_lane_hs2lp_time = phy_ctrl->clk_t_hs_trial +
+					phy_ctrl->clk_post_delay + 8 + 4;
+	phy_ctrl->data_lane_lp2hs_time = phy_ctrl->data_pre_delay +
+					 phy_ctrl->data_t_lpx +
+					 phy_ctrl->data_t_hs_prepare +
+					 phy_ctrl->data_t_hs_zero + 5 + 7;
 	phy_ctrl->data_lane_hs2lp_time = phy_ctrl->data_t_hs_trial + 8 + 5;
 
-	phy_ctrl->phy_stop_wait_time = phy_ctrl->clk_post_delay + 4 + phy_ctrl->clk_t_hs_trial +
-		DIV_ROUND_UP(clk_t_hs_exit, unit_tx_byte_clk_hs) - (phy_ctrl->data_post_delay + 4 + phy_ctrl->data_t_hs_trial) + 3;
+	phy_ctrl->phy_stop_wait_time = phy_ctrl->clk_post_delay + 4 +
+				       phy_ctrl->clk_t_hs_trial +
+				       DIV_ROUND_UP(clk_t_hs_exit,
+						    unit_tx_byte_clk_hs) -
+				       (phy_ctrl->data_post_delay + 4 +
+				        phy_ctrl->data_t_hs_trial) + 3;
 
 	phy_ctrl->lane_byte_clk = lane_clock / 8;
-	phy_ctrl->clk_division = (((phy_ctrl->lane_byte_clk / 2) % mipi->max_tx_esc_clk) > 0) ?
-		(uint32_t)(phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk + 1) :
-		(uint32_t)(phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk);
+	phy_ctrl->clk_division = (((phy_ctrl->lane_byte_clk / 2) %
+				    mipi->max_tx_esc_clk) > 0) ?
+		phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk + 1 :
+		phy_ctrl->lane_byte_clk / 2 / mipi->max_tx_esc_clk;
 
 	DRM_DEBUG("DPHY clock_lane and data_lane config :\n"
 		"lane_clock = %llu, n_pll=%d, m_pll=%d\n"
