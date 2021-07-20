@@ -170,6 +170,34 @@ struct mipi_phy_params {
 	u32 rg_pll_cp;				/*0x16[7:5]*/
 	u32 load_command;
 	/*********/
+
+	/****for hikey970*****/
+	u32 rg_hstx_ckg_sel;
+	u32 rg_pll_fbd_div5f;
+	u32 rg_pll_fbd_div1f;
+	u32 rg_pll_fbd_2p;
+	u32 rg_pll_enbwt;
+	u32 rg_pll_fbd_p;
+	u32 rg_pll_fbd_s;
+	u32 rg_pll_pre_div1p;
+	u32 rg_pll_pre_p;
+	u32 rg_pll_vco_750m;
+	u32 rg_pll_lpf_rs;
+	u32 rg_pll_lpf_cs;
+
+	u32 rg_cphy_div;        /* Q */
+	u32 rg_div;             /* M 0x4A[7:0] */
+	u32 rg_pre_div; /* N 0x49[0] */
+	u32 rg_320m;            /* 0x48[2] */
+	u32 rg_2p5g;            /* 0x48[1] */
+	u32 rg_0p8v;            /* 0x48[0] */
+	u32 rg_lpf_r;           /* 0x46[5:4] */
+	u32 rg_cp;                      /* 0x46[3:0] */
+	u32 t_prepare;
+	u32 t_lpx;
+	u32 t_prebegin;
+	u32 t_post;
+	/*********/
 };
 
 struct ldi_panel_info {

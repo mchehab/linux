@@ -62,7 +62,7 @@ void dsi_set_output_client(struct drm_device *dev)
 		/*
 		 * set the switch ic to select the HDMI or MIPI_DSI
 		 */
-		if (hisi_dsi_ops->version == KIRIN960_DSI)
+		if (hisi_dsi_ops->version != KIRIN620_DSI)
 			gpiod_set_value_cansleep(dsi->gpio_mux, client);
 
 		dsi->cur_client = client;
