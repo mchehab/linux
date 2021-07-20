@@ -62,14 +62,20 @@ enum dpe_channel {
 };
 
 struct dpe_hw_ctx {
+	struct drm_device *dev;
 	void __iomem *base;
 	void __iomem *noc_base;
+	void __iomem *pmctrl_base;
 
 	struct clk *dpe_axi_clk;
-	struct clk *dpe_pclk_clk;
+	struct clk *dpe_pclk_dss_clk;
 	struct clk *dpe_pri_clk;
 	struct clk *dpe_pxl0_clk;
+	struct clk *dpe_pxl1_clk;
 	struct clk *dpe_mmbuf_clk;
+	struct clk *dpe_pclk_mmbuf_clk;
+
+	struct dpe_clk_rate *dss_clk;
 
 	bool power_on;
 	int irq;
@@ -358,36 +364,9 @@ static int dpe_power_up(struct dpe_hw_ctx *ctx)
 	if (ctx->power_on)
 		return 0;
 
-	/*peri clk enable */
-	ret = clk_prepare_enable(ctx->dpe_pxl0_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dpe_pxl0_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dpe_pri_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dpe_pri_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dpe_pclk_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dpe_pclk_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dpe_axi_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dpe_axi_clk (%d)\n", ret);
-		return ret;
-	}
-
-	ret = clk_prepare_enable(ctx->dpe_mmbuf_clk);
-	if (ret) {
-		DRM_ERROR("failed to enable dpe_mmbuf_clk (%d)\n", ret);
-		return ret;
-	}
+	dpe_common_clk_enable(ctx);
+	dpe_inner_clk_enable(ctx);
+	dpe_set_clk_rate(ctx);
 
 	dpe_clk_enable(ctx);
 	dpe_interrupt_mask(ctx);
@@ -631,6 +610,133 @@ static void dpe_init(struct dpe_hw_ctx *ctx, struct drm_display_mode *mode,
 	mdelay(60);
 }
 
+int hdmi_pxl_ppll7_init(struct dpe_hw_ctx *ctx, u64 pixel_clock)
+{
+	u64 vco_min_freq_output = KIRIN970_VCO_MIN_FREQ_OUTPUT;
+	u64 refdiv, fbdiv, frac, postdiv1 = 0, postdiv2 = 0;
+	u64 dpe_pxl0_clk = 7 * 144000000UL;
+	u64 sys_clock_fref = KIRIN970_SYS_19M2;
+	u64 ppll7_freq_divider;
+	u64 vco_freq_output;
+	u64 frac_range = 0x1000000; /* 2^24 */
+	u64 pixel_clock_ori;
+	u64 pixel_clock_cur;
+	u32 ppll7ctrl0;
+	u32 ppll7ctrl1;
+	u32 ppll7ctrl0_val;
+	u32 ppll7ctrl1_val;
+	int ceil_temp;
+	int i, ret;
+	const int freq_divider_list[22] = {
+		1,  2,  3,  4,  5,  6,  7,  8,
+		9, 10, 12, 14, 15, 16, 20, 21,
+		24, 25, 30, 36, 42, 49
+	};
+	const int postdiv1_list[22] = {
+		1, 2, 3, 4, 5, 6, 7, 4, 3, 5,
+		4, 7, 5, 4, 5, 7, 6, 5, 6, 6,
+		7, 7
+	};
+	const int postdiv2_list[22] = {
+		1, 1, 1, 1, 1, 1, 1, 2, 3, 2,
+		3, 2, 3, 4, 4, 3, 4, 5, 5, 6,
+		6, 7
+	};
+
+	if (!pixel_clock) {
+		drm_err(ctx->dev, "Pixel clock can't be zero!\n");
+		return -EINVAL;
+	}
+
+	pixel_clock_ori = pixel_clock;
+	pixel_clock_cur = pixel_clock_ori;
+
+	if (pixel_clock_ori <= 255000000) {
+		pixel_clock_cur *= 7;
+		dpe_pxl0_clk /= 7;
+	} else if (pixel_clock_ori <= 415000000) {
+		pixel_clock_cur *= 5;
+		dpe_pxl0_clk /= 5;
+	} else if (pixel_clock_ori <= 594000000) {
+		pixel_clock_cur *= 3;
+		dpe_pxl0_clk /= 3;
+	} else {
+		drm_err(ctx->dev, "Clock not supported!\n");
+		return -EINVAL;
+	}
+
+	pixel_clock_cur = pixel_clock_cur / 1000;
+	if (!pixel_clock_cur) {
+		drm_err(ctx->dev, "pixel_clock_cur can't be zero!\n");
+		return -EINVAL;
+	}
+
+	ceil_temp = DIV_ROUND_UP(vco_min_freq_output, pixel_clock_cur);
+
+	ppll7_freq_divider = (u64)ceil_temp;
+
+	for (i = 0; i < ARRAY_SIZE(freq_divider_list); i++) {
+		if (freq_divider_list[i] >= ppll7_freq_divider) {
+			ppll7_freq_divider = freq_divider_list[i];
+			postdiv1 = postdiv1_list[i];
+			postdiv2 = postdiv2_list[i];
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(freq_divider_list)) {
+		drm_err(ctx->dev, "Can't find a valid setting for PLL7!\n");
+		return -EINVAL;
+	}
+
+	vco_freq_output = ppll7_freq_divider * pixel_clock_cur;
+	if (!vco_freq_output) {
+		drm_err(ctx->dev, "Can't find a valid setting for VCO_FREQ!\n");
+		return -EINVAL;
+	}
+
+	ceil_temp = DIV_ROUND_UP(400000, vco_freq_output);
+
+	refdiv = ((vco_freq_output * ceil_temp) >= 494000) ? 1 : 2;
+	fbdiv = (vco_freq_output * ceil_temp) * refdiv / sys_clock_fref;
+
+	frac = (u64)(ceil_temp * vco_freq_output - sys_clock_fref / refdiv * fbdiv) * refdiv * frac_range;
+	frac = (u64)frac / sys_clock_fref;
+
+	ppll7ctrl0 = readl(ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
+	ppll7ctrl0 &= ~MIDIA_PPLL7_FREQ_DEVIDER_MASK;
+
+	ppll7ctrl0_val = 0x0;
+	ppll7ctrl0_val |= (u32)(postdiv2 << 23 | postdiv1 << 20 | fbdiv << 8 | refdiv << 2);
+	ppll7ctrl0_val &= MIDIA_PPLL7_FREQ_DEVIDER_MASK;
+	ppll7ctrl0 |= ppll7ctrl0_val;
+
+	writel(ppll7ctrl0, ctx->pmctrl_base + MIDIA_PPLL7_CTRL0);
+
+	ppll7ctrl1 = readl(ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
+	ppll7ctrl1 &= ~MIDIA_PPLL7_FRAC_MODE_MASK;
+
+	ppll7ctrl1_val = 0x0;
+	ppll7ctrl1_val |= (u32)(1 << 25 | 0 << 24 | frac);
+	ppll7ctrl1_val &= MIDIA_PPLL7_FRAC_MODE_MASK;
+	ppll7ctrl1 |= ppll7ctrl1_val;
+
+	writel(ppll7ctrl1, ctx->pmctrl_base + MIDIA_PPLL7_CTRL1);
+
+	drm_dbg(ctx->dev, "PLL7 set to (0x%0x, 0x%0x)\n",
+		ppll7ctrl0, ppll7ctrl1);
+
+	ret = clk_set_rate(ctx->dpe_pxl0_clk, dpe_pxl0_clk);
+	if (ret < 0)
+		drm_err(ctx->dev, "%s: clk_set_rate(dpe_pxl0_clk, %llu) failed: %d!\n",
+			  __func__, dpe_pxl0_clk, ret);
+	else
+		drm_dbg(ctx->dev, "dpe_pxl0_clk:[%llu]->[%lu].\n",
+			dpe_pxl0_clk, clk_get_rate(ctx->dpe_pxl0_clk));
+
+	return ret;
+}
+
 static void dpe_ldi_set_mode(struct dpe_hw_ctx *ctx,
 			     struct drm_display_mode *mode,
 			     struct drm_display_mode *adj_mode)
@@ -638,26 +744,27 @@ static void dpe_ldi_set_mode(struct dpe_hw_ctx *ctx,
 	int ret;
 	u32 clk_Hz;
 
-	switch (mode->clock) {
-	case 148500:
+	if (mode->clock == 148500)
 		clk_Hz = 144000 * 1000UL;
-		break;
-	case 83496:
-		clk_Hz = 80000 * 1000UL;
-		break;
-	case 74440:
+	else if (mode->clock == 83496)
+		clk_Hz = 84000 * 1000UL;
+	else if (mode->clock == 74440)
 		clk_Hz = 72000 * 1000UL;
-		break;
-	case 74250:
+	else if (mode->clock == 74250)
 		clk_Hz = 72000 * 1000UL;
-		break;
-	default:
+	else
 		clk_Hz = mode->clock * 1000UL;
-	}
 
-	ret = clk_set_rate(ctx->dpe_pxl0_clk, clk_Hz);
+	/* Adjust pixel clock for compatibility with 10.1 inch special displays. */
+	if (mode->clock == 148500 &&
+	    mode->width_mm == 532 &&
+	    mode->height_mm == 299)
+		clk_Hz = 152000 * 1000UL;
+
+	ret = hdmi_pxl_ppll7_init(ctx, clk_Hz);
 	if (ret)
-		DRM_ERROR("failed to set pixel clk %dHz (%d)\n", clk_Hz, ret);
+		DRM_ERROR("failed to set pixel clock to %dHz (%d)\n",
+			  clk_Hz, ret);
 
 	adj_mode->clock = clk_get_rate(ctx->dpe_pxl0_clk) / 1000;
 }
