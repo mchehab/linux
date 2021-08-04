@@ -666,10 +666,10 @@
 			clock-names = "apb_pclk";
 		};
 
-		its_pcie: interrupt-controller@f4000000 {
+		its_pcie: interrupt-controller@f5100000 {
+			reg = <0x0 0xf5100000 0x0 0x100000>;
 			compatible = "arm,gic-v3-its";
 			msi-controller;
-			reg = <0x0 0xf5100000 0x0 0x100000>;
 		};
 
 		pcie_phy: pcie-phy@fc000000 {
@@ -701,8 +701,7 @@
 			      <0x0 0xfc180000 0x0 0x1000>,
 			      <0x0 0xf5000000 0x0 0x2000>;
 			reg-names = "dbi", "apb", "config";
-			bus-range = <0x0  0x1>;
-			msi-parent = <&its_pcie>;
+			bus-range = <0x00 0xff>;
 			#address-cells = <3>;
 			#size-cells = <2>;
 			device_type = "pci";
@@ -733,9 +732,11 @@
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
+				bus-range = <0x01 0xff>;
+				msi-parent = <&its_pcie>;
 
 				pcie@1,0 { // Lane 4: M.2
-					reg = <0x800 0 0 0 0>;
+					reg = <0x010800 0 0 0 0>;
 					compatible = "pciclass,0604";
 					device_type = "pci";
 					reset-gpios = <&gpio3 1 0>;
@@ -745,7 +746,7 @@
 				};
 
 				pcie@5,0 { // Lane 5: Mini PCIe
-					reg = <0x2800 0 0 0 0>;
+					reg = <0x012800 0 0 0 0>;
 					compatible = "pciclass,0604";
 					device_type = "pci";
 					reset-gpios = <&gpio27 4 0 >;
@@ -755,7 +756,7 @@
 				};
 
 				pcie@7,0 { // Lane 6: Ethernet
-					reg = <0x3800 0 0 0 0>;
+					reg = <0x013800 0 0 0 0>;
 					compatible = "pciclass,0604";
 					device_type = "pci";
 					reset-gpios = <&gpio25 2 0 >;
