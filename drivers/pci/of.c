@@ -18,12 +18,18 @@
 #ifdef CONFIG_PCI
 void pci_set_of_node(struct pci_dev *dev)
 {
-	if (!dev->bus->dev.of_node)
+	if (!dev->bus->dev.of_node) {
+		dev_dbg(&dev->dev, "%s: BUS of_node is null\n",
+			__func__, dev->bus->dev.of_node);
 		return;
+	}
 	dev->dev.of_node = of_pci_find_child_device(dev->bus->dev.of_node,
 						    dev->devfn);
 	if (dev->dev.of_node)
 		dev->dev.fwnode = &dev->dev.of_node->fwnode;
+
+	dev_dbg(&dev->dev, "%s: of_node: %pOF\n",
+		__func__, dev->dev.of_node);
 }
 
 void pci_release_of_node(struct pci_dev *dev)
@@ -45,6 +51,7 @@ void pci_set_bus_of_node(struct pci_bus *bus)
 			bus->self->external_facing = true;
 	}
 
+	dev_dbg(&bus->dev, "%s: of_node: %pOF\n", __func__, node);
 	bus->dev.of_node = node;
 
 	if (bus->dev.of_node)
