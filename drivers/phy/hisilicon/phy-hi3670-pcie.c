@@ -12,7 +12,7 @@
  *	Manivannan Sadhasivam <mani@kernel.org>
  *
  * Based on:
- * 	https://lore.kernel.org/lkml/4c9d6581478aa966698758c0420933f5defab4dd.1612335031.git.mchehab+huawei@kernel.org/
+ *	https://lore.kernel.org/lkml/4c9d6581478aa966698758c0420933f5defab4dd.1612335031.git.mchehab+huawei@kernel.org/
  */
 
 #include <linux/clk.h>
@@ -25,84 +25,133 @@
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 
-#define AXI_CLK_FREQ			207500000
-#define REF_CLK_FREQ			100000000
+#define AXI_CLK_FREQ				207500000
+#define REF_CLK_FREQ				100000000
 
 /* PCIe CTRL registers */
-#define SOC_PCIECTRL_CTRL0_ADDR   0x000
-#define SOC_PCIECTRL_CTRL1_ADDR   0x004
-#define SOC_PCIECTRL_CTRL7_ADDR   0x01c
-#define SOC_PCIECTRL_CTRL12_ADDR  0x030
-#define SOC_PCIECTRL_CTRL20_ADDR  0x050
-#define SOC_PCIECTRL_CTRL21_ADDR  0x054
-#define SOC_PCIECTRL_STATE0_ADDR  0x400
+#define SOC_PCIECTRL_CTRL0_ADDR			0x000
+#define SOC_PCIECTRL_CTRL1_ADDR			0x004
+#define SOC_PCIECTRL_CTRL7_ADDR			0x01c
+#define SOC_PCIECTRL_CTRL12_ADDR		0x030
+#define SOC_PCIECTRL_CTRL20_ADDR		0x050
+#define SOC_PCIECTRL_CTRL21_ADDR		0x054
+#define SOC_PCIECTRL_STATE0_ADDR		0x400
+
+#define PCIE_OUTPUT_PULL_BITS			GENMASK(3, 0)
+#define SOC_PCIECTRL_CTRL20_2P_MEM_CTRL		0x02605550
+#define SOC_PCIECTRL_CTRL21_DEFAULT		0x20000070
+#define PCIE_PULL_UP_SYS_AUX_PWR_DET		BIT(10)
+#define PCIE_OUTPUT_PULL_DOWN			BIT(1)
 
 /* PCIe PHY registers */
-#define SOC_PCIEPHY_CTRL0_ADDR    0x000
-#define SOC_PCIEPHY_CTRL1_ADDR    0x004
-#define SOC_PCIEPHY_CTRL2_ADDR    0x008
-#define SOC_PCIEPHY_CTRL3_ADDR    0x00c
-#define SOC_PCIEPHY_CTRL38_ADDR   0x0098
-#define SOC_PCIEPHY_STATE0_ADDR   0x400
+#define SOC_PCIEPHY_CTRL0_ADDR			0x000
+#define SOC_PCIEPHY_CTRL1_ADDR			0x004
+#define SOC_PCIEPHY_CTRL2_ADDR			0x008
+#define SOC_PCIEPHY_CTRL3_ADDR			0x00c
+#define SOC_PCIEPHY_CTRL38_ADDR			0x0098
+#define SOC_PCIEPHY_STATE0_ADDR			0x400
 
-#define PCIE_LINKUP_ENABLE            (0x8020)
-#define PCIE_ELBI_SLV_DBI_ENABLE      (0x1 << 21)
-#define PCIE_LTSSM_ENABLE_BIT         (0x1 << 11)
-#define PCIEPHY_RESET_BIT             (0x1 << 17)
-#define PCIEPHY_PIPE_LINE0_RESET_BIT  (0x1 << 19)
+#define PORT_MSI_CTRL_ADDR			0x820
+#define PORT_MSI_CTRL_UPPER_ADDR		0x824
+#define PORT_MSI_CTRL_INT0_ENABLE		0x828
 
-#define PORT_MSI_CTRL_ADDR            0x820
-#define PORT_MSI_CTRL_UPPER_ADDR      0x824
-#define PORT_MSI_CTRL_INT0_ENABLE     0x828
+#define RAWLANEN_DIG_PCS_XF_TX_OVRD_IN_1	0xc004
+#define SUP_DIG_LVL_OVRD_IN			0x003c
+#define LANEN_DIG_ASIC_TX_OVRD_IN_1		0x4008
+#define LANEN_DIG_ASIC_TX_OVRD_IN_2		0x400c
 
-#define EYEPARAM_NOCFG 0xFFFFFFFF
-#define RAWLANEN_DIG_PCS_XF_TX_OVRD_IN_1 0x3001
-#define SUP_DIG_LVL_OVRD_IN 0xf
-#define LANEN_DIG_ASIC_TX_OVRD_IN_1 0x1002
-#define LANEN_DIG_ASIC_TX_OVRD_IN_2 0x1003
+#define PCIE_LINKUP_ENABLE			0x8020
+#define PCIE_ELBI_SLV_DBI_ENABLE		BIT(21)
+#define PCIE_LTSSM_ENABLE_BIT			BIT(11)
+#define PCIEPHY_RESET_BIT			BIT(17)
+#define PCIEPHY_PIPE_LINE0_RESET_BIT		BIT(19)
+#define PCIE_TXDETECT_RX_FAIL			BIT(2)
+#define PCIE_CLK_SOURCE				BIT(8)
+#define PCIE_IS_CLOCK_STABLE			BIT(19)
+#define PCIE_PULL_DOWN_PHY_TEST_POWERDOWN	BIT(22)
+#define PCIE_DEASSERT_CONTROLLER_PERST		BIT(2)
+
+#define EYEPARAM_NOCFG				0xffffffff
+#define EYE_PARM0_MASK				GENMASK(8, 6)
+#define EYE_PARM1_MASK				GENMASK(11, 8)
+#define EYE_PARM2_MASK				GENMASK(5, 0)
+#define EYE_PARM3_MASK				GENMASK(12, 7)
+#define EYE_PARM4_MASK				GENMASK(14, 9)
+#define EYE_PARM0_EN				BIT(9)
+#define EYE_PARM1_EN				BIT(12)
+#define EYE_PARM2_EN				BIT(6)
+#define EYE_PARM3_EN				BIT(13)
+#define EYE_PARM4_EN				BIT(15)
 
 /* hi3670 pciephy register */
-#define SOC_PCIEPHY_MMC1PLL_CTRL1  0xc04
-#define SOC_PCIEPHY_MMC1PLL_CTRL16 0xC40
-#define SOC_PCIEPHY_MMC1PLL_CTRL17 0xC44
-#define SOC_PCIEPHY_MMC1PLL_CTRL20 0xC50
-#define SOC_PCIEPHY_MMC1PLL_CTRL21 0xC54
-#define SOC_PCIEPHY_MMC1PLL_STAT0  0xE00
+#define APB_PHY_START_ADDR			0x40000
+#define SOC_PCIEPHY_MMC1PLL_CTRL1		0xc04
+#define SOC_PCIEPHY_MMC1PLL_CTRL16		0xC40
+#define SOC_PCIEPHY_MMC1PLL_CTRL17		0xC44
+#define SOC_PCIEPHY_MMC1PLL_CTRL20		0xC50
+#define SOC_PCIEPHY_MMC1PLL_CTRL21		0xC54
+#define SOC_PCIEPHY_MMC1PLL_STAT0		0xE00
 
-#define CRGPERIPH_PEREN12   0x470
-#define CRGPERIPH_PERDIS12  0x474
-#define CRGPERIPH_PCIECTRL0 0x800
+#define CRGPERIPH_PEREN12			0x470
+#define CRGPERIPH_PERDIS12			0x474
+#define CRGPERIPH_PCIECTRL0			0x800
+
+#define PCIE_FNPLL_FBDIV_MASK			GENMASK(27, 16)
+#define PCIE_FNPLL_FRACDIV_MASK			GENMASK(23, 0)
+#define PCIE_FNPLL_POSTDIV1_MASK		GENMASK(10, 8)
+#define PCIE_FNPLL_POSTDIV2_MASK		GENMASK(14, 12)
+#define PCIE_FNPLL_PLL_MODE_MASK		BIT(25)
+
+#define PCIE_FNPLL_DLL_EN			BIT(27)
+#define PCIE_FNPLL_FBDIV			0xd0
+#define PCIE_FNPLL_FRACDIV			0x555555
+#define PCIE_FNPLL_POSTDIV1			0x5
+#define PCIE_FNPLL_POSTDIV2			0x4
+#define PCIE_FNPLL_PLL_MODE			0x0
+
+#define PCIE_PHY_MMC1PLL			0x20
+#define PCIE_PHY_CHOOSE_FNPLL			BIT(27)
+#define PCIE_PHY_MMC1PLL_DISABLE		BIT(0)
+#define PCIE_PHY_PCIEPL_BP			BIT(16)
 
 /* define ie,oe cfg */
-#define IO_IE_EN_HARD_BYPASS         (0x1 << 27)
-#define IO_OE_EN_HARD_BYPASS         (0x1 << 11)
-#define IO_HARD_CTRL_DEBOUNCE_BYPASS (0x1 << 10)
-#define IO_OE_GT_MODE                (0x2 << 7)
-#define DEBOUNCE_WAITCFG_IN          (0xf << 20)
-#define DEBOUNCE_WAITCFG_OUT         (0xf << 13)
+#define IO_OE_HARD_GT_MODE			BIT(1)
+#define IO_IE_EN_HARD_BYPASS			BIT(27)
+#define IO_OE_EN_HARD_BYPASS			BIT(11)
+#define IO_HARD_CTRL_DEBOUNCE_BYPASS		BIT(10)
+#define IO_OE_GT_MODE				BIT(8)
+#define DEBOUNCE_WAITCFG_IN			GENMASK(23, 20)
+#define DEBOUNCE_WAITCFG_OUT			GENMASK(16, 13)
+
+#define IO_HP_DEBOUNCE_GT			(BIT(12) | BIT(15))
+#define IO_PHYREF_SOFT_GT_MODE			BIT(14)
+#define IO_REF_SOFT_GT_MODE			BIT(13)
+#define IO_REF_HARD_GT_MODE			BIT(0)
 
 /* noc power domain */
-#define NOC_POWER_IDLEREQ_1 0x38c
-#define NOC_POWER_IDLE_1    0x394
-#define NOC_PW_MASK         0x10000
-#define NOC_PW_SET_BIT      0x1
+#define NOC_POWER_IDLEREQ_1			0x38c
+#define NOC_POWER_IDLE_1			0x394
+#define NOC_PW_MASK				0x10000
+#define NOC_PW_SET_BIT				0x1
 
-#define NUM_EYEPARAM		5
+#define NUM_EYEPARAM				5
 
 /* info located in sysctrl */
-#define SCTRL_PCIE_CMOS_OFFSET	0x60
-#define SCTRL_PCIE_CMOS_BIT	0x10
-#define SCTRL_PCIE_ISO_OFFSET	0x44
-#define SCTRL_PCIE_ISO_BIT	0x30
-#define SCTRL_PCIE_HPCLK_OFFSET	0x190
-#define SCTRL_PCIE_HPCLK_BIT	0x184000
-#define SCTRL_PCIE_OE_OFFSET	0x14a
-#define PCIE_DEBOUNCE_PARAM	0xF0F400
-#define PCIE_OE_BYPASS		(0x3 << 28)
+#define SCTRL_PCIE_CMOS_OFFSET			0x60
+#define SCTRL_PCIE_CMOS_BIT			0x10
+#define SCTRL_PCIE_ISO_OFFSET			0x44
+#define SCTRL_PCIE_ISO_BIT			0x30
+#define SCTRL_PCIE_HPCLK_OFFSET			0x190
+#define SCTRL_PCIE_HPCLK_BIT			0x184000
+#define SCTRL_PCIE_OE_OFFSET			0x14a
+#define PCIE_DEBOUNCE_PARAM			0xf0f400
+#define PCIE_OE_BYPASS				GENMASK(29, 28)
 
 /* peri_crg ctrl */
-#define CRGCTRL_PCIE_ASSERT_OFFSET	0x88
-#define CRGCTRL_PCIE_ASSERT_BIT		0x8c000000
+#define CRGCTRL_PCIE_ASSERT_OFFSET		0x88
+#define CRGCTRL_PCIE_ASSERT_BIT			0x8c000000
+
+#define FNPLL_HAS_LOCKED			BIT(4)
 
 /* Time for delay */
 #define PIPE_CLK_WAIT_MIN	550
@@ -111,6 +160,10 @@
 #define TIME_CMOS_MAX		105
 #define TIME_PHY_PD_MIN		10
 #define TIME_PHY_PD_MAX		11
+
+#define PIPE_CLK_STABLE_TIME	100
+#define PLL_CTRL_WAIT_TIME	200
+#define NOC_POWER_TIME		100
 
 struct hi3670_pcie_phy {
 	struct device	*dev;
@@ -127,29 +180,28 @@ struct hi3670_pcie_phy {
 	u32		eye_param[NUM_EYEPARAM];
 };
 
-
 /* Registers in PCIePHY */
-static inline void hi3670_apb_phy_writel(struct hi3670_pcie_phy *phy,
-					 u32 val, u32 reg)
+static inline void hi3670_apb_phy_writel(struct hi3670_pcie_phy *phy, u32 val,
+					 u32 reg)
 {
-	writel(val, phy->base + 0x40000 + reg);
+	writel(val, phy->base + APB_PHY_START_ADDR + reg);
 }
 
 static inline u32 hi3670_apb_phy_readl(struct hi3670_pcie_phy *phy, u32 reg)
 {
-	return readl(phy->base + 0x40000 + reg);
+	return readl(phy->base + APB_PHY_START_ADDR + reg);
 }
 
 static inline void kirin_apb_natural_phy_writel(struct hi3670_pcie_phy *phy,
 						u32 val, u32 reg)
 {
-	writel(val, phy->base + reg * 4);
+	writel(val, phy->base + reg);
 }
 
 static inline u32 kirin_apb_natural_phy_readl(struct hi3670_pcie_phy *phy,
 					      u32 reg)
 {
-	return readl(phy->base + reg * 4);
+	return readl(phy->base + reg);
 }
 
 static void hi3670_pcie_phy_oe_enable(struct hi3670_pcie_phy *phy, bool enable)
@@ -187,35 +239,44 @@ static void hi3670_pcie_set_eyeparam(struct hi3670_pcie_phy *phy)
 {
 	u32 val;
 
-	val = kirin_apb_natural_phy_readl(phy, RAWLANEN_DIG_PCS_XF_TX_OVRD_IN_1);
+	val = kirin_apb_natural_phy_readl(phy,
+					  RAWLANEN_DIG_PCS_XF_TX_OVRD_IN_1);
 
 	if (phy->eye_param[1] != EYEPARAM_NOCFG) {
-		val &= (~0xf00);
-		val |= (phy->eye_param[1] << 8) | (0x1 << 12);
+		val &= ~EYE_PARM1_MASK;
+		val |= FIELD_PREP(EYE_PARM1_MASK, phy->eye_param[1]);
+		val |= EYE_PARM1_EN;
 	}
-	kirin_apb_natural_phy_writel(phy, val, RAWLANEN_DIG_PCS_XF_TX_OVRD_IN_1);
+	kirin_apb_natural_phy_writel(phy, val,
+				     RAWLANEN_DIG_PCS_XF_TX_OVRD_IN_1);
 
 	val = kirin_apb_natural_phy_readl(phy, LANEN_DIG_ASIC_TX_OVRD_IN_2);
-	val &= (~0x1FBF);
-	if (phy->eye_param[2] != EYEPARAM_NOCFG)
-		val |= (phy->eye_param[2]<< 0) | (0x1 << 6);
+	val &= ~(EYE_PARM2_MASK | EYE_PARM3_MASK);
+	if (phy->eye_param[2] != EYEPARAM_NOCFG) {
+		val |= FIELD_PREP(EYE_PARM2_MASK, phy->eye_param[2]);
+		val |= EYE_PARM2_EN;
+	}
 
-	if (phy->eye_param[3] != EYEPARAM_NOCFG)
-		val |= (phy->eye_param[3] << 7) | (0x1 << 13);
+	if (phy->eye_param[3] != EYEPARAM_NOCFG) {
+		val |= FIELD_PREP(EYE_PARM3_MASK, phy->eye_param[3]);
+		val |= EYE_PARM3_EN;
+	}
 
 	kirin_apb_natural_phy_writel(phy, val, LANEN_DIG_ASIC_TX_OVRD_IN_2);
 
 	val = kirin_apb_natural_phy_readl(phy, SUP_DIG_LVL_OVRD_IN);
 	if (phy->eye_param[0] != EYEPARAM_NOCFG) {
-		val &= (~0x1C0);
-		val |= (phy->eye_param[0] << 6) | (0x1 << 9);
+		val &= ~EYE_PARM0_MASK;
+		val |= FIELD_PREP(EYE_PARM0_MASK, phy->eye_param[0]);
+		val |= EYE_PARM0_EN;
 	}
 	kirin_apb_natural_phy_writel(phy, val, SUP_DIG_LVL_OVRD_IN);
 
 	val = kirin_apb_natural_phy_readl(phy, LANEN_DIG_ASIC_TX_OVRD_IN_1);
 	if (phy->eye_param[4] != EYEPARAM_NOCFG) {
-		val &= (~0x7E00);
-		val |= (phy->eye_param[4] << 9) | (0x1 << 15);
+		val &= ~EYE_PARM4_MASK;
+		val |= FIELD_PREP(EYE_PARM4_MASK, phy->eye_param[4]);
+		val |= EYE_PARM4_EN;
 	}
 	kirin_apb_natural_phy_writel(phy, val, LANEN_DIG_ASIC_TX_OVRD_IN_1);
 }
@@ -225,18 +286,17 @@ static void hi3670_pcie_natural_cfg(struct hi3670_pcie_phy *phy)
 	u32 val;
 
 	/* change 2p mem_ctrl */
-	regmap_write(phy->apb, SOC_PCIECTRL_CTRL20_ADDR, 0x02605550);
+	regmap_write(phy->apb, SOC_PCIECTRL_CTRL20_ADDR,
+		     SOC_PCIECTRL_CTRL20_2P_MEM_CTRL);
 
-	/* pull up sys_aux_pwr_det */
 	regmap_read(phy->apb, SOC_PCIECTRL_CTRL7_ADDR, &val);
-	val |= (0x1 << 10);
+	val |= PCIE_PULL_UP_SYS_AUX_PWR_DET;
 	regmap_write(phy->apb, SOC_PCIECTRL_CTRL7_ADDR, val);
 
 	/* output, pull down */
 	regmap_read(phy->apb, SOC_PCIECTRL_CTRL12_ADDR, &val);
-	val &= ~(0x3 << 2);
-	val |= (0x1 << 1);
-	val &= ~(0x1 << 0);
+	val &= ~PCIE_OUTPUT_PULL_BITS;
+	val |= PCIE_OUTPUT_PULL_DOWN;
 	regmap_write(phy->apb, SOC_PCIECTRL_CTRL12_ADDR, val);
 
 	/* Handle phy_reset and lane0_reset to HW */
@@ -247,7 +307,7 @@ static void hi3670_pcie_natural_cfg(struct hi3670_pcie_phy *phy)
 
 	/* fix chip bug: TxDetectRx fail */
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_CTRL38_ADDR);
-	val |= (0x1 << 2);
+	val |= PCIE_TXDETECT_RX_FAIL;
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_CTRL38_ADDR);
 }
 
@@ -255,91 +315,87 @@ static void hi3670_pcie_pll_init(struct hi3670_pcie_phy *phy)
 {
 	u32 val;
 
-	/* choose FNPLL */
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL1);
-	val |= (0x1 << 27);
+	val |= PCIE_PHY_CHOOSE_FNPLL;
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL1);
 
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL16);
-	val &= 0xF000FFFF;
-	/* fnpll fbdiv = 0xD0 */
-	val |= (0xd0 << 16);
+	val &= ~PCIE_FNPLL_FBDIV_MASK;
+	val |= FIELD_PREP(PCIE_FNPLL_FBDIV_MASK, PCIE_FNPLL_FBDIV);
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL16);
 
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL17);
-	val &= 0xFF000000;
-	/* fnpll fracdiv = 0x555555 */
-	val |= (0x555555 << 0);
+	val &= PCIE_FNPLL_FRACDIV_MASK;
+	val |= FIELD_PREP(PCIE_FNPLL_FRACDIV_MASK, PCIE_FNPLL_FRACDIV);
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL17);
 
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL20);
-	val &= 0xF5FF88FF;
-	/* fnpll dll_en = 0x1 */
-	val |= (0x1 << 27);
-	/* fnpll postdiv1 = 0x5 */
-	val |= (0x5 << 8);
-	/* fnpll postdiv2 = 0x4 */
-	val |= (0x4 << 12);
-	/* fnpll pll_mode = 0x0 */
-	val &= ~(0x1 << 25);
+	val &= ~(PCIE_FNPLL_POSTDIV1_MASK | PCIE_FNPLL_POSTDIV2_MASK |
+		 PCIE_FNPLL_PLL_MODE_MASK | PCIE_FNPLL_DLL_EN);
+	val |= PCIE_FNPLL_DLL_EN;
+	val |= FIELD_PREP(PCIE_FNPLL_POSTDIV1_MASK, PCIE_FNPLL_POSTDIV1);
+	val |= FIELD_PREP(PCIE_FNPLL_POSTDIV2_MASK, PCIE_FNPLL_POSTDIV2);
+	val |= FIELD_PREP(PCIE_FNPLL_PLL_MODE_MASK, PCIE_FNPLL_PLL_MODE);
+
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL20);
 
-	hi3670_apb_phy_writel(phy, 0x20, SOC_PCIEPHY_MMC1PLL_CTRL21);
+	hi3670_apb_phy_writel(phy, PCIE_PHY_MMC1PLL,
+			      SOC_PCIEPHY_MMC1PLL_CTRL21);
 }
 
 static int hi3670_pcie_pll_ctrl(struct hi3670_pcie_phy *phy, bool enable)
 {
 	struct device *dev = phy->dev;
 	u32 val;
-	int time = 200;
+	int time = PLL_CTRL_WAIT_TIME;
 
 	if (enable) {
 		/* pd = 0 */
 		val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL16);
-		val &= ~(0x1 << 0);
+		val &= ~PCIE_PHY_MMC1PLL_DISABLE;
 		hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL16);
 
 		val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_STAT0);
 
 		/* choose FNPLL */
-		while (!(val & 0x10)) {
+		while (!(val & FNPLL_HAS_LOCKED)) {
 			if (!time) {
 				dev_err(dev, "wait for pll_lock timeout\n");
-				return -1;
+				return -EINVAL;
 			}
-			time --;
+			time--;
 			udelay(1);
-			val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_STAT0);
+			val = hi3670_apb_phy_readl(phy,
+						   SOC_PCIEPHY_MMC1PLL_STAT0);
 		}
 
-		/* pciepll_bp = 0 */
 		val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL20);
-		val &= ~(0x1 << 16);
+		val &= ~PCIE_PHY_PCIEPL_BP;
 		hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL20);
 
 	} else {
-		/* pd = 1 */
 		val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL16);
-		val |= (0x1 << 0);
+		val |= PCIE_PHY_MMC1PLL_DISABLE;
 		hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL16);
 
-		/* pciepll_bp = 1 */
 		val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_MMC1PLL_CTRL20);
-		val |= (0x1 << 16);
+		val |= PCIE_PHY_PCIEPL_BP;
 		hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_MMC1PLL_CTRL20);
 	}
 
-	 return 0;
+	return 0;
 }
 
 static void hi3670_pcie_hp_debounce_gt(struct hi3670_pcie_phy *phy, bool open)
 {
 	if (open)
 		/* gt_clk_pcie_hp/gt_clk_pcie_debounce open */
-		regmap_write(phy->crgctrl, CRGPERIPH_PEREN12, 0x9000);
+		regmap_write(phy->crgctrl, CRGPERIPH_PEREN12,
+			     IO_HP_DEBOUNCE_GT);
 	else
 		/* gt_clk_pcie_hp/gt_clk_pcie_debounce close */
-		regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12, 0x9000);
+		regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12,
+			     IO_HP_DEBOUNCE_GT);
 }
 
 static void hi3670_pcie_phyref_gt(struct hi3670_pcie_phy *phy, bool open)
@@ -349,21 +405,21 @@ static void hi3670_pcie_phyref_gt(struct hi3670_pcie_phy *phy, bool open)
 	regmap_read(phy->crgctrl, CRGPERIPH_PCIECTRL0, &val);
 
 	if (open)
-		val &= ~(0x1 << 1); //enable hard gt mode
+		val &= ~IO_OE_HARD_GT_MODE; // enable hard gt mode
 	else
-		val |= (0x1 << 1); //disable hard gt mode
+		val |= IO_OE_HARD_GT_MODE; // disable hard gt mode
 
 	regmap_write(phy->crgctrl, CRGPERIPH_PCIECTRL0, val);
 
 	/* disable soft gt mode */
-	regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12, 0x4000);
+	regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12, IO_PHYREF_SOFT_GT_MODE);
 }
 
 static void hi3670_pcie_oe_ctrl(struct hi3670_pcie_phy *phy, bool en_flag)
 {
 	unsigned int val;
 
-	regmap_read(phy->crgctrl , CRGPERIPH_PCIECTRL0, &val);
+	regmap_read(phy->crgctrl, CRGPERIPH_PCIECTRL0, &val);
 
 	/* set ie cfg */
 	val |= IO_IE_EN_HARD_BYPASS;
@@ -390,29 +446,32 @@ static void hi3670_pcie_ioref_gt(struct hi3670_pcie_phy *phy, bool open)
 	unsigned int val;
 
 	if (open) {
-		regmap_write(phy->apb, SOC_PCIECTRL_CTRL21_ADDR, 0x20000070);
+		regmap_write(phy->apb, SOC_PCIECTRL_CTRL21_ADDR,
+			     SOC_PCIECTRL_CTRL21_DEFAULT);
 
 		hi3670_pcie_oe_ctrl(phy, true);
 
 		/* en hard gt mode */
 		regmap_read(phy->crgctrl, CRGPERIPH_PCIECTRL0, &val);
-		val &= ~(0x1 << 0);
+		val &= ~IO_REF_HARD_GT_MODE;
 		regmap_write(phy->crgctrl, CRGPERIPH_PCIECTRL0, val);
 
 		/* disable soft gt mode */
-		regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12, 0x2000);
+		regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12,
+			     IO_REF_SOFT_GT_MODE);
 
 	} else {
 		/* disable hard gt mode */
 		regmap_read(phy->crgctrl, CRGPERIPH_PCIECTRL0, &val);
-		val |= (0x1 << 0);
+		val |= IO_REF_HARD_GT_MODE;
 		regmap_write(phy->crgctrl, CRGPERIPH_PCIECTRL0, val);
 
 		/* disable soft gt mode */
-		regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12, 0x2000);
+		regmap_write(phy->crgctrl, CRGPERIPH_PERDIS12,
+			     IO_REF_SOFT_GT_MODE);
 
 		hi3670_pcie_oe_ctrl(phy, false);
-       }
+	}
 }
 
 static int hi3670_pcie_allclk_ctrl(struct hi3670_pcie_phy *phy, bool clk_on)
@@ -426,7 +485,7 @@ static int hi3670_pcie_allclk_ctrl(struct hi3670_pcie_phy *phy, bool clk_on)
 
 	/* choose 100MHz clk src: Bit[8]==1 pad, Bit[8]==0 pll */
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_CTRL1_ADDR);
-	val &= ~(0x1 << 8);
+	val &= ~PCIE_CLK_SOURCE;
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_CTRL1_ADDR);
 
 	hi3670_pcie_pll_init(phy);
@@ -434,7 +493,7 @@ static int hi3670_pcie_allclk_ctrl(struct hi3670_pcie_phy *phy, bool clk_on)
 	ret = hi3670_pcie_pll_ctrl(phy, true);
 	if (ret) {
 		dev_err(dev, "Failed to enable pll\n");
-		return -1;
+		return -EINVAL;
 	}
 	hi3670_pcie_hp_debounce_gt(phy, true);
 	hi3670_pcie_phyref_gt(phy, true);
@@ -462,13 +521,13 @@ static bool is_pipe_clk_stable(struct hi3670_pcie_phy *phy)
 {
 	struct device *dev = phy->dev;
 	u32 val;
-	u32 time = 100;
-	u32 pipe_clk_stable = 0x1 << 19;
+	u32 time = PIPE_CLK_STABLE_TIME;
+	u32 pipe_clk_stable = PCIE_IS_CLOCK_STABLE;
 
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_STATE0_ADDR);
 	while (val & pipe_clk_stable) {
 		mdelay(1);
-		if (time == 0) {
+		if (!time) {
 			dev_err(dev, "PIPE clk is not stable\n");
 			return false;
 		}
@@ -482,7 +541,7 @@ static bool is_pipe_clk_stable(struct hi3670_pcie_phy *phy)
 static int hi3670_pcie_noc_power(struct hi3670_pcie_phy *phy, bool enable)
 {
 	struct device *dev = phy->dev;
-	u32 time = 100;
+	u32 time = NOC_POWER_TIME;
 	unsigned int val = NOC_PW_MASK;
 	int rst;
 
@@ -494,13 +553,13 @@ static int hi3670_pcie_noc_power(struct hi3670_pcie_phy *phy, bool enable)
 
 	regmap_write(phy->pmctrl, NOC_POWER_IDLEREQ_1, val);
 
-	time = 100;
+	time = NOC_POWER_TIME;
 	regmap_read(phy->pmctrl, NOC_POWER_IDLE_1, &val);
-	while((val & NOC_PW_SET_BIT) != rst) {
+	while ((val & NOC_PW_SET_BIT) != rst) {
 		udelay(10);
 		if (!time) {
 			dev_err(dev, "Failed to reverse noc power-status\n");
-			return -1;
+			return -EINVAL;
 		}
 		time--;
 		regmap_read(phy->pmctrl, NOC_POWER_IDLE_1, &val);
@@ -524,11 +583,11 @@ static int hi3670_pcie_get_resources_from_pcie(struct hi3670_pcie_phy *phy)
 
 	pcie_dev = bus_find_device_by_of_node(&platform_bus_type, pcie_port);
 	if (!pcie_dev) {
-                dev_err(dev, "Didn't find pcie device\n");
-                return -ENODEV;
-        }
+		dev_err(dev, "Didn't find pcie device\n");
+		return -ENODEV;
+	}
 
-        /*
+	/*
 	 * We might just use NULL instead of the APB name, as the
 	 * pcie-kirin currently registers directly just one regmap (although
 	 * the DWC driver register other regmaps).
@@ -544,7 +603,6 @@ static int hi3670_pcie_get_resources_from_pcie(struct hi3670_pcie_phy *phy)
 
 	return 0;
 }
-
 
 static int kirin_pcie_clk_ctrl(struct hi3670_pcie_phy *phy, bool enable)
 {
@@ -622,8 +680,7 @@ static int hi3670_pcie_phy_power_on(struct phy *generic_phy)
 	int val, ret;
 
 	/* Power supply for Host */
-	regmap_write(phy->sysctrl,
-		     SCTRL_PCIE_CMOS_OFFSET, SCTRL_PCIE_CMOS_BIT);
+	regmap_write(phy->sysctrl, SCTRL_PCIE_CMOS_OFFSET, SCTRL_PCIE_CMOS_BIT);
 	usleep_range(TIME_CMOS_MIN, TIME_CMOS_MAX);
 
 	hi3670_pcie_phy_oe_enable(phy, true);
@@ -633,12 +690,11 @@ static int hi3670_pcie_phy_power_on(struct phy *generic_phy)
 		return ret;
 
 	/* ISO disable, PCIeCtrl, PHY assert and clk gate clear */
-	regmap_write(phy->sysctrl,
-		     SCTRL_PCIE_ISO_OFFSET, SCTRL_PCIE_ISO_BIT);
-	regmap_write(phy->crgctrl,
-		     CRGCTRL_PCIE_ASSERT_OFFSET, CRGCTRL_PCIE_ASSERT_BIT);
-	regmap_write(phy->sysctrl,
-		     SCTRL_PCIE_HPCLK_OFFSET, SCTRL_PCIE_HPCLK_BIT);
+	regmap_write(phy->sysctrl, SCTRL_PCIE_ISO_OFFSET, SCTRL_PCIE_ISO_BIT);
+	regmap_write(phy->crgctrl, CRGCTRL_PCIE_ASSERT_OFFSET,
+		     CRGCTRL_PCIE_ASSERT_BIT);
+	regmap_write(phy->sysctrl, SCTRL_PCIE_HPCLK_OFFSET,
+		     SCTRL_PCIE_HPCLK_BIT);
 
 	hi3670_pcie_natural_cfg(phy);
 
@@ -648,12 +704,12 @@ static int hi3670_pcie_phy_power_on(struct phy *generic_phy)
 
 	/* pull down phy_test_powerdown signal */
 	val = hi3670_apb_phy_readl(phy, SOC_PCIEPHY_CTRL0_ADDR);
-	val &= ~(0x1 << 22);
+	val &= ~PCIE_PULL_DOWN_PHY_TEST_POWERDOWN;
 	hi3670_apb_phy_writel(phy, val, SOC_PCIEPHY_CTRL0_ADDR);
 
 	/* deassert controller perst_n */
 	regmap_read(phy->apb, SOC_PCIECTRL_CTRL12_ADDR, &val);
-	val |= (0x1 << 2);
+	val |= PCIE_DEASSERT_CONTROLLER_PERST;
 	regmap_write(phy->apb, SOC_PCIECTRL_CTRL12_ADDR, val);
 	udelay(10);
 
@@ -683,7 +739,7 @@ static int hi3670_pcie_phy_power_off(struct phy *generic_phy)
 	hi3670_pcie_allclk_ctrl(phy, false);
 
 	/* Drop power supply for Host */
-	regmap_write(phy->sysctrl, SCTRL_PCIE_CMOS_OFFSET, 0x00);
+	regmap_write(phy->sysctrl, SCTRL_PCIE_CMOS_OFFSET, 0);
 
 	/* FIXME: calling it causes an Asynchronous SError interrupt */
 //	kirin_pcie_clk_ctrl(phy, false);
