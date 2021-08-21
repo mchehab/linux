@@ -14,9 +14,9 @@
 #include "clk.h"
 
 static const struct hisi_fixed_rate_clock hi3670_fixed_rate_clks[] = {
-	{ HI3670_CLKIN_SYS, "clkin_sys", NULL, CLK_IS_CRITICAL, 19200000, },
-	{ HI3670_CLKIN_REF, "clkin_ref", NULL, CLK_IS_CRITICAL, 32764, },
-	{ HI3670_CLK_FLL_SRC, "clk_fll_src", NULL, CLK_IS_CRITICAL, 134400000, },
+	{ HI3670_CLKIN_SYS, "clkin_sys", NULL, 0, 19200000, },
+	{ HI3670_CLKIN_REF, "clkin_ref", NULL, 0, 32764, },
+	{ HI3670_CLK_FLL_SRC, "clk_fll_src", NULL, 0, 134400000, },
 	{ HI3670_CLK_PPLL0, "clk_ppll0", NULL, CLK_IS_CRITICAL, 1660000000, },
 	{ HI3670_CLK_PPLL1, "clk_ppll1", NULL, CLK_IS_CRITICAL, 1866000000, },
 	{ HI3670_CLK_PPLL2, "clk_ppll2", NULL, CLK_IS_CRITICAL, 1920000000, },
