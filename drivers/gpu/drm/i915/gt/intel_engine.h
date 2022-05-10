@@ -18,6 +18,7 @@
 #include "intel_gt_types.h"
 #include "intel_timeline.h"
 #include "intel_workarounds.h"
+#include "uc/intel_guc_submission.h"
 
 struct drm_printer;
 struct intel_context;

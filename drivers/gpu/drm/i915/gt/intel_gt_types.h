@@ -19,7 +19,6 @@
 #include "uc/intel_uc.h"
 #include "intel_gsc.h"
 
-#include "i915_vma.h"
 #include "intel_engine_types.h"
 #include "intel_gt_buffer_pool_types.h"
 #include "intel_hwconfig.h"
@@ -31,8 +30,11 @@
 #include "intel_wakeref.h"
 #include "pxp/intel_pxp_types.h"
 
+#include "intel_gt_defines.h"
+
 struct drm_i915_private;
 struct i915_ggtt;
+struct i915_vma;
 struct intel_engine_cs;
 struct intel_uncore;
 
