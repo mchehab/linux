@@ -1084,8 +1084,9 @@ static void dvb_ca_en50221_thread_update_delay(struct dvb_ca_private *ca)
  *
  * @ca: CA instance.
  * @slot: Slot to process.
- * return:: 0 .. no change
- *          1 .. CAM state changed
+ * return:
+ * * 0 .. no change,
+ * * 1 .. CAM state changed
  */
 
 static int dvb_ca_en50221_poll_cam_gone(struct dvb_ca_private *ca, int slot)
