@@ -68,6 +68,8 @@ static int ir_raw_event_thread(void *data)
  * pulse/space duration for the raw ir decoding state machines. Pulses are
  * signalled as positive values and spaces as negative values. A zero value
  * will reset the decoding state machines.
+ *
+ * return:	zero on success or a negative error code
  */
 int ir_raw_event_store(struct rc_dev *dev, struct ir_raw_event *ev)
 {
@@ -96,6 +98,8 @@ EXPORT_SYMBOL_GPL(ir_raw_event_store);
  * reception) for the raw ir decoding state machines. This is used by
  * hardware which does not provide durations directly but only interrupts
  * (or similar events) on state change.
+ *
+ * return:	zero on success or a negative error code
  */
 int ir_raw_event_store_edge(struct rc_dev *dev, bool pulse)
 {
@@ -123,11 +127,13 @@ EXPORT_SYMBOL_GPL(ir_raw_event_store_edge);
  * This routine (which may be called from an interrupt context) stores a
  * pulse/space duration for the raw ir decoding state machines, schedules
  * decoding and generates a timeout.
+ *
+ * return:	zero on success or a negative error code
  */
 int ir_raw_event_store_with_timeout(struct rc_dev *dev, struct ir_raw_event *ev)
 {
 	ktime_t		now;
-	int		rc = 0;
+	int		rc;
 
 	if (!dev->raw)
 		return -EINVAL;
@@ -163,6 +169,12 @@ EXPORT_SYMBOL_GPL(ir_raw_event_store_with_timeout);
  * It automerges samples of same type, and handles timeouts. Returns non-zero
  * if the event was added, and zero if the event was ignored due to idle
  * processing.
+ *
+ * return:
+ * * -EINVAL if raw IR decoding is not supported, e.g. if the RC device was
+ *   not allocated with rc_allocate_device(RC_DRIVER_IR_RAW);
+ * * 0 if event is ignored;
+ * * 1 if the event was stored.
  */
 int ir_raw_event_store_with_filter(struct rc_dev *dev, struct ir_raw_event *ev)
 {
