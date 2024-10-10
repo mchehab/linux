@@ -300,7 +300,10 @@ extern void init_wait_entry(struct wait_queue_entry *wq_entry, int flags);
 ({										\
 	__label__ __out;							\
 	struct wait_queue_entry __wq_entry;					\
-	long __ret = ret;	/* explicit shadow */				\
+	__diag_push()								\
+	__diag_ignore_all("-Wshadow", "Explicit shadow");			\
+	long __ret = ret;							\
+	__diag_pop()								\
 										\
 	init_wait_entry(&__wq_entry, exclusive ? WQ_FLAG_EXCLUSIVE : 0);	\
 	for (;;) {								\
