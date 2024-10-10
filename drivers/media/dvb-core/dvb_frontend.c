@@ -2434,7 +2434,7 @@ static int dvb_frontend_handle_ioctl(struct file *file,
 	struct dvb_frontend *fe = dvbdev->priv;
 	struct dvb_frontend_private *fepriv = fe->frontend_priv;
 	struct dtv_frontend_properties *c = &fe->dtv_property_cache;
-	int i, err = -ENOTSUPP;
+	int err = -ENOTSUPP;
 
 	dev_dbg(fe->dvb->device, "%s:\n", __func__);
 
@@ -2442,6 +2442,7 @@ static int dvb_frontend_handle_ioctl(struct file *file,
 	case FE_SET_PROPERTY: {
 		struct dtv_properties *tvps = parg;
 		struct dtv_property *tvp = NULL;
+		int i;
 
 		dev_dbg(fe->dvb->device, "%s: properties.num = %d\n",
 			__func__, tvps->num);
