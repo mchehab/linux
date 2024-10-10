@@ -92,8 +92,6 @@ MODULE_PARM_DESC(radio_nr, "Radio device numbers");
 #define GEMTEK_STDF_3_125_KHZ	0x01	/* Standard frequency 3.125 kHz	*/
 #define GEMTEK_PLL_OFF		0x07	/* PLL off			*/
 
-#define BU2614_BUS_SIZE	32	/* BU2614 / BU2614FS bus size		*/
-
 #define SHORT_DELAY 5		/* usec */
 #define LONG_DELAY 75		/* usec */
 
@@ -129,12 +127,10 @@ struct gemtek {
 			BU2614_##field##_SHIFT)
 #define BU2614_PORT_MASK	MKMASK(PORT)
 #define BU2614_FREQ_MASK	MKMASK(FREQ)
-#define BU2614_VOID_MASK	MKMASK(VOID)
 #define BU2614_FMES_MASK	MKMASK(FMES)
 #define BU2614_STDF_MASK	MKMASK(STDF)
 #define BU2614_SWIN_MASK	MKMASK(SWIN)
 #define BU2614_SWAL_MASK	MKMASK(SWAL)
-#define BU2614_VOID2_MASK	MKMASK(VOID2)
 #define BU2614_FMUN_MASK	MKMASK(FMUN)
 #define BU2614_TEST_MASK	MKMASK(TEST)
 
