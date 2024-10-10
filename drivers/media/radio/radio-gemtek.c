@@ -60,7 +60,7 @@ MODULE_VERSION("1.0.0");
 
 static bool probe = CONFIG_RADIO_GEMTEK_PROBE;
 static bool hardmute;
-static int io[GEMTEK_MAX] = { [0] = CONFIG_RADIO_GEMTEK_PORT,
+static int io_params[GEMTEK_MAX] = { [0] = CONFIG_RADIO_GEMTEK_PORT,
 			      [1 ... (GEMTEK_MAX - 1)] = -1 };
 static int radio_nr[GEMTEK_MAX]	= { [0 ... (GEMTEK_MAX - 1)] = -1 };
 
@@ -70,7 +70,7 @@ MODULE_PARM_DESC(probe, "Enable automatic device probing.");
 module_param(hardmute, bool, 0644);
 MODULE_PARM_DESC(hardmute, "Enable 'hard muting' by shutting down PLL, may reduce static noise.");
 
-module_param_array(io, int, NULL, 0444);
+module_param_array_named(io, io_params, int, NULL, 0444);
 MODULE_PARM_DESC(io, "Force I/O ports for the GemTek Radio card if automatic probing is disabled or fails. The most common I/O ports are: 0x20c 0x30c, 0x24c or 0x34c (0x20c, 0x248 and 0x28c have been reported to work for the combined sound/radiocard).");
 
 module_param_array(radio_nr, int, NULL, 0444);
@@ -308,7 +308,7 @@ static struct radio_isa_driver gemtek_driver = {
 		.remove		= radio_isa_pnp_remove,
 	},
 #endif
-	.io_params = io,
+	.io_params = io_params,
 	.radio_nr_params = radio_nr,
 	.io_ports = gemtek_ioports,
 	.num_of_io_ports = ARRAY_SIZE(gemtek_ioports),
