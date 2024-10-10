@@ -81,9 +81,9 @@ static inline const struct dma_map_ops *get_dma_ops(struct device *dev)
 }
 
 static inline void set_dma_ops(struct device *dev,
-			       const struct dma_map_ops *dma_ops)
+			       const struct dma_map_ops *dma_map_ops)
 {
-	dev->dma_ops = dma_ops;
+	dev->dma_ops = dma_map_ops;
 }
 #else /* CONFIG_ARCH_HAS_DMA_OPS */
 static inline const struct dma_map_ops *get_dma_ops(struct device *dev)
@@ -91,7 +91,7 @@ static inline const struct dma_map_ops *get_dma_ops(struct device *dev)
 	return NULL;
 }
 static inline void set_dma_ops(struct device *dev,
-			       const struct dma_map_ops *dma_ops)
+			       const struct dma_map_ops *dma_map_ops)
 {
 }
 #endif /* CONFIG_ARCH_HAS_DMA_OPS */
