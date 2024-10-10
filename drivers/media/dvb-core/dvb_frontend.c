@@ -1318,6 +1318,8 @@ dtv_property_legacy_params_sync(struct dvb_frontend *fe,
  * This routine calls either the DVBv3 or DVBv5 get_frontend call.
  * If c is not null, it will update the DVBv5 cache struct pointed by it.
  * If p_out is not null, it will update the DVBv3 params pointed by it.
+ *
+ * return:	zero on success or a negative error code
  */
 static int dtv_get_frontend(struct dvb_frontend *fe,
 			    struct dtv_frontend_properties *c,
@@ -1668,6 +1670,8 @@ static void emulate_delivery_system(struct dvb_frontend *fe, u32 delsys)
  * 2) Some apps might be using a DVBv5 call in a wrong way, passing, for
  *    example, SYS_DVBT instead of SYS_ISDBT. This is because early usage of
  *    ISDB-T provided backward compat with DVB-T.
+ *
+ * return:	zero on success or a negative error code
  */
 static int dvbv5_set_delivery_system(struct dvb_frontend *fe,
 				     u32 desired_system)
@@ -1774,6 +1778,8 @@ static int dvbv5_set_delivery_system(struct dvb_frontend *fe,
  *	DVB-S, drivers that support both DVB-S and DVB-S2 should have the
  *	SYS_DVBS entry before the SYS_DVBS2, otherwise it won't switch back
  *	to DVB-S.
+ *
+ * return:	zero on success or a negative error code
  */
 static int dvbv3_set_delivery_system(struct dvb_frontend *fe)
 {
