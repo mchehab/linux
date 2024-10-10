@@ -1617,7 +1617,7 @@ static bool is_dvbv3_delsys(u32 delsys)
  * using a DVB-S2 only frontend just like it were a DVB-S, if the frontend
  * parameters are compatible with DVB-S spec.
  */
-static int emulate_delivery_system(struct dvb_frontend *fe, u32 delsys)
+static void emulate_delivery_system(struct dvb_frontend *fe, u32 delsys)
 {
 	int i;
 	struct dtv_frontend_properties *c = &fe->dtv_property_cache;
@@ -1650,8 +1650,6 @@ static int emulate_delivery_system(struct dvb_frontend *fe, u32 delsys)
 	}
 	dev_dbg(fe->dvb->device, "%s: change delivery system on cache to %d\n",
 		__func__, c->delivery_system);
-
-	return 0;
 }
 
 /**
@@ -1744,7 +1742,9 @@ static int dvbv5_set_delivery_system(struct dvb_frontend *fe,
 		"%s: Using delivery system %d emulated as if it were %d\n",
 		__func__, delsys, desired_system);
 
-	return emulate_delivery_system(fe, desired_system);
+	emulate_delivery_system(fe, desired_system);
+
+	return 0;
 }
 
 /**
@@ -1814,7 +1814,9 @@ static int dvbv3_set_delivery_system(struct dvb_frontend *fe)
 			__func__);
 		return -EINVAL;
 	}
-	return emulate_delivery_system(fe, delsys);
+	emulate_delivery_system(fe, delsys);
+
+	return 0;
 }
 
 static void prepare_tuning_algo_parameters(struct dvb_frontend *fe)
