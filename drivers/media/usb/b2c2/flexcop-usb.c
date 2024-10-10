@@ -9,7 +9,6 @@
 #include "flexcop-common.h"
 
 /* Version information */
-#define DRIVER_VERSION "0.1"
 #define DRIVER_NAME "Technisat/B2C2 FlexCop II/IIb/III Digital TV USB Driver"
 #define DRIVER_AUTHOR "Patrick Boettcher <patrick.boettcher@posteo.de>"
 
@@ -39,7 +38,6 @@ MODULE_PARM_DESC(debug, "set debugging level (1=info,ts=2,ctrl=4,i2c=8,v8mem=16 
 
 #define deb_info(args...) dprintk(0x01, args)
 #define deb_ts(args...) dprintk(0x02, args)
-#define deb_ctrl(args...) dprintk(0x04, args)
 #define deb_i2c(args...) dprintk(0x08, args)
 #define deb_v8(args...) dprintk(0x10, args)
 
@@ -54,8 +52,6 @@ MODULE_PARM_DESC(debug, "set debugging level (1=info,ts=2,ctrl=4,i2c=8,v8mem=16 
  */
 #define B2C2_FLEX_PCIOFFSET_TO_INTERNALADDR(usPCI) (u8) \
 	(((usPCI >> 2) & 0x07) + ((usPCI >> 4) & 0x70))
-#define B2C2_FLEX_INTERNALADDR_TO_PCIOFFSET(ucAddr) (u16) \
-	(((ucAddr & 0x07) << 2) + ((ucAddr & 0x70) << 4))
 
 /*
  * DKT 020228
