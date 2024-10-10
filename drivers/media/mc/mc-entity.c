@@ -1032,9 +1032,9 @@ EXPORT_SYMBOL_GPL(media_pipeline_entity_iter_cleanup);
 struct media_entity *
 __media_pipeline_entity_iter_next(struct media_pipeline *pipe,
 				  struct media_pipeline_entity_iter *iter,
-				  struct media_entity *entity)
+				  struct media_entity *start_entity)
 {
-	if (!entity)
+	if (!start_entity)
 		iter->cursor = pipe->pads.next;
 
 	while (iter->cursor != &pipe->pads) {
