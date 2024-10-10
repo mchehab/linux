@@ -907,7 +907,7 @@ exitnowrite:
  * @ca: CA instance.
  * @slot: Slot to shut down.
  */
-static int dvb_ca_en50221_slot_shutdown(struct dvb_ca_private *ca, int slot)
+static void dvb_ca_en50221_slot_shutdown(struct dvb_ca_private *ca, int slot)
 {
 	dprintk("%s\n", __func__);
 
@@ -921,9 +921,6 @@ static int dvb_ca_en50221_slot_shutdown(struct dvb_ca_private *ca, int slot)
 	wake_up_interruptible(&ca->wait_queue);
 
 	dprintk("Slot %i shutdown\n", slot);
-
-	/* success */
-	return 0;
 }
 
 /**
