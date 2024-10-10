@@ -28,7 +28,6 @@ MODULE_PARM_DESC(irq_chk_intv, "set the interval for IRQ streaming watchdog.");
 
 #define deb_info(args...) dprintk(0x01, args)
 #define deb_reg(args...) dprintk(0x02, args)
-#define deb_ts(args...) dprintk(0x04, args)
 #define deb_irq(args...) dprintk(0x08, args)
 #define deb_chk(args...) dprintk(0x10, args)
 
@@ -38,7 +37,6 @@ MODULE_PARM_DESC(debug,
 	"set debug level (1=info,2=regs,4=TS,8=irqdma,16=check (|-able))."
 	DEBSTATUS);
 
-#define DRIVER_VERSION "0.1"
 #define DRIVER_NAME "flexcop-pci"
 #define DRIVER_AUTHOR "Patrick Boettcher <patrick.boettcher@posteo.de>"
 
