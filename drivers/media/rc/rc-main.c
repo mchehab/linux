@@ -171,6 +171,8 @@ static struct rc_map_list empty_map = {
  *
  * This function is a version of input_scancode_to_scalar specialized for
  * rc-core.
+ *
+ * return:	zero on success or a negative error code
  */
 static int scancode_to_u64(const struct input_keymap_entry *ke, u64 *scancode)
 {
@@ -893,6 +895,8 @@ EXPORT_SYMBOL_GPL(rc_keydown_notimeout);
  *	For nec, it should do the opposite of ir_nec_bytes_to_scancode()
  * @proto:	protocol
  * @scancode:	scancode
+ *
+ * return:	true if the scancode is valid, false otherwise
  */
 bool rc_validate_scancode(enum rc_proto proto, u32 scancode)
 {
@@ -1101,6 +1105,8 @@ struct rc_filter_attribute {
  *
  * dev->lock is taken to guard against races between
  * store_protocols and show_protocols.
+ *
+ * return:	number of characters stored on @buf
  */
 static ssize_t show_protocols(struct device *device,
 			      struct device_attribute *mattr, char *buf)
@@ -1154,7 +1160,8 @@ static ssize_t show_protocols(struct device *device,
  * Writing "-proto" will remove a protocol from protocol mask.
  * Writing "proto" will enable only "proto".
  * Writing "none" will disable all protocols.
- * Returns the number of changes performed or a negative error code.
+ *
+ * return:	the number of changes performed or a negative error code.
  */
 static int parse_protocol_change(struct rc_dev *dev, u64 *curr_protocols,
 				 const char *buf)
@@ -1272,6 +1279,8 @@ void ir_raw_load_modules(u64 *curr_protocols)
  *
  * dev->lock is taken to guard against races between
  * store_protocols and show_protocols.
+ *
+ * return:	@len on success or a negative error code
  */
 static ssize_t store_protocols(struct device *device,
 			       struct device_attribute *mattr,
@@ -1363,6 +1372,8 @@ out:
  *
  * dev->lock is taken to guard against races between
  * store_filter and show_filter.
+ *
+ * return:	a string with the scancode filter value
  */
 static ssize_t show_filter(struct device *device,
 			   struct device_attribute *attr,
@@ -1407,6 +1418,8 @@ static ssize_t show_filter(struct device *device,
  *
  * dev->lock is taken to guard against races between
  * store_filter and show_filter.
+ *
+ * return:	@len on success or a negative error code
  */
 static ssize_t store_filter(struct device *device,
 			    struct device_attribute *attr,
@@ -1491,6 +1504,8 @@ unlock:
  *
  * dev->lock is taken to guard against races between
  * store_wakeup_protocols and show_wakeup_protocols.
+ *
+ * return:	number of characters stored on @buf
  */
 static ssize_t show_wakeup_protocols(struct device *device,
 				     struct device_attribute *mattr,
@@ -1541,6 +1556,8 @@ static ssize_t show_wakeup_protocols(struct device *device,
  *
  * dev->lock is taken to guard against races between
  * store_wakeup_protocols and show_wakeup_protocols.
+ *
+* return:	@len on success or a negative error code
  */
 static ssize_t store_wakeup_protocols(struct device *device,
 				      struct device_attribute *mattr,
