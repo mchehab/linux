@@ -82,8 +82,8 @@ void of_phandle_args_to_fwspec(struct device_node *np, const u32 *args,
  * @unmap: Dispose of such a mapping
  * @xlate: Given a device tree node and interrupt specifier, decode
  *         the hardware irq number and linux irq type value.
- * @alloc: Allocate @nr_irqs interrupts starting from @virq.
- * @free: Free @nr_irqs interrupts starting from @virq.
+ * @alloc: Allocate @num_irqs interrupts starting from @virq.
+ * @free: Free @num_irqs interrupts starting from @virq.
  * @activate: Activate one interrupt in HW (@irqd). If @reserve is set, only
  *	      reserve the vector. If unset, assign the vector (called from
  *	      request_irq()).
@@ -111,9 +111,9 @@ struct irq_domain_ops {
 #ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
 	/* extended V2 interfaces to support hierarchy irq_domains */
 	int (*alloc)(struct irq_domain *d, unsigned int virq,
-		     unsigned int nr_irqs, void *arg);
+		     unsigned int num_irqs, void *arg);
 	void (*free)(struct irq_domain *d, unsigned int virq,
-		     unsigned int nr_irqs);
+		     unsigned int num_irqs);
 	int (*activate)(struct irq_domain *d, struct irq_data *irqd, bool reserve);
 	void (*deactivate)(struct irq_domain *d, struct irq_data *irq_data);
 	int (*translate)(struct irq_domain *d, struct irq_fwspec *fwspec,
@@ -354,7 +354,7 @@ extern struct irq_domain *irq_find_matching_fwspec(struct irq_fwspec *fwspec,
 						   enum irq_domain_bus_token bus_token);
 extern void irq_set_default_host(struct irq_domain *host);
 extern struct irq_domain *irq_get_default_host(void);
-extern int irq_domain_alloc_descs(int virq, unsigned int nr_irqs,
+extern int irq_domain_alloc_descs(int virq, unsigned int num_irqs,
 				  irq_hw_number_t hwirq, int node,
 				  const struct irq_affinity_desc *affinity);
 
@@ -614,23 +614,23 @@ static inline struct irq_domain *irq_domain_add_hierarchy(struct irq_domain *par
 }
 
 extern int __irq_domain_alloc_irqs(struct irq_domain *domain, int irq_base,
-				   unsigned int nr_irqs, int node, void *arg,
+				   unsigned int num_irqs, int node, void *arg,
 				   bool realloc,
 				   const struct irq_affinity_desc *affinity);
-extern void irq_domain_free_irqs(unsigned int virq, unsigned int nr_irqs);
+extern void irq_domain_free_irqs(unsigned int virq, unsigned int num_irqs);
 extern int irq_domain_activate_irq(struct irq_data *irq_data, bool early);
 extern void irq_domain_deactivate_irq(struct irq_data *irq_data);
 
 static inline int irq_domain_alloc_irqs(struct irq_domain *domain,
-			unsigned int nr_irqs, int node, void *arg)
+			unsigned int num_irqs, int node, void *arg)
 {
-	return __irq_domain_alloc_irqs(domain, -1, nr_irqs, node, arg, false,
+	return __irq_domain_alloc_irqs(domain, -1, num_irqs, node, arg, false,
 				       NULL);
 }
 
 extern int irq_domain_alloc_irqs_hierarchy(struct irq_domain *domain,
 					   unsigned int irq_base,
-					   unsigned int nr_irqs, void *arg);
+					   unsigned int num_irqs, void *arg);
 extern int irq_domain_set_hwirq_and_chip(struct irq_domain *domain,
 					 unsigned int virq,
 					 irq_hw_number_t hwirq,
@@ -638,20 +638,20 @@ extern int irq_domain_set_hwirq_and_chip(struct irq_domain *domain,
 					 void *chip_data);
 extern void irq_domain_free_irqs_common(struct irq_domain *domain,
 					unsigned int virq,
-					unsigned int nr_irqs);
+					unsigned int num_irqs);
 extern void irq_domain_free_irqs_top(struct irq_domain *domain,
-				     unsigned int virq, unsigned int nr_irqs);
+				     unsigned int virq, unsigned int num_irqs);
 
 extern int irq_domain_push_irq(struct irq_domain *domain, int virq, void *arg);
 extern int irq_domain_pop_irq(struct irq_domain *domain, int virq);
 
 extern int irq_domain_alloc_irqs_parent(struct irq_domain *domain,
 					unsigned int irq_base,
-					unsigned int nr_irqs, void *arg);
+					unsigned int num_irqs, void *arg);
 
 extern void irq_domain_free_irqs_parent(struct irq_domain *domain,
 					unsigned int irq_base,
-					unsigned int nr_irqs);
+					unsigned int num_irqs);
 
 extern int irq_domain_disconnect_hierarchy(struct irq_domain *domain,
 					   unsigned int virq);
@@ -694,13 +694,13 @@ static inline bool irq_domain_is_msi_device(struct irq_domain *domain)
 
 #else	/* CONFIG_IRQ_DOMAIN_HIERARCHY */
 static inline int irq_domain_alloc_irqs(struct irq_domain *domain,
-			unsigned int nr_irqs, int node, void *arg)
+			unsigned int num_irqs, int node, void *arg)
 {
 	return -1;
 }
 
 static inline void irq_domain_free_irqs(unsigned int virq,
-					unsigned int nr_irqs) { }
+					unsigned int num_irqs) { }
 
 static inline bool irq_domain_is_hierarchy(struct irq_domain *domain)
 {
