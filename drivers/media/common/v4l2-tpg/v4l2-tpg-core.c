@@ -51,11 +51,11 @@ const char * const tpg_aspect_strings[] = {
 EXPORT_SYMBOL_GPL(tpg_aspect_strings);
 
 /*
- * Sine table: sin[0] = 127 * sin(-180 degrees)
- *             sin[128] = 127 * sin(0 degrees)
- *             sin[256] = 127 * sin(180 degrees)
+ * Sine table: sin_table[0] = 127 * sin_table(-180 degrees)
+ *             sin_table[128] = 127 * sin_table(0 degrees)
+ *             sin_table[256] = 127 * sin_table(180 degrees)
  */
-static const s8 sin[257] = {
+static const s8 sin_table[257] = {
 	   0,   -4,   -7,  -11,  -13,  -18,  -20,  -22,  -26,  -29,  -33,  -35,  -37,  -41,  -43,  -48,
 	 -50,  -52,  -56,  -58,  -62,  -63,  -65,  -69,  -71,  -75,  -76,  -78,  -82,  -83,  -87,  -88,
 	 -90,  -93,  -94,  -97,  -99, -101, -103, -104, -107, -108, -110, -111, -112, -114, -115, -117,
@@ -75,7 +75,7 @@ static const s8 sin[257] = {
 	   0,
 };
 
-#define cos(idx) sin[((idx) + 64) % sizeof(sin)]
+#define cos(idx) sin_table[((idx) + 64) % sizeof(sin_table)]
 
 /* Global font descriptor */
 static const u8 *font8x16;
@@ -975,8 +975,8 @@ static void precalculate_color(struct tpg_data *tpg, int k)
 
 		cb -= 128 << 4;
 		cr -= 128 << 4;
-		tmp_cb = (cb * cos(128 + tpg->hue)) / 127 + (cr * sin[128 + tpg->hue]) / 127;
-		tmp_cr = (cr * cos(128 + tpg->hue)) / 127 - (cb * sin[128 + tpg->hue]) / 127;
+		tmp_cb = (cb * cos(128 + tpg->hue)) / 127 + (cr * sin_table[128 + tpg->hue]) / 127;
+		tmp_cr = (cr * cos(128 + tpg->hue)) / 127 - (cb * sin_table[128 + tpg->hue]) / 127;
 
 		cb = (128 << 4) + (tmp_cb * tpg->contrast * tpg->saturation) / (128 * 128);
 		cr = (128 << 4) + (tmp_cr * tpg->contrast * tpg->saturation) / (128 * 128);
@@ -2345,7 +2345,7 @@ static void tpg_fill_params_extras(const struct tpg_data *tpg,
 
 static void tpg_fill_plane_extras(const struct tpg_data *tpg,
 				  const struct tpg_draw_params *params,
-				  unsigned p, unsigned h, u8 *vbuf)
+				  unsigned idx, unsigned h, u8 *vbuf)
 {
 	unsigned twopixsize = params->twopixsize;
 	unsigned img_width = params->img_width;
@@ -2360,7 +2360,7 @@ static void tpg_fill_plane_extras(const struct tpg_data *tpg,
 		 * Replace the first half of the top line of a 50 Hz frame
 		 * with random data to simulate a WSS signal.
 		 */
-		u8 *wss = tpg->random_line[p] + params->wss_random_offset;
+		u8 *wss = tpg->random_line[idx] + params->wss_random_offset;
 
 		memcpy(vbuf, wss, params->wss_width);
 	}
@@ -2373,23 +2373,23 @@ static void tpg_fill_plane_extras(const struct tpg_data *tpg,
 
 		if (frame_line == b->top || frame_line == b->top + 1 ||
 		    frame_line == bottom || frame_line == bottom - 1) {
-			memcpy(vbuf + left, tpg->contrast_line[p],
+			memcpy(vbuf + left, tpg->contrast_line[idx],
 					right - left);
 		} else {
 			if (b->left >= c->left &&
 			    b->left < c->left + c->width)
 				memcpy(vbuf + left,
-					tpg->contrast_line[p], twopixsize);
+					tpg->contrast_line[idx], twopixsize);
 			if (b->left + b->width > c->left &&
 			    b->left + b->width <= c->left + c->width)
 				memcpy(vbuf + right - twopixsize,
-					tpg->contrast_line[p], twopixsize);
+					tpg->contrast_line[idx], twopixsize);
 		}
 	}
 	if (tpg->qual != TPG_QUAL_NOISE && frame_line >= b->top &&
 	    frame_line < b->top + b->height) {
-		memcpy(vbuf, tpg->black_line[p], params->left_pillar_width);
-		memcpy(vbuf + params->right_pillar_start, tpg->black_line[p],
+		memcpy(vbuf, tpg->black_line[idx], params->left_pillar_width);
+		memcpy(vbuf + params->right_pillar_start, tpg->black_line[idx],
 		       img_width - params->right_pillar_start);
 	}
 	if (tpg->show_square && frame_line >= sq->top &&
@@ -2406,12 +2406,12 @@ static void tpg_fill_plane_extras(const struct tpg_data *tpg,
 		if (c->left + c->width < left + width)
 			width -= left + width - c->left - c->width;
 		left -= c->left;
-		left = tpg_hscale_div(tpg, p, left);
-		width = tpg_hscale_div(tpg, p, width);
-		memcpy(vbuf + left, tpg->contrast_line[p], width);
+		left = tpg_hscale_div(tpg, idx, left);
+		width = tpg_hscale_div(tpg, idx, width);
+		memcpy(vbuf + left, tpg->contrast_line[idx], width);
 	}
 	if (tpg->insert_sav) {
-		unsigned offset = tpg_hdiv(tpg, p, tpg->compose.width / 3);
+		unsigned offset = tpg_hdiv(tpg, idx, tpg->compose.width / 3);
 		u8 *p = vbuf + offset;
 		unsigned vact = 0, hact = 0;
 
@@ -2426,7 +2426,7 @@ static void tpg_fill_plane_extras(const struct tpg_data *tpg,
 			(hact ^ vact ^ params->sav_eav_f);
 	}
 	if (tpg->insert_eav) {
-		unsigned offset = tpg_hdiv(tpg, p, tpg->compose.width * 2 / 3);
+		unsigned offset = tpg_hdiv(tpg, idx, tpg->compose.width * 2 / 3);
 		u8 *p = vbuf + offset;
 		unsigned vact = 0, hact = 1;
 
