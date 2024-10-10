@@ -323,7 +323,7 @@ static struct media_entity *stack_pop(struct media_graph *graph)
  * state. The memory must be released using
  * media_graph_walk_cleanup().
  *
- * Returns error on failure, zero on success.
+ * return: error on failure, zero on success.
  */
 __must_check int media_graph_walk_init(
 	struct media_graph *graph, struct media_device *mdev)
