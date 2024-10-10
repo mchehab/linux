@@ -2558,13 +2558,13 @@ static int dvb_frontend_handle_ioctl(struct file *file,
 
 	case FE_DISEQC_SEND_MASTER_CMD:
 		if (fe->ops.diseqc_send_master_cmd) {
-			struct dvb_diseqc_master_cmd *cmd = parg;
+			struct dvb_diseqc_master_cmd *diseq_cmd = parg;
 
-			if (cmd->msg_len > sizeof(cmd->msg)) {
+			if (diseq_cmd->msg_len > sizeof(diseq_cmd->msg)) {
 				err = -EINVAL;
 				break;
 			}
-			err = fe->ops.diseqc_send_master_cmd(fe, cmd);
+			err = fe->ops.diseqc_send_master_cmd(fe, diseq_cmd);
 			fepriv->state = FESTATE_DISEQC;
 			fepriv->status = 0;
 		}
