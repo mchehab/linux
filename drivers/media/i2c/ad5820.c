@@ -31,7 +31,6 @@
 #define AD5820_RAMP_MODE_LINEAR		(0 << 3)
 #define AD5820_RAMP_MODE_64_16		(1 << 3)
 
-#define CODE_TO_RAMP_US(s)	((s) == 0 ? 0 : (1 << ((s) - 1)) * 50)
 #define RAMP_US_TO_CODE(c)	fls(((c) + ((c)>>1)) / 50)
 
 #define to_ad5820_device(sd)	container_of(sd, struct ad5820_device, subdev)
