@@ -1318,9 +1318,9 @@ void __v4l2_subdev_state_free(struct v4l2_subdev_state *state);
 #define v4l2_subdev_init_finalize(sd)                                          \
 	({                                                                     \
 		static struct lock_class_key __key;                            \
-		const char *name = KBUILD_BASENAME                             \
+		const char *__name = KBUILD_BASENAME                           \
 			":" __stringify(__LINE__) ":sd->active_state->lock";   \
-		__v4l2_subdev_init_finalize(sd, name, &__key);                 \
+		__v4l2_subdev_init_finalize(sd, __name, &__key);               \
 	})
 
 int __v4l2_subdev_init_finalize(struct v4l2_subdev *sd, const char *name,
