@@ -87,8 +87,6 @@ struct sms_board {
 
 struct sms_board *sms_get_board(unsigned id);
 
-extern struct smscore_device_t *coredev;
-
 enum SMS_BOARD_EVENTS {
 	BOARD_EVENT_POWER_INIT,
 	BOARD_EVENT_POWER_SUSPEND,
