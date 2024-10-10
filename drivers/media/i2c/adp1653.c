@@ -32,7 +32,6 @@
 				 * TIMEOUT_STEP)
 #define TIMEOUT_US_TO_CODE(t)	((TIMEOUT_MAX + (TIMEOUT_STEP / 2) - (t)) \
 				 / TIMEOUT_STEP)
-#define TIMEOUT_CODE_TO_US(c)	(TIMEOUT_MAX - (c) * TIMEOUT_STEP)
 
 /* Write values into ADP1653 registers. */
 static int adp1653_update_hw(struct adp1653_flash *flash)
