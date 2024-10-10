@@ -598,7 +598,7 @@ static int dvb_ca_en50221_parse_attributes(struct dvb_ca_private *ca, int slot)
  * @ca: CA instance.
  * @slot: Slot containing the CAM.
  */
-static int dvb_ca_en50221_set_configoption(struct dvb_ca_private *ca, int slot)
+static void dvb_ca_en50221_set_configoption(struct dvb_ca_private *ca, int slot)
 {
 	struct dvb_ca_slot *sl = &ca->slot_info[slot];
 	int configoption;
@@ -614,9 +614,6 @@ static int dvb_ca_en50221_set_configoption(struct dvb_ca_private *ca, int slot)
 						   sl->config_base);
 	dprintk("Set configoption 0x%x, read configoption 0x%x\n",
 		sl->config_option, configoption & 0x3f);
-
-	/* fine! */
-	return 0;
 }
 
 /**
@@ -1186,13 +1183,7 @@ static void dvb_ca_en50221_thread_state_machine(struct dvb_ca_private *ca,
 			dvb_ca_en50221_thread_update_delay(ca);
 			break;
 		}
-		if (dvb_ca_en50221_set_configoption(ca, slot) != 0) {
-			pr_err("dvb_ca adapter %d: Unable to initialise CAM :(\n",
-			       ca->dvbdev->adapter->num);
-			sl->slot_state = DVB_CA_SLOTSTATE_INVALID;
-			dvb_ca_en50221_thread_update_delay(ca);
-			break;
-		}
+		dvb_ca_en50221_set_configoption(ca, slot);
 		if (ca->pub->write_cam_control(ca->pub, slot,
 					       CTRLIF_COMMAND,
 					       CMDREG_RS) != 0) {
