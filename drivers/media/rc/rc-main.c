@@ -1147,7 +1147,7 @@ static ssize_t show_protocols(struct device *device,
 /**
  * parse_protocol_change() - parses a protocol change request
  * @dev:	rc_dev device
- * @protocols:	pointer to the bitmask of current protocols
+ * @curr_protocols:	pointer to the bitmask of current curr_protocols
  * @buf:	pointer to the buffer with a list of changes
  *
  * Writing "+proto" will add a protocol to the protocol mask.
@@ -1156,7 +1156,7 @@ static ssize_t show_protocols(struct device *device,
  * Writing "none" will disable all protocols.
  * Returns the number of changes performed or a negative error code.
  */
-static int parse_protocol_change(struct rc_dev *dev, u64 *protocols,
+static int parse_protocol_change(struct rc_dev *dev, u64 *curr_protocols,
 				 const char *buf)
 {
 	const char *tmp;
@@ -1202,11 +1202,11 @@ static int parse_protocol_change(struct rc_dev *dev, u64 *protocols,
 		count++;
 
 		if (enable)
-			*protocols |= mask;
+			*curr_protocols |= mask;
 		else if (disable)
-			*protocols &= ~mask;
+			*curr_protocols &= ~mask;
 		else
-			*protocols = mask;
+			*curr_protocols = mask;
 	}
 
 	if (!count) {
@@ -1217,7 +1217,7 @@ static int parse_protocol_change(struct rc_dev *dev, u64 *protocols,
 	return count;
 }
 
-void ir_raw_load_modules(u64 *protocols)
+void ir_raw_load_modules(u64 *curr_protocols)
 {
 	u64 available;
 	int i, ret;
@@ -1229,13 +1229,13 @@ void ir_raw_load_modules(u64 *protocols)
 			continue;
 
 		available = ir_raw_get_allowed_protocols();
-		if (!(*protocols & proto_names[i].type & ~available))
+		if (!(*curr_protocols & proto_names[i].type & ~available))
 			continue;
 
 		if (!proto_names[i].module_name) {
 			pr_err("Can't enable IR protocol %s\n",
 			       proto_names[i].name);
-			*protocols &= ~proto_names[i].type;
+			*curr_protocols &= ~proto_names[i].type;
 			continue;
 		}
 
@@ -1243,18 +1243,18 @@ void ir_raw_load_modules(u64 *protocols)
 		if (ret < 0) {
 			pr_err("Couldn't load IR protocol module %s\n",
 			       proto_names[i].module_name);
-			*protocols &= ~proto_names[i].type;
+			*curr_protocols &= ~proto_names[i].type;
 			continue;
 		}
 		msleep(20);
 		available = ir_raw_get_allowed_protocols();
-		if (!(*protocols & proto_names[i].type & ~available))
+		if (!(*curr_protocols & proto_names[i].type & ~available))
 			continue;
 
 		pr_err("Loaded IR protocol module %s, but protocol %s still not available\n",
 		       proto_names[i].module_name,
 		       proto_names[i].name);
-		*protocols &= ~proto_names[i].type;
+		*curr_protocols &= ~proto_names[i].type;
 	}
 }
 
