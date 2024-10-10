@@ -858,8 +858,7 @@ static irqreturn_t extron_interrupt(struct serio *serio, unsigned char data,
 		} else if (!memcmp(extron->data, "DcecI", 5) &&
 			   extron->data[5] >= '1' &&
 			   extron->data[5] < '1' + extron->num_in_ports) {
-			unsigned int p = extron->data[5] - '1';
-
+			p = extron->data[5] - '1';
 			p += extron->num_out_ports;
 			extron_process_tx_done(extron->ports[p],
 					       extron->data[extron->len - 1]);
@@ -867,32 +866,29 @@ static irqreturn_t extron_interrupt(struct serio *serio, unsigned char data,
 			   extron->data[4] >= '1' &&
 			   extron->data[4] < '1' + extron->num_in_ports &&
 			   extron->data[5] == '*') {
-			unsigned int p = extron->data[4] - '1';
-
+			p = extron->data[4] - '1';
 			p += extron->num_out_ports;
 			extron_process_received(extron->ports[p],
 						extron->data + 6);
 		} else if (!memcmp(extron->data, "DcecO", 5) &&
 			   extron->data[5] >= '1' &&
 			   extron->data[5] < '1' + extron->num_out_ports) {
-			unsigned int p = extron->data[5] - '1';
-
+			p = extron->data[5] - '1';
 			extron_process_tx_done(extron->ports[p],
 					       extron->data[extron->len - 1]);
 		} else if (!memcmp(extron->data, "Ceco", 4) &&
 			   extron->data[4] >= '1' &&
 			   extron->data[4] < '1' + extron->num_out_ports &&
 			   extron->data[5] == '*') {
-			unsigned int p = extron->data[4] - '1';
-
+			p = extron->data[4] - '1';
 			extron_process_received(extron->ports[p],
 						extron->data + 6);
 		} else if (!memcmp(extron->data, "Pceco", 5) &&
 			   extron->data[5] >= '1' &&
 			   extron->data[5] < '1' + extron->num_out_ports) {
-			unsigned int p = extron->data[5] - '1';
 			unsigned int tmp_pa[2] = { 0xff, 0xff };
 
+			p = extron->data[5] - '1';
 			if (sscanf(extron->data + 7, "%%%02x%%%02x",
 				   &tmp_pa[0], &tmp_pa[1]) == 2)
 				extron_phys_addr_change(extron->ports[p],
@@ -900,9 +896,9 @@ static irqreturn_t extron_interrupt(struct serio *serio, unsigned char data,
 		} else if (!memcmp(extron->data, "Pceci", 5) &&
 			   extron->data[5] >= '1' &&
 			   extron->data[5] < '1' + extron->num_in_ports) {
-			unsigned int p = extron->data[5] - '1';
 			unsigned int tmp_pa[2] = { 0xff, 0xff };
 
+			p = extron->data[5] - '1';
 			p += extron->num_out_ports;
 			if (sscanf(extron->data + 7, "%%%02x%%%02x",
 				   &tmp_pa[0], &tmp_pa[1]) == 2)
@@ -912,8 +908,7 @@ static irqreturn_t extron_interrupt(struct serio *serio, unsigned char data,
 			   extron->data[5] >= '1' &&
 			   extron->data[5] < '1' + extron->num_ports &&
 			   extron->data[6] == '*') {
-			unsigned int p = extron->data[5] - '1';
-
+			p = extron->data[5] - '1';
 			if (p)
 				p--;
 			else
@@ -1737,7 +1732,7 @@ static int extron_setup_thread(void *_extron)
 disable_ports:
 	extron->is_ready = false;
 	for (p = 0; p < extron->num_ports; p++) {
-		struct extron_port *port = extron->ports[p];
+		port = extron->ports[p];
 
 		if (!port)
 			continue;
