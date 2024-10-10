@@ -605,7 +605,7 @@ static int jpeg_parse_app14_data(struct jpeg_stream *stream,
  * out->quantization_tables pointers must be initialized to NULL or point to a
  * valid array of 4 v4l2_jpeg_reference structures each.
  *
- * Returns 0 or negative error if parsing failed.
+ * Return: 0 or negative error if parsing failed.
  */
 int v4l2_jpeg_parse_header(void *buf, size_t len, struct v4l2_jpeg_header *out)
 {
@@ -718,7 +718,7 @@ EXPORT_SYMBOL_GPL(v4l2_jpeg_parse_header);
  * @len: length of the frame header
  * @frame_header: returns the parsed frame header
  *
- * Returns 0 or negative error if parsing failed.
+ * Return: 0 or negative error if parsing failed.
  */
 int v4l2_jpeg_parse_frame_header(void *buf, size_t len,
 				 struct v4l2_jpeg_frame_header *frame_header)
@@ -737,7 +737,7 @@ EXPORT_SYMBOL_GPL(v4l2_jpeg_parse_frame_header);
  * @len: length of the scan header
  * @scan_header: returns the parsed scan header
  *
- * Returns 0 or negative error if parsing failed.
+ * Return: 0 or negative error if parsing failed.
  */
 int v4l2_jpeg_parse_scan_header(void *buf, size_t len,
 				struct v4l2_jpeg_scan_header *scan_header)
@@ -758,7 +758,7 @@ EXPORT_SYMBOL_GPL(v4l2_jpeg_parse_scan_header);
  * @q_tables: returns four references into the buffer for the
  *            four possible quantization table destinations
  *
- * Returns 0 or negative error if parsing failed.
+ * Return: 0 or negative error if parsing failed.
  */
 int v4l2_jpeg_parse_quantization_tables(void *buf, size_t len, u8 precision,
 					struct v4l2_jpeg_reference *q_tables)
@@ -779,7 +779,7 @@ EXPORT_SYMBOL_GPL(v4l2_jpeg_parse_quantization_tables);
  *                  four possible Huffman table destinations, in
  *                  the order DC0, DC1, AC0, AC1
  *
- * Returns 0 or negative error if parsing failed.
+ * Return: 0 or negative error if parsing failed.
  */
 int v4l2_jpeg_parse_huffman_tables(void *buf, size_t len,
 				   struct v4l2_jpeg_reference *huffman_tables)
