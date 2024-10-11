@@ -882,6 +882,8 @@ static ssize_t allegro_mbox_read(struct allegro_mbox *mbox,
  * allegro_mbox_send() - Send a message via the mailbox
  * @mbox: the mailbox which is used to send the message
  * @msg: the message to send
+ *
+ * return: size of mbox message on success or a negative error code
  */
 static int allegro_mbox_send(struct allegro_mbox *mbox, void *msg)
 {

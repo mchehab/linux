@@ -464,6 +464,8 @@ allegro_dec_encode_frame(struct mcu_msg_encode_frame_response *msg, u32 *src)
  * allegro_encode_mail() - Encode allegro messages to firmware format
  * @dst: Pointer to the memory that will be filled with data
  * @msg: The allegro message that will be encoded
+ *
+ * return: size of mbox message on success or a negative error code
  */
 ssize_t allegro_encode_mail(u32 *dst, void *msg)
 {
@@ -516,6 +518,8 @@ ssize_t allegro_encode_mail(u32 *dst, void *msg)
  * The message format in the mailbox depends on the firmware. Parse the
  * different formats into a uniform message format that can be used without
  * taking care of the firmware version.
+ *
+ * return:	zero on success or a negative error code
  */
 int allegro_decode_mail(void *msg, u32 *src)
 {
