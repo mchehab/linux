@@ -37,7 +37,6 @@
 #define S302M_SAMPLING_RATE_HZ 48000
 #define PES_PRIVATE_STREAM_1 0xbd  /* PES: private_stream_1 */
 #define S302M_BLOCK_SZ 192
-#define S302M_SIN_LUT_NUM_ELEM 1024
 
 /* these are retrieved empirically from ffmpeg/libavcodec */
 #define FF_S302M_DEFAULT_NUM_FRAMES 1115

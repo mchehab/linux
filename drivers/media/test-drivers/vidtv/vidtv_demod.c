@@ -24,8 +24,6 @@
 
 #include "vidtv_demod.h"
 
-#define POLL_THRD_TIME 2000 /* ms */
-
 static const struct vidtv_demod_cnr_to_qual_s vidtv_demod_c_cnr_2_qual[] = {
 	/* from libdvbv5 source code, in milli db */
 	{ QAM_256, FEC_NONE,  34000, 38000},

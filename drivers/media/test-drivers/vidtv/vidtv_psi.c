@@ -27,7 +27,6 @@
 #include "vidtv_ts.h"
 
 #define CRC_SIZE_IN_BYTES 4
-#define MAX_VERSION_NUM 32
 #define INITIAL_CRC 0xffffffff
 #define ISO_LANGUAGE_CODE_LEN 3
 
