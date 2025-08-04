@@ -127,8 +127,7 @@ class ParseHeader:
         "struct": {
             "prefix": "\\ ",
             "suffix": "\\ ",
-            # Were, rely on autodoc extension instead of set real_type
-            "real_type": ":c:type",
+            "ref_type": ":c:type",
         },
     }
 
@@ -273,7 +272,8 @@ class ParseHeader:
                 for re_struct in self.RE_STRUCTS:
                     match = re_struct.match(line)
                     if match:
-                        self.store_type("struct", match.group(1))
+                        self.store_type("struct", match.group(1),
+                                        replace_underscores=False)
                         break
 
     def process_exceptions(self, fname: str):
