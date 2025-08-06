@@ -148,7 +148,7 @@ class SphinxBuilder:
 
         return path
 
-    def __init__(self, venv=None, verbose=False, n_jobs=None):
+    def __init__(self, venv=None, verbose=False, n_jobs=None, interactive=None):
         """Initialize internal variables"""
         self.venv = venv
         self.verbose = None
@@ -157,7 +157,11 @@ class SphinxBuilder:
         self.kernelversion = os.environ.get("KERNELVERSION", "unknown")
         self.kernelrelease = os.environ.get("KERNELRELEASE", "unknown")
         self.pdflatex = os.environ.get("PDFLATEX", "xelatex")
-        self.latexopts = os.environ.get("LATEXOPTS", "-interaction=batchmode -no-shell-escape")
+
+        if not interactive:
+            self.latexopts = os.environ.get("LATEXOPTS", "-interaction=batchmode -no-shell-escape")
+        else:
+            self.latexopts = os.environ.get("LATEXOPTS", "")
 
         if not verbose:
             verbose = bool(os.environ.get("KBUILD_VERBOSE", "") != "")
@@ -661,6 +665,9 @@ def main():
     parser.add_argument('-j', '--jobs', type=jobs_type,
                         help="Sets number of jobs to use with sphinx-build")
 
+    parser.add_argument('-i', '--interactive', action='store_true',
+                        help="Change latex default to run in interactive mode")
+
     parser.add_argument("-V", "--venv", nargs='?', const=f'{VENV_DEFAULT}',
                         default=None,
                         help=f'If used, run Sphinx from a venv dir (default dir: {VENV_DEFAULT})')
@@ -670,7 +677,7 @@ def main():
     SphinxBuilder.check_python()
 
     builder = SphinxBuilder(venv=args.venv, verbose=args.verbose,
-                            n_jobs=args.jobs)
+                            n_jobs=args.jobs, interactive=args.interactive)
 
     builder.build(args.target, sphinxdirs=args.sphinxdirs, conf=args.conf,
                   theme=args.theme, css=args.css, paper=args.paper)
