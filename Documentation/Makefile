@@ -19,6 +19,7 @@ endif
 
 # You can set these variables from the command line.
 SPHINXBUILD   = sphinx-build
+SPHINXOPTS    =
 SPHINXDIRS    = .
 DOCS_THEME    =
 DOCS_CSS      =

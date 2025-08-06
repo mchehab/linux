@@ -148,16 +148,44 @@ class SphinxBuilder:
 
         return path
 
-    def __init__(self, venv=None, verbose=False):
+    def __init__(self, venv=None, verbose=False, n_jobs=None):
         """Initialize internal variables"""
         self.venv = venv
-        self.verbose = verbose
+        self.verbose = None
 
         # Normal variables passed from Kernel's makefile
         self.kernelversion = os.environ.get("KERNELVERSION", "unknown")
         self.kernelrelease = os.environ.get("KERNELRELEASE", "unknown")
         self.pdflatex = os.environ.get("PDFLATEX", "xelatex")
         self.latexopts = os.environ.get("LATEXOPTS", "-interaction=batchmode -no-shell-escape")
+
+        if not verbose:
+            verbose = bool(os.environ.get("KBUILD_VERBOSE", "") != "")
+
+        # Handle SPHINXOPTS evironment
+        sphinxopts = shlex.split(os.environ.get("SPHINXOPTS", ""))
+
+        # As we handle number of jobs and quiet in separate, we need to pick
+        # it the same way as sphinx-build would pick, so let's use argparse
+        # do to the right argument expansion
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-j', '--jobs', type=int)
+        parser.add_argument('-q', '--quiet', type=int)
+
+        # Other sphinx-build arguments go as-is, so place them
+        # at self.sphinxopts
+        sphinx_args, self.sphinxopts = parser.parse_known_args(sphinxopts)
+        if sphinx_args.quiet == True:
+            self.verbose = False
+
+        if sphinx_args.jobs:
+            self.n_jobs = sphinx_args.jobs
+
+        # Command line arguments was passed, override SPHINXOPTS
+        if verbose is not None:
+            self.verbose = verbose
+
+        self.n_jobs = n_jobs
 
         # Source tree directory. This needs to be at os.environ, as
         # Sphinx extensions and media uAPI makefile needs it
@@ -199,7 +227,7 @@ class SphinxBuilder:
             else:
                 sys.exit(f"Venv {venv} not found.")
 
-    def run_sphinx(self, sphinx_build, sphinx_args, *args, **pwargs):
+    def run_sphinx(self, sphinx_build, build_args, *args, **pwargs):
         """
         Executes sphinx-build using current python3 command and setting
         -j parameter if possible to run the build in parallel.
@@ -207,11 +235,9 @@ class SphinxBuilder:
 
         with JobserverExec() as jobserver:
             if jobserver.claim:
-                parallelism = str(jobserver.claim)
+                n_jobs = str(jobserver.claim)
             else:
-                # As Sphinx has parallelism since version 1.7, we don't need
-                # any check here.
-                parallelism = "auto"
+                n_jobs = "auto" # Supported since Sphinx 1.7
 
             cmd = []
 
@@ -222,10 +248,19 @@ class SphinxBuilder:
 
             cmd.append(sphinx_build)
 
-            if parallelism:
-                cmd.append("-j" + parallelism)
+            # if present, SPHINXOPTS or command line --jobs overrides default
+            if self.n_jobs:
+                n_jobs = str(self.n_jobs)
 
-            cmd += sphinx_args
+            if n_jobs:
+                cmd += [f"-j{n_jobs}"]
+
+            if not self.verbose:
+                cmd.append("-q")
+
+            cmd += self.sphinxopts
+
+            cmd += build_args
 
             if self.verbose:
                 print(" ".join(cmd))
@@ -447,9 +482,6 @@ class SphinxBuilder:
 
             args.extend(["-D", f"latex_elements.papersize={paper}paper"])
 
-        if not self.verbose:
-            args.append("-q")
-
         if self.config_rust:
             args.extend(["-t", "rustdoc"])
 
@@ -582,6 +614,25 @@ class SphinxBuilder:
         except OSError as e:
             sys.exit(f"Failed to restart with {new_python_cmd}: {e}")
 
+def jobs_type(value):
+    """
+    Handle valid values for -j. Accepts Sphinx "-jauto", plus a number
+    equal or bigger than one.
+    """
+    if value is None:
+        return None
+
+    if value.lower() == 'auto':
+        return value.lower()
+
+    try:
+        if int(value) >= 1:
+            return value
+
+        raise argparse.ArgumentTypeError(f"Minimum jobs is 1, got {value}")
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Must be 'auto' or positive integer, got {value}")
+
 def main():
     """
     Main function. The only mandatory argument is the target. If not
@@ -607,18 +658,19 @@ def main():
     parser.add_argument("-v", "--verbose", action='store_true',
                         help="place build in verbose mode")
 
+    parser.add_argument('-j', '--jobs', type=jobs_type,
+                        help="Sets number of jobs to use with sphinx-build")
+
     parser.add_argument("-V", "--venv", nargs='?', const=f'{VENV_DEFAULT}',
                         default=None,
                         help=f'If used, run Sphinx from a venv dir (default dir: {VENV_DEFAULT})')
 
     args = parser.parse_args()
 
-    if not args.verbose:
-        args.verbose = bool(os.environ.get("KBUILD_VERBOSE", "") != "")
-
     SphinxBuilder.check_python()
 
-    builder = SphinxBuilder(venv=args.venv, verbose=args.verbose)
+    builder = SphinxBuilder(venv=args.venv, verbose=args.verbose,
+                            n_jobs=args.jobs)
 
     builder.build(args.target, sphinxdirs=args.sphinxdirs, conf=args.conf,
                   theme=args.theme, css=args.css, paper=args.paper)
