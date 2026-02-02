@@ -279,13 +279,18 @@ class TestUnits:
         if not caller_file and not suite:
             raise TypeError("Either caller_file or suite is needed at TestUnits")
 
-        if env:
-            patcher = patch.dict(os.environ, env)
-            patcher.start()
-            # ensure it gets stopped after
-            atexit.register(patcher.stop)
-
         verbose = args.verbose
+
+        if not env:
+            env = os.environ.copy()
+
+        env["VERBOSE"] = f"{verbose}"
+
+        patcher = patch.dict(os.environ, env)
+        patcher.start()
+        # ensure it gets stopped after
+        atexit.register(patcher.stop)
+
 
         if verbose >= 2:
             unittest.TextTestRunner(verbosity=verbose).run = lambda suite: suite
