@@ -43,9 +43,8 @@ tests:
 
       always return 0.
 
-    # TODO: how to handle timestamps at .TH?
     man: |
-      .TH "func1" 9 "February 2026"  "" "Kernel API Manual"
+      .TH "func1" 9 "January 2026"  "" "Kernel API Manual"
       .SH NAME
       func1 \- Not exported function
       .SH SYNOPSIS
@@ -435,7 +434,7 @@ tests:
     unsigned long rtnl_mutex;
   expected:
   - man: |
-      .TH "var rtnl_mutex" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var rtnl_mutex" 9 "January 2026"  "init" "Kernel API Manual"
       .SH NAME
       rtnl_mutex \- historical global lock for networking control operations.
       .SH SYNOPSIS

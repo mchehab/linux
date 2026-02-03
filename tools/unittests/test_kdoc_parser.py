@@ -11,6 +11,7 @@ Unit tests for kernel-doc parser.
 import logging
 import os
 import re
+import shlex
 import sys
 import unittest
 
@@ -175,11 +176,48 @@ class GenerateKdocItem(unittest.TestCase):
 
                     self.assertEqual(result, value, msg=f"at {key}")
 
+
+#
+# Ancillary function to deal with .TH and date timestamps
+#
+TH_LINE_RE = re.compile(r'^[ \t]*\.TH\b.*$', re.MULTILINE)
+DATE_POS = 3
+
+def replace_th_date(text):
+    """
+    Man pages have a .TH field that contains a timestamp. Get rid of
+    it, as otherwise unit test will fail at a new month.
+    """
+
+    new_text = ""
+    last_end = 0
+
+    for match in TH_LINE_RE.finditer(text):
+        start = match.start()
+        end = match.end()
+
+        new_text += text[last_end:start]
+
+        th_line = text[start:end]
+
+        tokens = shlex.split(th_line)
+
+        if len(tokens) > DATE_POS:
+            tokens[DATE_POS] = "DATE"
+
+        new_text += shlex.join(tokens)
+
+        last_end = end
+
+    new_text += text[last_end:]
+
+    return new_text
+
 #
 # Ancillary function that replicates kdoc_files way to generate output
 #
 def gen_output(fname, out_style, symbols, expected,
-               config=None, relax_whitespace=False):
+               config=None, relax_whitespace=False, has_th=False):
     """
     Use the output class to return an output content from KdocItem symbols.
     """
@@ -193,6 +231,10 @@ def gen_output(fname, out_style, symbols, expected,
 
     result = clean_whitespc(msg, relax_whitespace)
     expected = clean_whitespc(expected, relax_whitespace)
+
+    if has_th:
+        result = replace_th_date(result)
+        expected = replace_th_date(expected)
 
     return result, expected
 
@@ -226,7 +268,7 @@ class KdocItemToMan(unittest.TestCase):
         Generate output using out_style,
         """
         result, expected = gen_output(fname, self.out_style,
-                                      symbols, expected)
+                                      symbols, expected, has_th=True)
 
         self.assertEqual(result, expected)
 
@@ -266,8 +308,8 @@ class CToMan(unittest.TestCase):
         with patcher:
             export_table, entries = kernel_doc.parse_kdoc()
 
-        result, expected = gen_output(fname, self.out_style,
-                                      entries, expected, config=self.config)
+        result, expected = gen_output(fname, self.out_style,    entries,
+                                      expected, config=self.config, has_th=True)
 
         self.assertEqual(result, expected)
 
