@@ -6,28 +6,118 @@
 #
 
 tests:
-  - name: func1
-    fname: mock_functions.c
-    description: "Simplest function test: do nothing, just rst output"
+- name: func1
+  fname: mock_functions.c
+  description: "Simplest function test: do nothing, just rst output"
 
-    source: |
-      /**
-       * func1 - Not exported function
-       * @arg1: @arg1 does nothing
-       *
-       * Does nothing
-       *
-       * return:
-       *    always return 0.
-       */
-      int func1(char *arg1) { return 0; };
+  source: |
+    /**
+      * func1 - Not exported function
+      * @arg1: @arg1 does nothing
+      *
+      * Does nothing
+      *
+      * return:
+      *    always return 0.
+      */
+    int func1(char *arg1) { return 0; };
 
 
-    expected:
-      - rst: |
-        .. c:function:: int func1 (char *arg1)
+  expected:
+    - rst: |
+      .. c:function:: int func1 (char *arg1)
 
-          Not exported function
+        Not exported function
+
+      .. container:: kernelindent
+
+        **Parameters**
+
+        ``char *arg1``
+          **arg1** does nothing
+
+        **Description**
+
+        Does nothing
+
+        **Return**
+
+        always return 0.
+
+      # TODO: how to handle timestamps at .TH?
+      man: |
+        .TH "func1" 9 "February 2026"  "" "Kernel API Manual"
+        .SH NAME
+        func1 \- Not exported function
+        .SH SYNOPSIS
+        .B "int" func1
+        .BI "(char *arg1 "  ");"
+        .SH ARGUMENTS
+        .IP "arg1" 12
+        \fIarg1\fP does nothing
+        .SH "DESCRIPTION"
+        Does nothing
+        .SH "RETURN"
+        always return 0.
+        .SH "SEE ALSO"
+        .PP
+        Kernel file \fBmock_functions.c\fR
+
+- name: func2
+  fname: func2.c
+  description: Simple test with exports
+
+  source: |
+    /**
+      * func2() - Exported function
+      * @arg1: @arg1 does nothing
+      *
+      * Does nothing
+      *
+      * return:
+      *    always return 0.
+      */
+    int func2(char *arg1) { return 0; };
+    EXPORT_SYMBOL(func2);
+
+  exports: func2
+  expected:
+    - kdoc_item:
+        name: func2
+        type: function
+        declaration_start_line: 1
+
+        sections:
+          Description: |
+            Does nothing
+
+          Return: |
+            always return 0.
+
+        sections_start_lines:
+          Description: 3
+          Return: 6
+
+        parameterdescs:
+          arg1: |
+            @arg1 does nothing
+        parameterlist:
+          - arg1
+        parameterdesc_start_lines:
+          arg1: 2
+        parametertypes:
+          arg1: char *arg1
+
+        other_stuff:
+          func_macro: false
+          functiontype: int
+          purpose: "Exported function"
+          typedef: false
+
+      rst: |
+        .. c:function:: int func2 (char *arg1)
+
+          Exported function
 
         .. container:: kernelindent
 
@@ -44,111 +134,333 @@ tests:
 
           always return 0.
 
-        # TODO: how to handle timestamps at .TH?
-        man: |
-          .TH "func1" 9 "February 2026"  "" "Kernel API Manual"
-          .SH NAME
-          func1 \- Not exported function
-          .SH SYNOPSIS
-          .B "int" func1
-          .BI "(char *arg1 "  ");"
-          .SH ARGUMENTS
-          .IP "arg1" 12
-          \fIarg1\fP does nothing
-          .SH "DESCRIPTION"
-          Does nothing
-          .SH "RETURN"
-          always return 0.
-          .SH "SEE ALSO"
-          .PP
-          Kernel file \fBmock_functions.c\fR
+      # TODO: how to handle timestamps at .TH?
+      man: |
+        .TH "func2" 9 "February 2026"  "" "Kernel API Manual"
+        .SH NAME
+        func2 \- Exported function
+        .SH SYNOPSIS
+        .B "int" func2
+        .BI "(char *arg1 "  ");"
+        .SH ARGUMENTS
+        .IP "arg1" 12
+        \fIarg1\fP does nothing
+        .SH "DESCRIPTION"
+        Does nothing
+        .SH "RETURN"
+        always return 0.
+        .SH "SEE ALSO"
+        .PP
+        Kernel file \fBfunc2.c\fR
 
-  - name: func2
-    fname: func2.c
-    description: Simple test with exports
+#
+# Variables from Randy Dunlop's testset
+#
+- name: test_init_kdoc-globals-test_c_000
+  description: init/kdoc-globals-test.c line 4
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var ROOT_DEV - system root device
+     *
+     * @ROOT_DEV is either the successful root device or the root device
+     * that failed boot in the boot failure message.
+     */
+    unsigned long ROOT_DEV;
+  expected:
+  - man: |
+      .TH "var ROOT_DEV" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      ROOT_DEV \- system root device
+      .SH SYNOPSIS
+      unsigned long ROOT_DEV;
+      .SH "Description"
+      \fIROOT_DEV\fP is either the successful root device or the root device
+      that failed boot in the boot failure message.
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: ROOT_DEV
 
-    source: |
-      /**
-       * func2() - Exported function
-       * @arg1: @arg1 does nothing
-       *
-       * Does nothing
-       *
-       * return:
-       *    always return 0.
-       */
-      int func2(char *arg1) { return 0; };
-      EXPORT_SYMBOL(func2);
+        ``unsigned long ROOT_DEV;``
 
-    exports: func2
-    expected:
-      - kdoc_item:
-          name: func2
-          type: function
-          declaration_start_line: 1
+        system root device
 
-          sections:
-            Description: |
-              Does nothing
+        **Description**
 
-            Return: |
-              always return 0.
+        **ROOT_DEV** is either the successful root device or the root device
+        that failed boot in the boot failure message.
+- name: test_init_kdoc-globals-test_c_001
+  description: init/kdoc-globals-test.c line 14
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var system_state - system state used during boot or suspend/hibernate/resume
+     *
+     * @system_state can be used during boot to determine if it is safe to
+     * make certain calls to other parts of the kernel. It can also be used
+     * during suspend/hibernate or resume to determine the order of actions
+     * that need to be executed. The numerical values of system_state are
+     * sometimes used in numerical ordering tests, so the relative values
+     * must not be altered.
+     */
+    enum system_states system_state __read_mostly;
+  expected:
+  - man: |
+      .TH "var system_state" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      system_state \- system state used during boot or suspend/hibernate/resume
+      .SH SYNOPSIS
+      enum system_states system_state __read_mostly;
+      .SH "Description"
+      \fIsystem_state\fP can be used during boot to determine if it is safe to
+      make certain calls to other parts of the kernel. It can also be used
+      during suspend/hibernate or resume to determine the order of actions
+      that need to be executed. The numerical values of system_state are
+      sometimes used in numerical ordering tests, so the relative values
+      must not be altered.
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: system_state
 
-          sections_start_lines:
-            Description: 3
-            Return: 6
+        ``enum system_states system_state __read_mostly;``
 
-          parameterdescs:
-            arg1: |
-              @arg1 does nothing
-          parameterlist:
-            - arg1
-          parameterdesc_start_lines:
-            arg1: 2
-          parametertypes:
-            arg1: char *arg1
+        system state used during boot or suspend/hibernate/resume
 
-          other_stuff:
-            func_macro: false
-            functiontype: int
-            purpose: "Exported function"
-            typedef: false
+        **Description**
 
-        rst: |
-          .. c:function:: int func2 (char *arg1)
+        **system_state** can be used during boot to determine if it is safe to
+        make certain calls to other parts of the kernel. It can also be used
+        during suspend/hibernate or resume to determine the order of actions
+        that need to be executed. The numerical values of system_state are
+        sometimes used in numerical ordering tests, so the relative values
+        must not be altered.
+- name: test_init_kdoc-globals-test_c_002
+  description: init/kdoc-globals-test.c line 26
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var saved_command_line - kernel's command line, saved from use at
+     * any later time in the kernel.
+     */
+    char *saved_command_line __ro_after_init;
+  expected:
+  - man: |
+      .TH "var saved_command_line" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      saved_command_line \- kernel's command line, saved from use at any later time in the kernel.
+      .SH SYNOPSIS
+      char *saved_command_line __ro_after_init;
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: saved_command_line
 
-            Exported function
+        ``char *saved_command_line __ro_after_init;``
 
-          .. container:: kernelindent
+        kernel's command line, saved from use at any later time in the kernel.
+- name: test_init_kdoc-globals-test_c_003
+  description: init/kdoc-globals-test.c line 32
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var loop_per_jiffy - calculated loop count needed to consume one jiffy
+     * of time
+     */
+    unsigned long loops_per_jiffy = (1<<12);
+  expected:
+  - man: |
+      .TH "var loops_per_jiffy" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      loops_per_jiffy \- calculated loop count needed to consume one jiffy of time
+      .SH SYNOPSIS
+      unsigned long loops_per_jiffy = (1<<12);
+      .SH "Initialization"
+      default: (1<<12)
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: loops_per_jiffy
 
-            **Parameters**
+        ``unsigned long loops_per_jiffy = (1<<12);``
 
-            ``char *arg1``
-              **arg1** does nothing
+        calculated loop count needed to consume one jiffy of time
 
-            **Description**
+        **Initialization**
 
-            Does nothing
+        default: ``(1<<12)``
+- name: test_init_kdoc-globals-test_c_004
+  description: init/kdoc-globals-test.c line 39
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var preset_lpj - lpj (loops per jiffy) value set from kernel
+     * command line using "lpj=VALUE"
+     *
+     * See Documentation/admin-guide/kernel-parameters.txt ("lpj=") for details.
+     */
+    unsigned long preset_lpj;
+  expected:
+  - man: |
+      .TH "var preset_lpj" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      preset_lpj \- lpj (loops per jiffy) value set from kernel command line using "lpj=VALUE"
+      .SH SYNOPSIS
+      unsigned long preset_lpj;
+      .SH "Description"
+      See Documentation/admin-guide/kernel-parameters.txt ("lpj=") for details.
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: preset_lpj
 
-            **Return**
+        ``unsigned long preset_lpj;``
 
-            always return 0.
+        lpj (loops per jiffy) value set from kernel command line using "lpj=VALUE"
 
-        # TODO: how to handle timestamps at .TH?
-        man: |
-          .TH "func2" 9 "February 2026"  "" "Kernel API Manual"
-          .SH NAME
-          func2 \- Exported function
-          .SH SYNOPSIS
-          .B "int" func2
-          .BI "(char *arg1 "  ");"
-          .SH ARGUMENTS
-          .IP "arg1" 12
-          \fIarg1\fP does nothing
-          .SH "DESCRIPTION"
-          Does nothing
-          .SH "RETURN"
-          always return 0.
-          .SH "SEE ALSO"
-          .PP
-          Kernel file \fBfunc2.c\fR
+        **Description**
+
+        See Documentation/admin-guide/kernel-parameters.txt ("lpj=") for details.
+- name: test_init_kdoc-globals-test_c_005
+  description: init/kdoc-globals-test.c line 48
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var linux_proc_banner - text used from /proc/version file
+     *
+     * * first %s is sysname (e.g., "Linux")
+     * * second %s is release
+     * * third %s is version
+     */
+    char linux_proc_banner[];
+  expected:
+  - man: |
+      .TH "var linux_proc_banner" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      linux_proc_banner \- text used from /proc/version file
+      .SH SYNOPSIS
+      char linux_proc_banner[];
+      .SH "Description"
+      * first s is sysname (e.g., "Linux")
+      * second s is release
+      * third s is version
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: linux_proc_banner
+
+        ``char linux_proc_banner[];``
+
+        text used from /proc/version file
+
+        **Description**
+
+        * first ``s`` is sysname (e.g., "Linux")
+        * second ``s`` is release
+        * third ``s`` is version
+- name: test_init_kdoc-globals-test_c_006
+  description: init/kdoc-globals-test.c line 64
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var linux_banner - Linux boot banner, usually printed at boot time
+     */
+    const char linux_banner[];
+  expected:
+  - man: |
+      .TH "var linux_banner" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      linux_banner \- Linux boot banner, usually printed at boot time
+      .SH SYNOPSIS
+      const char linux_banner[];
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: linux_banner
+
+        ``const char linux_banner[];``
+
+        Linux boot banner, usually printed at boot time
+- name: test_init_kdoc-globals-test_c_007
+  description: init/kdoc-globals-test.c line 75
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var diskseq - unique sequence number for block device instances
+     *
+     * Allows userspace to associate uevents to the lifetime of a device
+     */
+    static atomic64_t diskseq;
+  expected:
+  - man: |
+      .TH "var diskseq" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      diskseq \- unique sequence number for block device instances
+      .SH SYNOPSIS
+      static atomic64_t diskseq;
+      .SH "Description"
+      Allows userspace to associate uevents to the lifetime of a device
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: diskseq
+
+        ``static atomic64_t diskseq;``
+
+        unique sequence number for block device instances
+
+        **Description**
+
+        Allows userspace to associate uevents to the lifetime of a device
+- name: test_init_kdoc-globals-test_c_008
+  description: init/kdoc-globals-test.c line 83
+  fname: init/kdoc-globals-test.c
+  source: |
+    /**
+     * var rtnl_mutex - historical global lock for networking control operations.
+     *
+     * @rtnl_mutex is used to serialize rtnetlink requests
+     * and protect all kernel internal data structures related to networking.
+     *
+     * See Documentation/networking/netdevices.rst for details.
+     * Often known as the rtnl_lock, although rtnl_lock is a kernel function.
+     */
+    unsigned long rtnl_mutex;
+  expected:
+  - man: |
+      .TH "var rtnl_mutex" 9 "February 2026"  "init" "Kernel API Manual"
+      .SH NAME
+      rtnl_mutex \- historical global lock for networking control operations.
+      .SH SYNOPSIS
+      unsigned long rtnl_mutex;
+      .SH "Description"
+      \fIrtnl_mutex\fP is used to serialize rtnetlink requests
+      and protect all kernel internal data structures related to networking.
+      See Documentation/networking/netdevices.rst for details.
+      Often known as the rtnl_lock, although rtnl_lock is a kernel function.
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBinit/kdoc-globals-test.c\fR
+    rst: |
+      .. c:macro:: rtnl_mutex
+
+        ``unsigned long rtnl_mutex;``
+
+        historical global lock for networking control operations.
+
+        **Description**
+
+        **rtnl_mutex** is used to serialize rtnetlink requests
+        and protect all kernel internal data structures related to networking.
+
+        See Documentation/networking/netdevices.rst for details.
+        Often known as the rtnl_lock, although rtnl_lock is a kernel function.
