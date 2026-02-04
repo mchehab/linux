@@ -22,45 +22,44 @@ tests:
       */
     int func1(char *arg1) { return 0; };
 
-
   expected:
-    - rst: |
-      .. c:function:: int func1 (char *arg1)
+  - rst: |
+    .. c:function:: int func1 (char *arg1)
 
-        Not exported function
+      Not exported function
 
-      .. container:: kernelindent
+    .. container:: kernelindent
 
-        **Parameters**
+      **Parameters**
 
-        ``char *arg1``
-          **arg1** does nothing
+      ``char *arg1``
+        **arg1** does nothing
 
-        **Description**
+      **Description**
 
-        Does nothing
+      Does nothing
 
-        **Return**
+      **Return**
 
-        always return 0.
+      always return 0.
 
-      man: |
-        .TH "func1" 9 "February 2026"  "" "Kernel API Manual"
-        .SH NAME
-        func1 \- Not exported function
-        .SH SYNOPSIS
-        .B "int" func1
-        .BI "(char *arg1 "  ");"
-        .SH ARGUMENTS
-        .IP "arg1" 12
-        \fIarg1\fP does nothing
-        .SH "DESCRIPTION"
-        Does nothing
-        .SH "RETURN"
-        always return 0.
-        .SH "SEE ALSO"
-        .PP
-        Kernel file \fBmock_functions.c\fR
+    man: |
+      .TH "func1" 9 "February 2026"  "" "Kernel API Manual"
+      .SH NAME
+      func1 \- Not exported function
+      .SH SYNOPSIS
+      .B "int" func1
+      .BI "(char *arg1 "  ");"
+      .SH ARGUMENTS
+      .IP "arg1" 12
+      \fIarg1\fP does nothing
+      .SH "DESCRIPTION"
+      Does nothing
+      .SH "RETURN"
+      always return 0.
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBmock_functions.c\fR
 
 - name: func2
   fname: func2.c
@@ -81,82 +80,82 @@ tests:
 
   exports: func2
   expected:
-    - kdoc_item:
-        name: func2
-        type: function
-        declaration_start_line: 1
+  - kdoc_item:
+      name: func2
+      type: function
+      declaration_start_line: 1
 
-        sections:
-          Description: |
-            Does nothing
-
-          Return: |
-            always return 0.
-
-        sections_start_lines:
-          Description: 3
-          Return: 6
-
-        parameterdescs:
-          arg1: |
-            @arg1 does nothing
-        parameterlist:
-          - arg1
-        parameterdesc_start_lines:
-          arg1: 2
-        parametertypes:
-          arg1: char *arg1
-
-        other_stuff:
-          func_macro: false
-          functiontype: int
-          purpose: "Exported function"
-          typedef: false
-
-      rst: |
-        .. c:function:: int func2 (char *arg1)
-
-          Exported function
-
-        .. container:: kernelindent
-
-          **Parameters**
-
-          ``char *arg1``
-            **arg1** does nothing
-
-          **Description**
-
+      sections:
+        Description: |
           Does nothing
 
-          **Return**
-
+        Return: |
           always return 0.
 
-      man: |
-        .TH "func2" 9 "February 2026"  "" "Kernel API Manual"
-        .SH NAME
-        func2 \- Exported function
-        .SH SYNOPSIS
-        .B "int" func2
-        .BI "(char *arg1 "  ");"
-        .SH ARGUMENTS
-        .IP "arg1" 12
-        \fIarg1\fP does nothing
-        .SH "DESCRIPTION"
+      sections_start_lines:
+        Description: 3
+        Return: 6
+
+      parameterdescs:
+        arg1: |
+          @arg1 does nothing
+      parameterlist:
+        - arg1
+      parameterdesc_start_lines:
+        arg1: 2
+      parametertypes:
+        arg1: char *arg1
+
+      other_stuff:
+        func_macro: false
+        functiontype: int
+        purpose: "Exported function"
+        typedef: false
+
+    rst: |
+      .. c:function:: int func2 (char *arg1)
+
+        Exported function
+
+      .. container:: kernelindent
+
+        **Parameters**
+
+        ``char *arg1``
+          **arg1** does nothing
+
+        **Description**
+
         Does nothing
-        .SH "RETURN"
+
+        **Return**
+
         always return 0.
-        .SH "SEE ALSO"
-        .PP
-        Kernel file \fBfunc2.c\fR
+
+    man: |
+      .TH "func2" 9 "February 2026"  "" "Kernel API Manual"
+      .SH NAME
+      func2 \- Exported function
+      .SH SYNOPSIS
+      .B "int" func2
+      .BI "(char *arg1 "  ");"
+      .SH ARGUMENTS
+      .IP "arg1" 12
+      \fIarg1\fP does nothing
+      .SH "DESCRIPTION"
+      Does nothing
+      .SH "RETURN"
+      always return 0.
+      .SH "SEE ALSO"
+      .PP
+      Kernel file \fBfunc2.c\fR
 
 #
 # Variables from Randy Dunlop's testset
 #
-- name: test_init_kdoc-globals-test_c_000
-  description: init/kdoc-globals-test.c line 4
-  fname: init/kdoc-globals-test.c
+- name: unsigned_long_var_on_uppercase
+  description: Test an unsigned long varaible in uppercase
+  fname: mock-vars.c
   source: |
     /**
      * var ROOT_DEV - system root device
@@ -167,7 +166,7 @@ tests:
     unsigned long ROOT_DEV;
   expected:
   - man: |
-      .TH "var ROOT_DEV" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var ROOT_DEV" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       ROOT_DEV \- system root device
       .SH SYNOPSIS
@@ -177,7 +176,7 @@ tests:
       that failed boot in the boot failure message.
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: ROOT_DEV
 
@@ -189,9 +188,9 @@ tests:
 
         **ROOT_DEV** is either the successful root device or the root device
         that failed boot in the boot failure message.
-- name: test_init_kdoc-globals-test_c_001
-  description: init/kdoc-globals-test.c line 14
-  fname: init/kdoc-globals-test.c
+- name: enum_var
+  description: Test an enum var with __read_mostly
+  fname: mock-vars.c
   source: |
     /**
      * var system_state - system state used during boot or suspend/hibernate/resume
@@ -206,7 +205,7 @@ tests:
     enum system_states system_state __read_mostly;
   expected:
   - man: |
-      .TH "var system_state" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var system_state" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       system_state \- system state used during boot or suspend/hibernate/resume
       .SH SYNOPSIS
@@ -220,7 +219,7 @@ tests:
       must not be altered.
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: system_state
 
@@ -236,9 +235,9 @@ tests:
         that need to be executed. The numerical values of system_state are
         sometimes used in numerical ordering tests, so the relative values
         must not be altered.
-- name: test_init_kdoc-globals-test_c_002
-  description: init/kdoc-globals-test.c line 26
-  fname: init/kdoc-globals-test.c
+- name: test_char_pointer_var
+  description: Test char * var with __ro_after_init
+  fname: mock-vars.c
   source: |
     /**
      * var saved_command_line - kernel's command line, saved from use at
@@ -247,23 +246,23 @@ tests:
     char *saved_command_line __ro_after_init;
   expected:
   - man: |
-      .TH "var saved_command_line" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var saved_command_line" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       saved_command_line \- kernel's command line, saved from use at any later time in the kernel.
       .SH SYNOPSIS
       char *saved_command_line __ro_after_init;
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: saved_command_line
 
         ``char *saved_command_line __ro_after_init;``
 
         kernel's command line, saved from use at any later time in the kernel.
-- name: test_init_kdoc-globals-test_c_003
-  description: init/kdoc-globals-test.c line 32
-  fname: init/kdoc-globals-test.c
+- name: test_unsigned_long_with_default
+  description: Test an unsigned long var that is set to a default value
+  fname: mock-vars.c
   source: |
     /**
      * var loop_per_jiffy - calculated loop count needed to consume one jiffy
@@ -272,7 +271,7 @@ tests:
     unsigned long loops_per_jiffy = (1<<12);
   expected:
   - man: |
-      .TH "var loops_per_jiffy" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var loops_per_jiffy" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       loops_per_jiffy \- calculated loop count needed to consume one jiffy of time
       .SH SYNOPSIS
@@ -281,7 +280,7 @@ tests:
       default: (1<<12)
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: loops_per_jiffy
 
@@ -292,9 +291,9 @@ tests:
         **Initialization**
 
         default: ``(1<<12)``
-- name: test_init_kdoc-globals-test_c_004
-  description: init/kdoc-globals-test.c line 39
-  fname: init/kdoc-globals-test.c
+- name: test_unsigned_long
+  description: test a simple unsigned long variable.
+  fname: mock-vars.c
   source: |
     /**
      * var preset_lpj - lpj (loops per jiffy) value set from kernel
@@ -305,7 +304,7 @@ tests:
     unsigned long preset_lpj;
   expected:
   - man: |
-      .TH "var preset_lpj" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var preset_lpj" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       preset_lpj \- lpj (loops per jiffy) value set from kernel command line using "lpj=VALUE"
       .SH SYNOPSIS
@@ -314,7 +313,7 @@ tests:
       See Documentation/admin-guide/kernel-parameters.txt ("lpj=") for details.
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: preset_lpj
 
@@ -325,9 +324,9 @@ tests:
         **Description**
 
         See Documentation/admin-guide/kernel-parameters.txt ("lpj=") for details.
-- name: test_init_kdoc-globals-test_c_005
-  description: init/kdoc-globals-test.c line 48
-  fname: init/kdoc-globals-test.c
+- name: test_char_array
+  description: test a char array variable
+  fname: mock-vars.c
   source: |
     /**
      * var linux_proc_banner - text used from /proc/version file
@@ -339,7 +338,7 @@ tests:
     char linux_proc_banner[];
   expected:
   - man: |
-      .TH "var linux_proc_banner" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var linux_proc_banner" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       linux_proc_banner \- text used from /proc/version file
       .SH SYNOPSIS
@@ -350,7 +349,7 @@ tests:
       * third s is version
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: linux_proc_banner
 
@@ -363,9 +362,9 @@ tests:
         * first ``s`` is sysname (e.g., "Linux")
         * second ``s`` is release
         * third ``s`` is version
-- name: test_init_kdoc-globals-test_c_006
-  description: init/kdoc-globals-test.c line 64
-  fname: init/kdoc-globals-test.c
+- name: test_const_char_array
+  description: test a const char array variable
+  fname: mock-vars.c
   source: |
     /**
      * var linux_banner - Linux boot banner, usually printed at boot time
@@ -373,23 +372,23 @@ tests:
     const char linux_banner[];
   expected:
   - man: |
-      .TH "var linux_banner" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var linux_banner" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       linux_banner \- Linux boot banner, usually printed at boot time
       .SH SYNOPSIS
       const char linux_banner[];
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: linux_banner
 
         ``const char linux_banner[];``
 
         Linux boot banner, usually printed at boot time
-- name: test_init_kdoc-globals-test_c_007
-  description: init/kdoc-globals-test.c line 75
-  fname: init/kdoc-globals-test.c
+- name: test_static_atomic64_t_var
+  description: test a static atomi64_t variable
+  fname: mock-vars.c
   source: |
     /**
      * var diskseq - unique sequence number for block device instances
@@ -399,7 +398,7 @@ tests:
     static atomic64_t diskseq;
   expected:
   - man: |
-      .TH "var diskseq" 9 "February 2026"  "init" "Kernel API Manual"
+      .TH "var diskseq" 9 "February 2026"  "" "Kernel API Manual"
       .SH NAME
       diskseq \- unique sequence number for block device instances
       .SH SYNOPSIS
@@ -408,7 +407,7 @@ tests:
       Allows userspace to associate uevents to the lifetime of a device
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBmock-vars.c\fR
     rst: |
       .. c:macro:: diskseq
 
@@ -419,9 +418,9 @@ tests:
         **Description**
 
         Allows userspace to associate uevents to the lifetime of a device
-- name: test_init_kdoc-globals-test_c_008
-  description: init/kdoc-globals-test.c line 83
-  fname: init/kdoc-globals-test.c
+- name: test_unsigned_long_on_init
+  description: test an unsigned long var at "init" with a different timestamp.
+  fname: init/mock-vars.c
   source: |
     /**
      * var rtnl_mutex - historical global lock for networking control operations.
@@ -447,7 +446,7 @@ tests:
       Often known as the rtnl_lock, although rtnl_lock is a kernel function.
       .SH "SEE ALSO"
       .PP
-      Kernel file \fBinit/kdoc-globals-test.c\fR
+      Kernel file \fBinit/mock-vars.c\fR
     rst: |
       .. c:macro:: rtnl_mutex
 
