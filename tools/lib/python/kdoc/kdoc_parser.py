@@ -87,19 +87,103 @@ def trim_whitespace(s):
     """
     return multi_space.sub(' ', s.strip())
 
-def trim_private_members(text):
+#: Regex to identify public/private markers and the end of the string
+#public_priv_markup = KernRe(r'(?:[ \t]*/\*\s*(?:(public|private)?):(?:.*?\*/))')
+
+public_priv_markup = KernRe('(' +
+                            r'?:[ \t]*/\*\s*' +          # start comment
+                            r'(?:(public|private):)' +   # public/private
+                            r'(?:.*)?\*/' +              # end comment/text
+                            ')|$')
+
+#: Start/end of a C code block.
+c_code_block = KernRe(r'([\{\}])|$')
+
+def trim_private_members(source):
     """
-    Remove ``struct``/``enum`` members that have been marked "private".
+    Remove ``struct``/``union``/``enum`` members that have been marked
+    as private by a comment like::
+
+        /* private: <with an optional rationale why it is private> */
+
+    The behavior of private can be reverted on two situations:
+
+        - after a ``/* public: */ comment;
+        - after the end of the code block marked with "{}",
+          for inner structs/enums
+
+    The code ensures that block ends will be preserved and will try to
+    preserve the original identation as much as possible, due to the man
+    pages output.
     """
-    # First look for a "public:" block that ends a private region, then
-    # handle the "private until the end" case.
+
+    is_public = True
+    stack = [is_public]
+    out = ""
+
     #
-    text = KernRe(r'/\*\s*private:.*?/\*\s*public:.*?\*/', flags=re.S).sub('', text)
-    text = KernRe(r'/\*\s*private:.*', flags=re.S).sub('', text)
+    # As public_priv_markup regex picks either a comment or ``.*/$``, we don't
+    # need an extra step to handle the remaining output at the end.
     #
-    # We needed the comments to do the above, but now we can take them out.
-    #
-    return KernRe(r'\s*/\*.*?\*/\s*', flags=re.S).sub('', text).strip()
+    pos = 0
+    for match in public_priv_markup.finditer(source):
+        mtype = match.group(1)
+
+        before = source[pos:match.start()]
+
+        pos = match.end() + 1
+
+        p = 0
+        for m in c_code_block.finditer(before):
+            start = m.start()
+            end = m.end()
+
+            if is_public:
+                out += before[p:end + 1]
+
+            #
+            # The only case where m.group(1) is none is at the end of the string
+            #
+            if not m.group(1):
+                break
+
+            if m.group(1) == "{":
+                stack.append(is_public)
+            else:
+                #
+                # Preserve block ends even when public is not true
+                #
+
+                if not is_public:
+
+                    #
+                    # Handle struct { ... } foo;
+                    #
+                    while end < len(before) and before[end] != ";":
+                        end += 1
+
+                    #
+                    # Preserve ";" at the end
+                    #
+                    if end < len(before) and before[end] == ";":
+                        end += 1
+
+                    out += before[start:end] + "\n"
+
+                if stack:
+                    is_public = stack.pop()
+                else:
+                    is_public = True
+
+            p = end + 1
+
+        if mtype:
+            if mtype == "private":
+                is_public = False
+            else:
+                is_public = True
+
+    return out
 
 class state:
     """
@@ -744,6 +828,9 @@ class KernelDoc:
         #
         # Do the basic parse to get the pieces of the declaration.
         #
+
+        proto = trim_private_members(proto)
+
         struct_parts = self.split_struct_proto(proto)
         if not struct_parts:
             self.emit_msg(ln, f"{proto} error: Cannot parse struct or union!")
@@ -757,7 +844,6 @@ class KernelDoc:
         #
         # Go through the list of members applying all of our transformations.
         #
-        members = trim_private_members(members)
         members = self.apply_transforms(self.xforms.struct_xforms, members)
 
         #
