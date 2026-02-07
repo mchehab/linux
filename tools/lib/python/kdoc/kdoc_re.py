@@ -402,3 +402,220 @@ class CFunction(NestedMatch):
     """
     def __init__(self, regex):
         self.regex = KernRe(r"\b" + regex + r"\s*\(")
+
+class MemberExtractor:
+    """
+    Extract members from structs and unions.
+
+    Parameters:
+
+    ``logger``
+      - a class derivated from logging logger used for debugging purposes.
+
+    NOTE:
+        This logic was written in a way that it stricly requires all
+        delimiters to be in place.
+
+        However, the current implementation at the parser for "private"
+        is **not** compliant: if one uses it, and doesn't add a public,
+        it will strip the delimiters.
+
+        We already added a hack at NestedMatch due to that, but let's not
+        repeat it here. Instead, we need to fix the logic at the KernelDoc
+        parser.
+
+        An alternative would be to not raise a ValueError, but it sounds
+        better to ensure that the kernel-doc is doing the right thing.
+    """
+
+    RE_STRUCT = KernRe(r'\b(?:struct|union)\b([^\{\};]+)')
+    RE_IDENT =  KernRe(r'\b([^\{\};]+)\b')
+    SPACE_CHARS = [ " ", "\t", "\n" ]
+
+    def __init__(self, logger):
+        self.log = logger
+
+    def get_code_block(self, text):
+        """
+        Return a C start/end code block, e.g. ``{ code_block }``.
+
+        Properly handle inner code blocks inside it.
+        """
+
+        start = text.find('{')
+        if start == -1:
+            return None, None
+
+        stack = []
+        for i in range(start, len(text)):
+            char = text[i]
+
+            if char in DELIMITER_PAIRS:            # opening
+                stack.append(DELIMITER_PAIRS[char])
+            elif char in DELIMITER_PAIRS.values(): # closing
+                if not stack or char != stack.pop():
+                    raise ValueError(f"missing closing brace at {i}")
+
+                if not stack:                    # all matched
+                    self.log.debug(f"code_block: {text[start:i + 1]}")
+                    return start, i
+
+        raise ValueError(f"missing closing brace at the end of the string")
+
+    def next_statement(self, s: str, pos: int) -> int:
+        """
+        Find the next statement inside struct/union, by searching for a ";"
+        delimiter outside a nested block.
+
+        Properly handle inner code blocks inside it.
+        """
+
+        stack = []
+        while pos < len(s):
+            char = s[pos]
+
+            if char in DELIMITER_PAIRS:
+                stack.append(DELIMITER_PAIRS[char])
+            elif char in DELIMITER_PAIRS.values():
+                if stack and char == stack[-1]:
+                    stack.pop()
+
+            #
+            # Go up to the end of the statement
+            #
+            if char == ';' and not stack:
+                return pos
+
+            pos += 1
+
+        return len(s)
+
+    def isspace(self, char, ignore=None):
+        """
+        Ancillary method to ignore space characters in C code
+        """
+
+        if char in self.SPACE_CHARS:
+            return True
+
+        return False
+
+    @staticmethod
+    def get_identifier(text):
+        #
+        # Remove bitfield/array/pointer info, getting the bare name.
+        #
+        text = KernRe(r'[:\[].*').sub('', text.strip())
+        if not text:
+            return None
+
+        s_id = text.split(' ')[-1]
+        s_id = KernRe(r'^\**(\S+)\s*').sub(r'\1 ', s_id)
+
+        return s_id.strip()
+
+    def extract_members(self, text: str) -> List[List[str]]:
+        """
+        Main routine to extract members from a struct or union.
+
+        It is called recursively until it finishes handling the entire
+        struct and their inner blocks.
+        """
+
+        members = []
+
+        self.log.debug(f"extract members from '{text}'")
+
+        pos = 0
+        while pos < len(text):
+            while self.isspace(text[pos]):
+                pos += 1
+                if pos >= len(text):
+                    break
+
+            #
+            # find the next statement
+            #
+            old_pos = pos
+            pos = self.next_statement(text, old_pos)
+            member_str = text[old_pos:pos]
+
+            #
+            # drop semicolons after statements
+            #
+            while pos < len(text) and text[pos] == ';':
+                pos += 1
+
+            #
+            # Get an inner block, if any
+            #
+            nested_start, nested_end = self.get_code_block(member_str)
+
+            #
+            # No inner code blocks
+            #
+            if not nested_end:
+                if member_str:
+                    s_id = self.get_identifier(member_str)
+                    self.log.debug(f"member: {s_id}")
+
+                    members.append([s_id])
+
+                continue
+
+            #
+            # Handle members of inner code blocks
+            #
+            nested_body = member_str[nested_start + 1:nested_end]
+            nested_members = self.extract_members(nested_body)
+
+            # name of the anonymous block (if any)
+            after_brace = member_str[nested_end + 1:]
+
+            name = self.get_identifier(after_brace)
+            if name:
+                self.log.debug(f"Found nested block named '{name}'")
+                for nm in nested_members:
+                    members.append([name] + nm)
+            else:
+                self.log.debug("Anonymous nested block – inserting directly")
+                members += nested_members
+
+        self.log.debug(f"extract_members: finished – found {len(members)} members")
+        return members
+
+    def parse(self, text):
+        """
+        Return struct/union ID and its members from a C source code.
+        """
+
+        #
+        # Search for the beginning of the struct. Don't care about its end,
+        # as this will be handled using matching delimiters.
+        #
+        m = self.RE_STRUCT.search(text)
+        if not m:
+            return None, []
+
+        #
+        # Pick potential struct/union ID
+        #
+        s_id = m.group(1).strip()
+
+        #
+        # Pick the struct contents, if any. Let's use a simple loop, as this
+        # is faster than using regex.
+        #
+        # Please notice that the logic below assumes that there's just one
+        # structure following a given kernel-doc markup. This is different
+        # from the previous kernel-doc behavior.
+        #
+        start = m.end()
+        while self.isspace(text[start]):
+            start += 1
+
+        end = len(text) - 1
+        while self.isspace(text[end]) or text[end] == ";":
+            end -= 1
+
+        return s_id, self.extract_members(text[start:end + 1])
