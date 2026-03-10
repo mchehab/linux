@@ -245,6 +245,74 @@ class CTokenizer():
         return out
 
 
+class CTokenArgs:
+    """Ancillary class to help using backrefs from sub matches."""
+    def __init__(sub_str):
+        self.sub_groups = {}
+        self.max_group = -1
+
+        for m in KernRe(r'\\\{(\d+)\}').findinter(sub_str):
+            group = int(m.group(1))
+            sub_groups.add(group)
+            max_group = max(self.max_group, group)
+
+    def groups(new_tokenizer):
+        """Create replacement arguments for \1, \2, \3,.. \{max_group}"""
+
+        if self.max_group < 0:
+            return []
+
+        groups_list = [] * (max_group + 1)
+
+        #
+        # Fill \0 with the full token contents
+        #
+        groups_list[0] = new_tokenizer.tokens
+
+        if not max_group:
+            return groups_list
+
+        delim = None
+        tokens = new_tokenizer.tokens
+
+        #
+        # Ignore everything before BEGIN. The value of begin gives the
+        # delimiter to be used for the matches
+        #
+        for i in range(0, len(tokens)):
+            tok = tokens[i]
+            if tok.kind == CToken.BEGIN:
+                if tok.value == "{":
+                    delim = ";"
+                elif tok.value == "(":
+                    delim = ","
+                else:
+                    raise ValueError(fr"Can't handle \1..\n on {sub_str}")
+
+                break
+
+        pos = 1
+        while i < len(tokens) and pos <= max_group:
+            if tok.kind == CToken.PUNC and delim == tok.value:
+                pos += 1
+                continue
+
+            groups_list[pos].append(tok)
+
+        if pos < max_group:
+            raise ValueError(fr"{sub_str} groups are up to {pos} instead of {max_group}")
+
+        return groups_list
+
+    def tokens(new_tokenizer):
+        groups = self.groups(new_tokenizer)
+
+        new = CTokenizer()
+        # TODO: implement the replacement logic, by adding tokens to new
+
+
+
+
 class CMatch:
     """
     Finding nested delimiters is hard with regular expressions. It is
@@ -378,54 +446,14 @@ class CMatch:
 
         # Detect if sub_str contains sub arguments
 
-        sub_groups = {}
-        max_group = -1
-        for m in KernRe(r'\\\{(\d+)\}').findinter(sub_str):
-            group = int(m.group(1))
-            sub_groups.add(group)
-            max_group = max(max_group, group)
-
-        if sub_groups:
-            groups = [] * (max_group + 1)
+        args_match = CTokenArgs(sub_str)
 
         new_tokenizer = CTokenizer()
-        cur_pos = 0
-        for new_tokenizer in self._search(tokenizer):
-            if 0 in sub_groups:
-                groups[0] = new_tokenizer
-
-            #
-            # Create replacement arguments for \1, \2, \3,.. \{max_group}
-            #
-            if max_group:
-                delim = None
-                tokens = new_tokenizer.tokens
-                for i in range(1, max_group):
-                    tok = tokens[i]
-                    if tok.kind == CToken.BEGIN:
-                        if tok.value == "{":
-                            delim = ";"
-                        elif tok.value == "(":
-                            delim = ";"
-                        else:
-                            raise ValueError(fr"Can't handle \1..\n on {sub_str}")
-
-                pos = 1
-                while i < len(tokens) and pos <= max_group:
-                    if tok.kind == CToken.PUNC and delim == tok.value:
-                        pos += 1
-                        continue
-
-                    group[pos].append(tok)
+        # FIXME: add tokens before match
 
 
-            #
-            # TODO: tokenize sub_str, and use the replacement groups
-            #
-
-#            new_tokenizer.tokens += [sub_str]
-
-            cur_pos = end + 1
+        for new in self._search(tokenizer):
+            new_tokenizer.tokens += args_match.tokens(new)
 
         if cur_pos:
             new_tokenizer.tokens += tokenizer.tokens[cur_pos:]
