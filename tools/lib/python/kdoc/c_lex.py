@@ -270,28 +270,6 @@ class CMatch:
     will ignore the search string.
     """
 
-    # TODO: make CMatch handle multiple match groups
-    #
-    # Right now, regular expressions to match it are defined only up to
-    #       the start delimiter, e.g.:
-    #
-    #       \bSTRUCT_GROUP\(
-    #
-    # is similar to: STRUCT_GROUP\((.*)\)
-    # except that the content inside the match group is delimiter-aligned.
-    #
-    # The content inside parentheses is converted into a single replace
-    # group (e.g. r`\0').
-    #
-    # It would be nice to change such definition to support multiple
-    # match groups, allowing a regex equivalent to:
-    #
-    #   FOO\((.*), (.*), (.*)\)
-    #
-    # it is probably easier to define it not as a regular expression, but
-    # with some lexical definition like:
-    #
-    #   FOO(arg1, arg2, arg3)
 
     def __init__(self, regex):
         self.regex = KernRe(regex)
@@ -374,7 +352,7 @@ class CMatch:
             else:
                 yield str(new_tokenizer)
 
-    def sub(self, sub, line, count=0):
+    def sub(self, sub_str, line, count=0):
         """
         This is similar to re.sub:
 
@@ -398,10 +376,53 @@ class CMatch:
             is_token = False
             tokenizer = CTokenizer(source)
 
+        # Detect if sub_str contains sub arguments
+
+        sub_groups = {}
+        max_group = -1
+        for m in KernRe(r'\\\{(\d+)\}').findinter(sub_str):
+            group = int(m.group(1))
+            sub_groups.add(group)
+            max_group = max(max_group, group)
+
+        if sub_groups:
+            groups = [] * (max_group + 1)
+
         new_tokenizer = CTokenizer()
         cur_pos = 0
-        for start, end in self._search(tokenizer):
-            new_tokenizer.tokens += tokenizer.tokens[cur_pos:start]
+        for new_tokenizer in self._search(tokenizer):
+            if 0 in sub_groups:
+                groups[0] = new_tokenizer
+
+            #
+            # Create replacement arguments for \1, \2, \3,.. \{max_group}
+            #
+            if max_group:
+                delim = None
+                tokens = new_tokenizer.tokens
+                for i in range(1, max_group):
+                    tok = tokens[i]
+                    if tok.kind == CToken.BEGIN:
+                        if tok.value == "{":
+                            delim = ";"
+                        elif tok.value == "(":
+                            delim = ";"
+                        else:
+                            raise ValueError(fr"Can't handle \1..\n on {sub_str}")
+
+                pos = 1
+                while i < len(tokens) and pos <= max_group:
+                    if tok.kind == CToken.PUNC and delim == tok.value:
+                        pos += 1
+                        continue
+
+                    group[pos].append(tok)
+
+
+            #
+            # TODO: tokenize sub_str, and use the replacement groups
+            #
+
 #            new_tokenizer.tokens += [sub_str]
 
             cur_pos = end + 1
