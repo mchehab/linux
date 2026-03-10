@@ -36,6 +36,8 @@ class CToken():
     NAME = 14       #: A name. Can be an ID or a type.
     SPACE = 15      #: Any space characters, including new lines
 
+    BACKREF = 16  #: Not a valid C sequence, but used at sub regex patterns.
+
     MISMATCH = 255  #: an error indicator: should never happen in practice.
 
     # Dict to convert from an enum interger into a string.
@@ -106,6 +108,8 @@ TOKEN_LIST = [
     (CToken.NAME,    r"[A-Za-z_][A-Za-z0-9_]*"),
 
     (CToken.SPACE,   r"[\s]+"),
+
+    (CToken.BACKREF, r"\\\d+"),
 
     (CToken.MISMATCH,r"."),
 ]
@@ -251,6 +255,8 @@ class CTokenArgs:
         self.sub_groups = {}
         self.max_group = -1
 
+        self.tokenizer = CTokenizer(sub_str)
+
         for m in KernRe(r'\\\{(\d+)\}').findinter(sub_str):
             group = int(m.group(1))
             sub_groups.add(group)
@@ -308,9 +314,13 @@ class CTokenArgs:
         groups = self.groups(new_tokenizer)
 
         new = CTokenizer()
-        # TODO: implement the replacement logic, by adding tokens to new
 
-
+        for tok in self.tokenizer:
+            if tok.kind == CToken.BACKREF:
+                group = int(tok.value[1:])
+                new.tokens.append(groups[group])
+            else:
+                new.tokens.append(tok.value)
 
 
 class CMatch:
@@ -363,7 +373,6 @@ class CMatch:
         """
 
         start = None
-        offset = -1
         started = False
 
         import sys
@@ -385,9 +394,8 @@ class CMatch:
 
             if tok.kind == CToken.END and tok.level == stack[-1][1]:
                 start, level = stack.pop()
-                offset = i
 
-                yield CTokenizer(tokenizer.tokens[start:offset + 1])
+                yield start, i
                 start = None
 
         #
@@ -397,7 +405,7 @@ class CMatch:
         #
         if start and offset < 0:
             print("WARNING: can't find an end", file=sys.stderr)
-            yield CTokenizer(tokenizer.tokens[start:])
+            yield start, len(tok)
 
     def search(self, source):
         """
@@ -414,7 +422,9 @@ class CMatch:
             tokenizer = CTokenizer(source)
             is_token = False
 
-        for new_tokenizer in self._search(tokenizer):
+        for start, end in self._search(tokenizer):
+            new_tokenizer = CTokenizer(tokenizer.tokens[start:end + 1])
+
             if is_token:
                 yield new_tokenizer
             else:
@@ -449,14 +459,25 @@ class CMatch:
         args_match = CTokenArgs(sub_str)
 
         new_tokenizer = CTokenizer()
-        # FIXME: add tokens before match
+        pos = 0
 
+        #
+        # NOTE: the code below doesn't consider overlays at sub.
+        # We may need to add some extra unit tests to check if those
+        # would cause problems. When replacing by "", this should not
+        # be a problem, but other transformations could be problematic
+        #
+        for start, end in self._search(tokenizer):
+            new_tokenizer.tokens += tokenizer.tokens[pos:start]
 
-        for new in self._search(tokenizer):
+            new = CTokenizer(tokenizer.tokens[start:end + 1])
+
             new_tokenizer.tokens += args_match.tokens(new)
 
-        if cur_pos:
-            new_tokenizer.tokens += tokenizer.tokens[cur_pos:]
+            pos = end + 1
+
+        if pos:
+            new_tokenizer.tokens += tokenizer.tokens[pos:]
 
         print(new_tokenizer.tokens)
 
