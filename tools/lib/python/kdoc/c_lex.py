@@ -254,28 +254,31 @@ class CTokenArgs:
     def __init__(self, sub_str):
         self.sub_groups = {}
         self.max_group = -1
+        self.level = (0, 0, 0)
 
-        self.tokenizer = CTokenizer(sub_str)
+        self.sub_tokeninzer = CTokenizer(sub_str)
 
         for m in KernRe(r'\\\{(\d+)\}').finditer(sub_str):
             group = int(m.group(1))
             sub_groups.add(group)
-            max_group = max(self.max_group, group)
+            self.max_group = max(self.max_group, group)
 
     def groups(self, new_tokenizer):
-        """Create replacement arguments for \1, \2, \3,.. \{max_group}"""
+        """Create replacement arguments for ``\1``, ``\2, ``\3``,.."""
 
         if self.max_group < 0:
             return []
 
-        groups_list = [] * (max_group + 1)
+        groups_list = [] * (self.max_group + 1)
+
+        print("#", self.max_group)
 
         #
         # Fill \0 with the full token contents
         #
         groups_list[0] = new_tokenizer.tokens
 
-        if not max_group:
+        if not self.max_group:
             return groups_list
 
         delim = None
@@ -295,18 +298,22 @@ class CTokenArgs:
                 else:
                     raise ValueError(fr"Can't handle \1..\n on {sub_str}")
 
+                self.level = tok.level
+
                 break
 
         pos = 1
-        while i < len(tokens) and pos <= max_group:
+        while i < len(tokens) and pos <= self.max_group:
             if tok.kind == CToken.PUNC and delim == tok.value:
                 pos += 1
                 continue
 
             groups_list[pos].append(tok)
 
-        if pos < max_group:
-            raise ValueError(fr"{sub_str} groups are up to {pos} instead of {max_group}")
+        if pos < self.max_group:
+            raise ValueError(fr"{sub_str} groups are up to {pos} instead of {self.max_group}")
+
+        print("GROUPS:", groups_list)
 
         return groups_list
 
@@ -315,13 +322,19 @@ class CTokenArgs:
 
         new = CTokenizer()
 
-        for tok in self.tokenizer:
+
+        print(self.sub_tokeninzer.tokens)
+
+        for tok in self.sub_tokeninzer.tokens:
             if tok.kind == CToken.BACKREF:
                 group = int(tok.value[1:])
-                new.tokens.append(groups[group])
-            else:
-                new.tokens.append(tok.value)
 
+                new_tok = CToken(CToken.NAME, groups[group], self.level)
+                new.tokens.append(new_tok)
+            else:
+                new.tokens.append(tok)
+
+        return new.tokens
 
 class CMatch:
     """
@@ -460,6 +473,7 @@ class CMatch:
 
         new_tokenizer = CTokenizer()
         pos = 0
+        n = 0
 
         #
         # NOTE: the code below doesn't consider overlays at sub.
@@ -476,12 +490,16 @@ class CMatch:
 
             pos = end + 1
 
-        if pos:
-            new_tokenizer.tokens += tokenizer.tokens[pos:]
+            n += 1
+            if count and n >= count:
+                break
 
-        print(new_tokenizer.tokens)
+        new_tokenizer.tokens += tokenizer.tokens[pos:]
 
-        return str(new_tokenizer)
+        if not is_token:
+            return str(new_tokenizer)
+
+        return new_tokenizer
 
     def __repr__(self):
         """

@@ -134,31 +134,28 @@ class TestSubMultipleMacros(TestCaseDiff):
     def test_acquires_simple(self):
         """Simple replacement test with __acquires"""
         line = "__acquires(ctx) foo();"
-        result = CMatch(r"__acquires\s*\(").sub("REPLACED", line)
+        result = CMatch(r"__acquires").sub("REPLACED", line)
 
-        self.assertNotIn("__acquires(", result)
-        self.assertIn("foo();", result)
+        self.assertEqual("REPLACED foo();", result)
 
     def test_acquires_multiple(self):
         """Multiple __acquires"""
         line = "__acquires(ctx) __acquires(other) bar();"
-        result = CMatch(r"__acquires\s*\(").sub("REPLACED", line)
+        result = CMatch(r"__acquires").sub("REPLACED", line)
 
-        self.assertNotIn("__acquires(", result)
-        self.assertEqual(result.count("REPLACED"), 2)
+        self.assertEqual("REPLACED REPLACED bar();", result)
 
     def test_acquires_nested_paren(self):
         """__acquires with nested pattern"""
         line = "__acquires((ctx1, ctx2)) baz();"
-        result = CMatch(r"__acquires\s*\(").sub("REPLACED", line)
+        result = CMatch(r"__acquires").sub("REPLACED", line)
 
-        self.assertNotIn("__acquires(", result)
-        self.assertIn("baz();", result)
+        self.assertEqual("REPLACED baz();", result)
 
     def test_must_hold(self):
         """__must_hold with a pointer"""
         line = "__must_hold(&lock) do_something();"
-        result = CMatch(r"__must_hold\s*\(").sub("REPLACED", line)
+        result = CMatch(r"__must_hold").sub("REPLACED", line)
 
         self.assertNotIn("__must_hold(", result)
         self.assertIn("do_something();", result)
@@ -166,7 +163,7 @@ class TestSubMultipleMacros(TestCaseDiff):
     def test_must_hold_shared(self):
         """__must_hold with an upercase defined value"""
         line = "__must_hold_shared(RCU) other();"
-        result = CMatch(r"__must_hold_shared\s*\(").sub("REPLACED", line)
+        result = CMatch(r"__must_hold_shared").sub("REPLACED", line)
 
         self.assertNotIn("__must_hold_shared(", result)
         self.assertIn("other();", result)
@@ -176,17 +173,17 @@ class TestSubMultipleMacros(TestCaseDiff):
         Ensure that unrelated text containing similar patterns is preserved
         """
         line = "call__acquires(foo);  // should stay intact"
-        result = CMatch(r"\b__acquires\s*\(").sub("REPLACED", line)
+        result = CMatch(r"\b__acquires").sub("REPLACED", line)
 
-        self.assertEqual(result, line)
+        self.assertLogicallyEqual(result, "call__acquires(foo);")
 
     def test_mixed_macros(self):
         """Add a mix of macros"""
         line = "__acquires(ctx) __releases(ctx) __must_hold(&lock) foo();"
 
-        result = CMatch(r"__acquires\s*\(").sub("REPLACED", line)
-        result = CMatch(r"__releases\s*\(").sub("REPLACED", result)
-        result = CMatch(r"__must_hold\s*\(").sub("REPLACED", result)
+        result = CMatch(r"__acquires").sub("REPLACED", line)
+        result = CMatch(r"__releases").sub("REPLACED", result)
+        result = CMatch(r"__must_hold").sub("REPLACED", result)
 
         self.assertNotIn("__acquires(", result)
         self.assertNotIn("__releases(", result)
@@ -197,7 +194,7 @@ class TestSubMultipleMacros(TestCaseDiff):
     def test_no_macro_remains(self):
         """Ensures that unmatched macros are untouched"""
         line = "do_something_else();"
-        result = CMatch(r"__acquires\s*\(").sub("REPLACED", line)
+        result = CMatch(r"__acquires").sub("REPLACED", line)
 
         self.assertEqual(result, line)
 
@@ -227,7 +224,7 @@ class TestSubSimple(TestCaseDiff):
     @classmethod
     def setUpClass(cls):
         """Define a CMatch to be used for all tests"""
-        cls.matcher = CMatch(re.compile(rf"{cls.MACRO}\s*\("))
+        cls.matcher = CMatch(re.compile(rf"{cls.MACRO}"))
 
     def test_sub_with_capture(self):
         """Test all arguments replacement with a single arg"""
@@ -284,7 +281,7 @@ class TestSubSimple(TestCaseDiff):
     def test_strip_multiple_acquires(self):
         """Check if spaces between removed delimiters will be dropped"""
         line = f"int {self.MACRO}(1)  {self.MACRO}(2 )   {self.MACRO}(3) foo;"
-        result = self.matcher.sub(r"", line)
+        result = self.matcher.sub("", line)
 
         self.assertLogicallyEqual(result, "int foo;")
 
