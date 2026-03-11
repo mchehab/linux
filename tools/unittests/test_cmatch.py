@@ -540,7 +540,26 @@ class TestSubWithLocalXforms(TestCaseDiff):
 
     def test_raw_struct_group_tagged(self):
         """
-        Test some  struct_group_tagged patterns from drivers/cxl/cxl.h.
+        Test cxl_regs with struct_group_tagged patterns from drivers/cxl/cxl.h.
+
+        NOTE:
+
+            This one has actually a violation from what kernel-doc would
+            expect: Kernel-doc regex expects only 3 members, but this is
+            actually defined as::
+
+                #define struct_group_tagged(TAG, NAME, MEMBERS...)
+
+            The replace expression there is::
+
+                struct \1 { \3 } \2;
+
+            but it should be really something like::
+
+                struct \1 { \3 \4 \5 \6 \7 \8 ... } \2;
+
+            a later fix would be needed to address it.
+
         """
         line = """
             struct cxl_regs {
@@ -576,8 +595,7 @@ class TestSubWithLocalXforms(TestCaseDiff):
             } component;;
 
             struct cxl_device_regs {
-                void __iomem *status, *mbox, *memdev;
-            } device_regs;;
+                void __iomem *status } device_regs;;
 
             struct cxl_pmu_regs {
                 void __iomem *pmu;
