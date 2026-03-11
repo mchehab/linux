@@ -281,18 +281,35 @@ class CTokenArgs:
         if self.max_group < 0:
             return 0, []
 
-        groups_list = [[]] * (self.max_group + 1)
+        tokens = new_tokenizer.tokens
 
         #
         # Fill \0 with the full token contents
         #
-        groups_list[0] = new_tokenizer.tokens
+        groups_list = [ [] ]
+
+        if 0 in self.sub_groups:
+            inner_level = 0
+
+            for i in range(0, len(tokens)):
+                tok = tokens[i]
+
+                if tok.kind == CToken.BEGIN:
+                    inner_level += 1
+                    continue
+
+                if tok.kind == CToken.END:
+                    inner_level -= 1
+                    if inner_level < 1:
+                        break
+
+                if inner_level:
+                    groups_list[0].append(tok)
 
         if not self.max_group:
             return 0, groups_list
 
         delim = None
-        tokens = new_tokenizer.tokens
         level = (0, 0, 0)
 
         #
@@ -313,6 +330,8 @@ class CTokenArgs:
                 break
 
         pos = 1
+        groups_list.append([])
+
         inner_level = 0
         for i in range(i + 1, len(tokens)):
             tok = tokens[i]
@@ -326,8 +345,10 @@ class CTokenArgs:
 
             if tok.kind == CToken.PUNC and delim == tok.value:
                 pos += 1
-                if pos >= self.max_group:
+                if pos > self.max_group:
                     break
+
+                groups_list.append([])
 
                 continue
 
@@ -337,7 +358,9 @@ class CTokenArgs:
             raise ValueError(fr"{sub_str} groups are up to {pos} instead of {self.max_group}")
 
         print(f"\nmax_groups: {self.max_group}, {self.sub_tokeninzer}")
-        print("GROUPS:", groups_list)
+        for i, group in enumerate(groups_list):
+            tmp = CTokenizer(group)
+            print(f"GROUP #{i}: {str(tmp)}")
 
         return level, groups_list
 

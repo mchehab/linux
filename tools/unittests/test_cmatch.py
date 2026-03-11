@@ -114,6 +114,9 @@ class TestCaseDiff(unittest.TestCase):
         a = re.sub(r"[\t ]+", " ", a.strip())
         b = re.sub(r"[\t ]+", " ", b.strip())
 
+        a = re.sub(r"\s+\n", "\n", a)
+        b = re.sub(r"\s+\n", "\n", b)
+
         a = re.sub(" ;", ";", a)
         b = re.sub(" ;", ";", b)
 
@@ -324,7 +327,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
 
         return text.strip()
 
-        cls.matcher = CMatch(r"\bstruct_group[\w\_]*\(")
+        cls.matcher = CMatch(r"\bstruct_group[\w\_]*")
 
     def test_struct_group(self):
         """
@@ -345,7 +348,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
         expected = """
             struct tx_pkt_info {
                     struct tx_sop_header sop;
-                    struct tx_segment_header seg;;
+                    struct tx_segment_header seg;
                     struct tx_eop_header eop;
                     u16 pkt_len;
                     u16 seq_num;
@@ -382,7 +385,6 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 __u8 DirectoryFlag;
                 __u16 ByteCount;        /* bct = 0 */
             } __packed OPEN_RSP;
-
             typedef struct {
                 struct_group_attr(common_attributes, __packed,
                     __le64 CreationTime;
@@ -419,7 +421,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 __le64 LastAccessTime;
                 __le64 LastWriteTime;
                 __le64 ChangeTime;
-                __le32 FileAttributes;;
+                __le32 FileAttributes;
                 __le64 AllocationSize;
                 __le64 EndOfFile;
                 __le16 FileType;
@@ -427,13 +429,12 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 __u8 DirectoryFlag;
                 __u16 ByteCount; /* bct = 0 */
             } OPEN_RSP;
-
         typedef struct {
             __le64 CreationTime;
             __le64 LastAccessTime;
             __le64 LastWriteTime;
             __le64 ChangeTime;
-            __le32 Attributes;;
+            __le32 Attributes;
             __u32 Pad1;
             __le64 AllocationSize;
             __le64 EndOfFile;
@@ -556,15 +557,17 @@ class TestSubWithSlashrefs(TestCaseDiff):
         """
         expected = """
             struct page_pool_params {
-                struct page_pool_params_fast fast; unsigned int order;
+                struct page_pool_params_fast fast;
+                unsigned int order;
                 unsigned int    pool_size;
                 int             nid;
                 struct device   *dev;
                 struct napi_struct *napi;
                 enum dma_data_direction dma_dir;
                 unsigned int    max_len;
-                unsigned int    offset;;
-                struct page_pool_params_slow slow; struct net_device *netdev;
+                unsigned int    offset;
+                struct page_pool_params_slow slow;
+                struct net_device *netdev;
                 unsigned int queue_idx;
                 unsigned int    flags;
                 /* private: used by test code only */
@@ -640,8 +643,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
             void **stack_pools __pt_guarded_by(&pool_lock);
         """
         expected = """
-            size_t pool_offset = DEPOT_POOL_SIZE;
-            struct list_head free_stacks;
+            size_t pool_offset = DEPOT_POOL_SIZE; struct list_head free_stacks;
             void **stack_pools;
         """
 
