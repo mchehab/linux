@@ -10,6 +10,8 @@ Those help caching regular expressions and do matching for kernel-doc.
 
 import re
 
+from copy import copy
+
 from .kdoc_re import KernRe
 
 class CToken():
@@ -254,8 +256,6 @@ class CTokenArgs:
     def __init__(self, sub_str):
         self.sub_groups = set()
         self.max_group = -1
-        self.level = (0, 0, 0)
-
         self.sub_tokeninzer = CTokenizer(sub_str)
 
         for m in KernRe(r'\\(\d+)').finditer(sub_str):
@@ -263,18 +263,25 @@ class CTokenArgs:
             self.sub_groups.add(group)
             self.max_group = max(self.max_group, group)
 
-        print(f"max_groups: {self.max_group}, {self.sub_tokeninzer}")
-
-
     def groups(self, new_tokenizer):
-        """Create replacement arguments for ``\1``, ``\2, ``\3``,.."""
+        """
+        Create replacement arguments for backrefs like:
+
+        ``\0``, ``\1``, ``\2``, ...``\n``
+
+        The logic is smart enough to only go up to the maximum required
+        argument, even if there are more.
+
+        If there is a backref for an argument above the limit, it will
+        raise an exception. Please notice that, on C, square brackets
+        don't have any separator on it. Trying to use ``\1``..``\n`` for
+        brackets also raise an exception.
+        """
 
         if self.max_group < 0:
-            return []
+            return 0, []
 
-        groups_list = [] * (self.max_group + 1)
-
-        print(groups_list)
+        groups_list = [[]] * (self.max_group + 1)
 
         #
         # Fill \0 with the full token contents
@@ -282,10 +289,11 @@ class CTokenArgs:
         groups_list[0] = new_tokenizer.tokens
 
         if not self.max_group:
-            return groups_list
+            return 0, groups_list
 
         delim = None
         tokens = new_tokenizer.tokens
+        level = (0, 0, 0)
 
         #
         # Ignore everything before BEGIN. The value of begin gives the
@@ -301,14 +309,26 @@ class CTokenArgs:
                 else:
                     raise ValueError(fr"Can't handle \1..\n on {sub_str}")
 
-                self.level = tok.level
-
+                level = tok.level
                 break
 
         pos = 1
-        while i < len(tokens) and pos <= self.max_group:
+        inner_level = 0
+        for i in range(i + 1, len(tokens)):
+            tok = tokens[i]
+
+            if tok.kind == CToken.BEGIN:
+                inner_level += 1
+            if tok.kind == CToken.END:
+                inner_level -= 1
+                if inner_level < 0:
+                    break
+
             if tok.kind == CToken.PUNC and delim == tok.value:
                 pos += 1
+                if pos >= self.max_group:
+                    break
+
                 continue
 
             groups_list[pos].append(tok)
@@ -316,15 +336,15 @@ class CTokenArgs:
         if pos < self.max_group:
             raise ValueError(fr"{sub_str} groups are up to {pos} instead of {self.max_group}")
 
+        print(f"\nmax_groups: {self.max_group}, {self.sub_tokeninzer}")
         print("GROUPS:", groups_list)
 
-        return groups_list
+        return level, groups_list
 
     def tokens(self, new_tokenizer):
-        groups = self.groups(new_tokenizer)
+        level, groups = self.groups(new_tokenizer)
 
         new = CTokenizer()
-
 
         print(self.sub_tokeninzer.tokens)
 
@@ -332,10 +352,16 @@ class CTokenArgs:
             if tok.kind == CToken.BACKREF:
                 group = int(tok.value[1:])
 
-                new_tok = CToken(CToken.NAME, groups[group], self.level)
-                new.tokens.append(new_tok)
+                for group_tok in groups[group]:
+                    new_tok = copy(group_tok)
+                    new_tok.level = level
+
+                    new.tokens += [ new_tok ]
             else:
-                new.tokens.append(tok)
+                new.tokens += [ tok ]
+
+        from pprint import pprint
+        pprint (new.tokens)
 
         return new.tokens
 
