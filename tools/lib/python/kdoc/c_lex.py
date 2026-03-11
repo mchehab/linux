@@ -251,18 +251,18 @@ class CTokenizer():
 
 class CTokenArgs:
     """Ancillary class to help using backrefs from sub matches."""
-    def __init__(sub_str):
+    def __init__(self, sub_str):
         self.sub_groups = {}
         self.max_group = -1
 
         self.tokenizer = CTokenizer(sub_str)
 
-        for m in KernRe(r'\\\{(\d+)\}').findinter(sub_str):
+        for m in KernRe(r'\\\{(\d+)\}').finditer(sub_str):
             group = int(m.group(1))
             sub_groups.add(group)
             max_group = max(self.max_group, group)
 
-    def groups(new_tokenizer):
+    def groups(self, new_tokenizer):
         """Create replacement arguments for \1, \2, \3,.. \{max_group}"""
 
         if self.max_group < 0:
@@ -310,7 +310,7 @@ class CTokenArgs:
 
         return groups_list
 
-    def tokens(new_tokenizer):
+    def tokens(self, new_tokenizer):
         groups = self.groups(new_tokenizer)
 
         new = CTokenizer()
@@ -430,7 +430,7 @@ class CMatch:
             else:
                 yield str(new_tokenizer)
 
-    def sub(self, sub_str, line, count=0):
+    def sub(self, sub_str, source, count=0):
         """
         This is similar to re.sub:
 

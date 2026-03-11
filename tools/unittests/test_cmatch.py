@@ -123,7 +123,7 @@ class TestCaseDiff(unittest.TestCase):
 # Tests doing with different macros
 #
 
-class TestMultipleMacros(TestCaseDiff):
+class TestSubMultipleMacros(TestCaseDiff):
     """
     Tests doing with different macros.
 
@@ -213,7 +213,7 @@ class TestMultipleMacros(TestCaseDiff):
 # use a single macro name for all replacements.
 #
 
-class TestDifferentReplacements(TestCaseDiff):
+class TestSubSimple(TestCaseDiff):
     """
     Test argument replacements.
 
@@ -290,11 +290,11 @@ class TestDifferentReplacements(TestCaseDiff):
 
 
 #
-# Test struct_group replacements
+# Test replacements with slashrefs
 #
 
 
-class TestRealUsecases(TestCaseDiff):
+class TestSubWithSlashrefs(TestCaseDiff):
     """
     Test diferent usecase patterns found at the Kernel.
 
