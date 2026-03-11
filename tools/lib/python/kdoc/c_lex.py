@@ -252,16 +252,19 @@ class CTokenizer():
 class CTokenArgs:
     """Ancillary class to help using backrefs from sub matches."""
     def __init__(self, sub_str):
-        self.sub_groups = {}
+        self.sub_groups = set()
         self.max_group = -1
         self.level = (0, 0, 0)
 
         self.sub_tokeninzer = CTokenizer(sub_str)
 
-        for m in KernRe(r'\\\{(\d+)\}').finditer(sub_str):
+        for m in KernRe(r'\\(\d+)').finditer(sub_str):
             group = int(m.group(1))
-            sub_groups.add(group)
+            self.sub_groups.add(group)
             self.max_group = max(self.max_group, group)
+
+        print(f"max_groups: {self.max_group}, {self.sub_tokeninzer}")
+
 
     def groups(self, new_tokenizer):
         """Create replacement arguments for ``\1``, ``\2, ``\3``,.."""
@@ -271,7 +274,7 @@ class CTokenArgs:
 
         groups_list = [] * (self.max_group + 1)
 
-        print("#", self.max_group)
+        print(groups_list)
 
         #
         # Fill \0 with the full token contents
