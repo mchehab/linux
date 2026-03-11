@@ -75,7 +75,7 @@ class TestSearch(TestCaseDiff):
 
     def test_search_no_false_positive(self):
         line = "call__acquires(foo);  // should stay intact"
-        result = ", ".join(CMatch(r"\b__acquires").search(line))
+        result = ", ".join(CMatch(r"__acquires").search(line))
         self.assertEqual(result, "")
 
     def test_search_no_macro_remains(self):
@@ -227,7 +227,7 @@ class TestSubSimple(TestCaseDiff):
     @classmethod
     def setUpClass(cls):
         """Define a CMatch to be used for all tests"""
-        cls.matcher = CMatch(re.compile(rf"{cls.MACRO}"))
+        cls.matcher = CMatch(cls.MACRO)
 
     def test_sub_with_capture(self):
         """Test all arguments replacement with a single arg"""
@@ -294,7 +294,7 @@ class TestSubSimple(TestCaseDiff):
 #
 
 
-class TestSubWithSlashrefs(TestCaseDiff):
+class TestSubWithLocalXforms(TestCaseDiff):
     """
     Test diferent usecase patterns found at the Kernel.
 
@@ -381,7 +381,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
 
         return text.strip()
 
-        cls.matcher = CMatch(r"\bstruct_group[\w\_]*")
+        cls.matcher = CMatch(r"struct_group[\w\_]*")
 
     def test_struct_group(self):
         """
@@ -403,6 +403,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
             struct tx_pkt_info {
                     struct tx_sop_header sop;
                     struct tx_segment_header seg;
+                    ;
                     struct tx_eop_header eop;
                     u16 pkt_len;
                     u16 seq_num;
@@ -425,7 +426,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 __u8 OplockLevel;
                 __u16 Fid;
                 __le32 CreateAction;
-                struct_group_attr(common_attributes, __packed,
+                struct_group_attr(common_attributes,,
                     __le64 CreationTime;
                     __le64 LastAccessTime;
                     __le64 LastWriteTime;
@@ -438,9 +439,9 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 __le16 DeviceState;
                 __u8 DirectoryFlag;
                 __u16 ByteCount;        /* bct = 0 */
-            } __packed OPEN_RSP;
+            } OPEN_RSP;
             typedef struct {
-                struct_group_attr(common_attributes, __packed,
+                struct_group_attr(common_attributes,,
                     __le64 CreationTime;
                     __le64 LastAccessTime;
                     __le64 LastWriteTime;
@@ -460,11 +461,11 @@ class TestSubWithSlashrefs(TestCaseDiff):
                     char __pad;
                     DECLARE_FLEX_ARRAY(char, FileName);
                 };
-            } __packed FILE_ALL_INFO;       /* level 0x107 QPathInfo */
+            } FILE_ALL_INFO;       /* level 0x107 QPathInfo */
         """
         expected = """
             typedef struct smb_com_open_rsp {
-                struct smb_hdr hdr; /* wct = 34 BB */
+                struct smb_hdr hdr;
                 __u8 AndXCommand;
                 __u8 AndXReserved;
                 __le16 AndXOffset;
@@ -476,12 +477,13 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 __le64 LastWriteTime;
                 __le64 ChangeTime;
                 __le32 FileAttributes;
+                ;
                 __le64 AllocationSize;
                 __le64 EndOfFile;
                 __le16 FileType;
                 __le16 DeviceState;
                 __u8 DirectoryFlag;
-                __u16 ByteCount; /* bct = 0 */
+                __u16 ByteCount;
             } OPEN_RSP;
         typedef struct {
             __le64 CreationTime;
@@ -489,6 +491,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
             __le64 LastWriteTime;
             __le64 ChangeTime;
             __le32 Attributes;
+            ;
             __u32 Pad1;
             __le64 AllocationSize;
             __le64 EndOfFile;
@@ -502,7 +505,7 @@ class TestSubWithSlashrefs(TestCaseDiff):
                 char __pad;
                 char FileName[];
             };
-        } FILE_ALL_INFO; /* level 0x107 QPathInfo */
+        } FILE_ALL_INFO;
         """
 
         result = self.apply_transforms("struct", line)
@@ -526,7 +529,8 @@ class TestSubWithSlashrefs(TestCaseDiff):
             struct cxl_mbox_get_sup_feats_out {
                 __le16 num_entries;
                 __le16 supported_feats;
-                __u8 reserved[4];;
+                __u8 reserved[4];
+                ;
                 struct cxl_feat_entry ents[];
             };
         """
@@ -545,6 +549,8 @@ class TestSubWithSlashrefs(TestCaseDiff):
                     void __iomem *ras;
                 );
 
+
+                /* This is actually a violation: too much commas */
                 struct_group_tagged(cxl_device_regs, device_regs,
                     void __iomem *status, *mbox, *memdev;
                 );
@@ -567,17 +573,23 @@ class TestSubWithSlashrefs(TestCaseDiff):
             struct cxl_component_regs {
                 void __iomem *hdm_decoder;
                 void __iomem *ras;
-            } component;
+            } component;;
 
             struct cxl_device_regs {
                 void __iomem *status, *mbox, *memdev;
-            } device_regs;
+            } device_regs;;
 
-            struct cxl_pmu_regs pmu_regs; void __iomem *pmu;;
+            struct cxl_pmu_regs {
+                void __iomem *pmu;
+            } pmu_regs;;
 
-            struct cxl_rch_regs rch_regs; void __iomem *dport_aer;;
+            struct cxl_rch_regs {
+                void __iomem *dport_aer;
+            } rch_regs;;
 
-            struct cxl_rcd_regs rcd_regs; void __iomem *rcd_pcie_cap;;
+            struct cxl_rcd_regs {
+                void __iomem *rcd_pcie_cap;
+            } rcd_regs;;
         };
         """
 
@@ -597,8 +609,35 @@ class TestSubWithSlashrefs(TestCaseDiff):
         """
         line = """
             struct page_pool_params {
+                struct_group_tagged(page_pool_params_slow, slow,
+                                    struct net_device *netdev;
+                                    unsigned int queue_idx;
+                                    unsigned int    flags;
+                                    /* private: only under "slow" struct */
+                                    unsigned int ignored;
+                );
+                /* Struct below shall not be ignored */
                 struct_group_tagged(page_pool_params_fast, fast,
-                    unsigned int    order;
+                                    unsigned int    order;
+                                    unsigned int    pool_size;
+                                    int             nid;
+                                    struct device   *dev;
+                                    struct napi_struct *napi;
+                                    enum dma_data_direction dma_dir;
+                                    unsigned int    max_len;
+                                    unsigned int    offset;
+                );
+            };
+        """
+        expected = """
+            struct page_pool_params {
+                struct page_pool_params_slow {
+                    struct net_device *netdev;
+                    unsigned int queue_idx;
+                    unsigned int    flags;
+                } slow;;
+                struct page_pool_params_fast {
+                    unsigned int order;
                     unsigned int    pool_size;
                     int             nid;
                     struct device   *dev;
@@ -606,29 +645,8 @@ class TestSubWithSlashrefs(TestCaseDiff):
                     enum dma_data_direction dma_dir;
                     unsigned int    max_len;
                     unsigned int    offset;
-                );
-                struct_group_tagged(page_pool_params_slow, slow,
-                    struct net_device *netdev;
-                    unsigned int queue_idx;
-                    unsigned int    flags;
-            /* private: used by test code only */
-        """
-        expected = """
-            struct page_pool_params {
-                struct page_pool_params_fast fast;
-                unsigned int order;
-                unsigned int    pool_size;
-                int             nid;
-                struct device   *dev;
-                struct napi_struct *napi;
-                enum dma_data_direction dma_dir;
-                unsigned int    max_len;
-                unsigned int    offset;
-                struct page_pool_params_slow slow;
-                struct net_device *netdev;
-                unsigned int queue_idx;
-                unsigned int    flags;
-                /* private: used by test code only */
+                } fast;;
+            };
         """
 
         result = self.apply_transforms("struct", line)

@@ -343,6 +343,7 @@ class CTokenArgs:
                 if inner_level < 0:
                     break
 
+            # FIXME: handle inner_level
             if tok.kind == CToken.PUNC and delim == tok.value:
                 pos += 1
                 if pos > self.max_group:
@@ -357,19 +358,12 @@ class CTokenArgs:
         if pos < self.max_group:
             raise ValueError(fr"{sub_str} groups are up to {pos} instead of {self.max_group}")
 
-        print(f"\nmax_groups: {self.max_group}, {self.sub_tokeninzer}")
-        for i, group in enumerate(groups_list):
-            tmp = CTokenizer(group)
-            print(f"GROUP #{i}: {str(tmp)}")
-
         return level, groups_list
 
     def tokens(self, new_tokenizer):
         level, groups = self.groups(new_tokenizer)
 
         new = CTokenizer()
-
-        print(self.sub_tokeninzer.tokens)
 
         for tok in self.sub_tokeninzer.tokens:
             if tok.kind == CToken.BACKREF:
@@ -382,9 +376,6 @@ class CTokenArgs:
                     new.tokens += [ new_tok ]
             else:
                 new.tokens += [ tok ]
-
-        from pprint import pprint
-        pprint (new.tokens)
 
         return new.tokens
 
@@ -415,7 +406,7 @@ class CMatch:
 
 
     def __init__(self, regex):
-        self.regex = KernRe(regex)
+        self.regex = KernRe("^" + regex + r"\b")
 
     def _search(self, tokenizer):
         """
