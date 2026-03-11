@@ -21,7 +21,7 @@ SRC_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(SRC_DIR, "../lib/python"))
 
 from kdoc.c_lex import CMatch
-from kdoc.xforms_lists import CTransforms
+from kdoc.kdoc_re import KernRe
 from unittest_helper import run_unittest
 
 #
@@ -302,10 +302,64 @@ class TestSubWithSlashrefs(TestCaseDiff):
     as it will import the actual replacement rules used by kernel-doc.
     """
 
+    struct_xforms = [
+        (CMatch("__attribute__"), ' '),
+        (CMatch('__aligned'), ' '),
+        (CMatch('__counted_by'), ' '),
+        (CMatch('__counted_by_(le|be)'), ' '),
+        (CMatch('__guarded_by'), ' '),
+        (CMatch('__pt_guarded_by'), ' '),
+
+        (CMatch('__cacheline_group_(begin|end)'), ''),
+
+        (CMatch('struct_group'), r'\2'),
+        (CMatch('struct_group_attr'), r'\3'),
+        (CMatch('struct_group_tagged'), r'struct \1 { \3 } \2;'),
+        (CMatch('__struct_group'), r'\4'),
+
+        (CMatch('__ETHTOOL_DECLARE_LINK_MODE_MASK'), r'DECLARE_BITMAP(\1, __ETHTOOL_LINK_MODE_MASK_NBITS)'),
+        (CMatch('DECLARE_PHY_INTERFACE_MASK',), r'DECLARE_BITMAP(\1, PHY_INTERFACE_MODE_MAX)'),
+        (CMatch('DECLARE_BITMAP'), r'unsigned long \1[BITS_TO_LONGS(\2)]'),
+
+        (CMatch('DECLARE_HASHTABLE'), r'unsigned long \1[1 << ((\2) - 1)]'),
+        (CMatch('DECLARE_KFIFO'), r'\2 *\1'),
+        (CMatch('DECLARE_KFIFO_PTR'), r'\2 *\1'),
+        (CMatch('(?:__)?DECLARE_FLEX_ARRAY'), r'\1 \2[]'),
+        (CMatch('DEFINE_DMA_UNMAP_ADDR'), r'dma_addr_t \1'),
+        (CMatch('DEFINE_DMA_UNMAP_LEN'), r'__u32 \1'),
+        (CMatch('VIRTIO_DECLARE_FEATURES'), r'union { u64 \1; u64 \1_array[VIRTIO_FEATURES_U64S]; }'),
+    ]
+
+    function_xforms = [
+        (CMatch('__printf'), ""),
+        (CMatch('__(?:re)?alloc_size'), ""),
+        (CMatch("__diagnose_as"), ""),
+        (CMatch("DECL_BUCKET_PARAMS"), r"\1, \2"),
+
+        (CMatch("__cond_acquires"), ""),
+        (CMatch("__cond_releases"), ""),
+        (CMatch("__acquires"), ""),
+        (CMatch("__releases"), ""),
+        (CMatch("__must_hold"), ""),
+        (CMatch("__must_not_hold"), ""),
+        (CMatch("__must_hold_shared"), ""),
+        (CMatch("__cond_acquires_shared"), ""),
+        (CMatch("__acquires_shared"), ""),
+        (CMatch("__releases_shared"), ""),
+        (CMatch("__attribute__"), ""),
+    ]
+
+    var_xforms = [
+        (CMatch('__guarded_by'), ""),
+        (CMatch('__pt_guarded_by'), ""),
+        (CMatch("LIST_HEAD"), r"struct list_head \1"),
+    ]
+
+    #: Transforms main dictionary used at apply_transforms().
     xforms = {
-        "func":   CTransforms.function_xforms,
-        "struct": CTransforms.struct_xforms,
-        "var":    CTransforms.var_xforms,
+        "struct": struct_xforms,
+        "func": function_xforms,
+        "var": var_xforms,
     }
 
     @classmethod
@@ -510,10 +564,14 @@ class TestSubWithSlashrefs(TestCaseDiff):
         """
         expected = """
         struct cxl_regs {
-            struct cxl_component_regs component; void __iomem *hdm_decoder;
-            void __iomem *ras;;
+            struct cxl_component_regs {
+                void __iomem *hdm_decoder;
+                void __iomem *ras;
+            } component;
 
-            struct cxl_device_regs device_regs; void __iomem *status;
+            struct cxl_device_regs {
+                void __iomem *status, *mbox, *memdev;
+            } device_regs;
 
             struct cxl_pmu_regs pmu_regs; void __iomem *pmu;;
 
@@ -643,7 +701,8 @@ class TestSubWithSlashrefs(TestCaseDiff):
             void **stack_pools __pt_guarded_by(&pool_lock);
         """
         expected = """
-            size_t pool_offset = DEPOT_POOL_SIZE; struct list_head free_stacks;
+            size_t pool_offset = DEPOT_POOL_SIZE;
+            struct list_head free_stacks;
             void **stack_pools;
         """
 

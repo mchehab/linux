@@ -468,9 +468,9 @@ class CMatch:
         # This is meant to solve cases where the caller logic might be
         # picking an incomplete block.
         #
-        if start and offset < 0:
+        if start and stack:
             print("WARNING: can't find an end", file=sys.stderr)
-            yield start, len(tok)
+            yield start, len(tokenizer.tokens)
 
     def search(self, source):
         """
