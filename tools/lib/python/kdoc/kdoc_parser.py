@@ -566,14 +566,7 @@ class KernelDoc:
         """
 
         type_pattern = r'(struct|union)'
-        qualifiers = [
-            "__attribute__",
-            "__packed",
-            "__aligned",
-            "____cacheline_aligned_in_smp",
-            "____cacheline_aligned",
-        ]
-        definition_body = r'\{(.*)\}\s*' + "(?:" + '|'.join(qualifiers) + ")?"
+        definition_body = r'\{(.*)\}\s*'
 
         r = KernRe(type_pattern + r'\s+(\w+)\s*' + definition_body)
         if r.search(proto):
@@ -722,9 +715,10 @@ class KernelDoc:
         Store an entry for a ``struct`` or ``union``
         """
         #
-        # Do the basic parse to get the pieces of the declaration.
+        # Go through the list of members applying all of our transformations.
         #
-        proto = trim_private_members(proto)
+        proto = self.xforms.apply("struct", proto)
+
         struct_parts = self.split_struct_proto(proto)
         if not struct_parts:
             self.emit_msg(ln, f"{proto} error: Cannot parse struct or union!")
@@ -735,10 +729,6 @@ class KernelDoc:
             self.emit_msg(ln, f"expecting prototype for {decl_type} {self.entry.identifier}. "
                           f"Prototype was for {decl_type} {declaration_name} instead\n")
             return
-        #
-        # Go through the list of members applying all of our transformations.
-        #
-        members = self.xforms.apply("struct", members)
 
         #
         # Deal with embedded struct and union members, and drop enums entirely.
