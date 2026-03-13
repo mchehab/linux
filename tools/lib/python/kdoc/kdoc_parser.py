@@ -724,6 +724,7 @@ class KernelDoc:
         #
         # Do the basic parse to get the pieces of the declaration.
         #
+        proto = trim_private_members(proto)
         struct_parts = self.split_struct_proto(proto)
         if not struct_parts:
             self.emit_msg(ln, f"{proto} error: Cannot parse struct or union!")
@@ -764,6 +765,7 @@ class KernelDoc:
         # Strip preprocessor directives.  Note that this depends on the
         # trailing semicolon we added in process_proto_type().
         #
+        proto = trim_private_members(proto)
         proto = KernRe(r'#\s*((define|ifdef|if)\s+|endif)[^;]*;', flags=re.S).sub('', proto)
         #
         # Parse out the name and members of the enum.  Typedef form first.
@@ -771,7 +773,7 @@ class KernelDoc:
         r = KernRe(r'typedef\s+enum\s*\{(.*)\}\s*(\w*)\s*;')
         if r.search(proto):
             declaration_name = r.group(2)
-            members = trim_private_members(r.group(1))
+            members = r.group(1)
         #
         # Failing that, look for a straight enum
         #
@@ -779,7 +781,7 @@ class KernelDoc:
             r = KernRe(r'enum\s+(\w*)\s*\{(.*)\}')
             if r.match(proto):
                 declaration_name = r.group(1)
-                members = trim_private_members(r.group(2))
+                members = r.group(2)
         #
         # OK, this isn't going to work.
         #
