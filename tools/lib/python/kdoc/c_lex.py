@@ -130,7 +130,7 @@ TOKEN_LIST = [
     (CToken.STRUCT,  r"\bstruct\b"),
     (CToken.UNION,   r"\bunion\b"),
     (CToken.ENUM,    r"\benum\b"),
-    (CToken.TYPEDEF, r"\bkinddef\b"),
+    (CToken.TYPEDEF, r"\btypedef\b"),
 
     (CToken.NAME,    r"[A-Za-z_][A-Za-z0-9_]*"),
 
@@ -295,6 +295,84 @@ class CTokenizer():
             out += str(tok.value)
 
         return out
+
+class PickTokens:
+    """
+    Ancillary class to allow navigating on tokens.
+    """
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.start = 0
+        self.end = len(tokens)
+
+    def skip_begin_spaces(self):
+        """
+        Skip whitespaces, tabs and blank lines at the begin.
+        """
+        if self.start >= self.end:
+            return
+
+        while self.tokens[self.start].kind in [CToken.SPACE, CToken.COMMENT]:
+            self.start += 1
+            if self.start >= self.end:
+                return
+
+    def skip_end_spaces(self):
+        """
+        Skip whitespaces, tabs and blank lines at the end.
+        """
+        if self.start >= self.end:
+            return
+
+        while self.tokens[self.end - 1].kind in [CToken.SPACE, CToken.COMMENT]:
+            self.end -= 1
+            if self.start >= self.end:
+                return
+
+    def get(self, kind=None):
+        """
+        Get next begin token.
+        """
+
+        self.skip_begin_spaces()
+
+        if self.start >= self.end:
+            return None
+
+        if kind and self.tokens[self.start].kind != kind:
+            return None
+
+        token = self.tokens[self.start]
+        self.start += 1
+
+        return token
+
+    def pop(self, kind=None):
+        """
+        Get next final token.
+        """
+
+        self.skip_end_spaces()
+
+        if self.start >= self.end:
+            return None
+
+        if kind and self.tokens[self.end - 1].kind != kind:
+            return None
+
+        self.end -= 1
+        return self.tokens[self.end]
+
+    def get_remaining(self):
+        """
+        Get the remaining tokens that weren't picked previously.
+        May be an empty list.
+        """
+
+        self.skip_begin_spaces()
+        self.skip_end_spaces()
+
+        return self.tokens[self.start: self.end]
 
 
 class CTokenArgs:
