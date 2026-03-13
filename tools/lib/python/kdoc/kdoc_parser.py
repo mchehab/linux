@@ -14,8 +14,7 @@ import re
 from pprint import pformat
 
 from kdoc.kdoc_re import KernRe
-from kdoc.c_lex import tokenizer_set_log
-from kdoc.c_lex import CTokenizer
+from kdoc.c_lex import tokenizer_set_log, CTokenizer, CToken, PickTokens
 from kdoc.kdoc_item import KdocItem
 
 #
@@ -561,21 +560,77 @@ class KernelDoc:
 
     def split_struct_proto(self, proto):
         """
-        Split apart a structure prototype; returns (struct|union, name,
-        members) or ``None``.
+        Split apart ``struct``, ``union`` and ``typedef`` prototypes.
+
+        Returns:
+            (struct|union, name, typedef_name, members) or ``None``.
         """
+        tokens = PickTokens(CTokenizer(proto).tokens)
+        typedef_name = None
+        decl_type = None
+        declaration_name = None
+        has_end = None
 
-        type_pattern = r'(struct|union)'
-        definition_body = r'\{(.*)\}\s*'
+        #
+        # Check if statement is properly finished, eating keyword
+        #
+        tok = tokens.pop()
+        if not tok:
+            return None
 
-        r = KernRe(type_pattern + r'\s+(\w+)\s*' + definition_body)
-        if r.search(proto):
-            return (r.group(1), r.group(2), r.group(3))
-        else:
-            r = KernRe(r'typedef\s+' + type_pattern + r'\s*' + definition_body + r'\s*(\w+)\s*;')
-            if r.search(proto):
-                return (r.group(1), r.group(3), r.group(2))
-        return None
+        if tok.kind != CToken.PUNC or tok.value != ";":
+            return None
+
+        #
+        # Discover the type of prototype
+        #
+
+        tok = tokens.get()
+        if not tok:
+            return None
+
+        if tok.kind == CToken.TYPEDEF:
+            #
+            # Starts with a typedef. Picks its name
+            #
+
+            decl_type = tok.value
+
+            tok = tokens.pop(kind=CToken.NAME)
+            if not tok:
+                return None
+
+            typedef_name = tok.value
+
+            tok = tokens.get()
+            if not tok:
+                return None
+
+        if (tok.kind == CToken.STRUCT or
+            tok.kind == CToken.UNION):
+
+            decl_type = tok.value
+
+            #
+            # Get name if not anonymous
+            #
+            name_tok = tokens.get(kind=CToken.NAME)
+            if name_tok:
+                declaration_name = name_tok.value
+
+            members = str(CTokenizer(tokens.get_remaining()))
+
+            if not typedef_name and not declaration_name:
+                return None
+
+            return decl_type, declaration_name, typedef_name, members
+
+        #
+        # It is a typedef where members define a type
+        #
+
+        members = str(CTokenizer(tokens.get_remaining()))
+        return decl_type, declaration_name, typedef_name, members
 
     def rewrite_struct_members(self, members):
         """
@@ -720,10 +775,15 @@ class KernelDoc:
         proto = self.xforms.apply("struct", proto)
 
         struct_parts = self.split_struct_proto(proto)
-        if not struct_parts:
+
+        if struct_parts:
+            decl_type, declaration_name, typedef_name, members = struct_parts
+        else:
+            declaration_name = None
+
+        if not declaration_name:
             self.emit_msg(ln, f"{proto} error: Cannot parse struct or union!")
             return
-        decl_type, declaration_name, members = struct_parts
 
         if self.entry.identifier != declaration_name:
             self.emit_msg(ln, f"expecting prototype for {decl_type} {self.entry.identifier}. "
