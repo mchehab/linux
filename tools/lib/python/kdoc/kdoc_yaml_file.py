@@ -103,12 +103,12 @@ class KDocTestFile():
         if not symbols:
             return
 
-        expected_dict = {}
-        start_line=1
+        start_line = 1
 
         for arg in symbols:
             source = arg.get("source", "")
 
+            expected_dict = {}
             if arg and "KdocItem" in self.yaml_content:
                 msg = self.get_kdoc_item(arg)
 
@@ -150,8 +150,6 @@ class KDocTestFile():
             }
 
             self.tests.append(test)
-
-            expected_dict = {}
 
     def write(self):
         """
