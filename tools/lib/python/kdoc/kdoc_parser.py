@@ -1030,7 +1030,7 @@ class KernelDoc:
         self.output_declaration(decl_type, declaration_name,
                                 source=source,
                                 typedef=('typedef' in return_type),
-                                functiontype=return_type,
+                                functiontype=return_type.strip(),
                                 purpose=self.entry.declaration_purpose,
                                 func_macro=func_macro)
 
@@ -1070,7 +1070,7 @@ class KernelDoc:
             self.output_declaration('function', declaration_name,
                                     source=source,
                                     typedef=True,
-                                    functiontype=return_type,
+                                    functiontype=return_type.strip(),
                                     purpose=self.entry.declaration_purpose)
             return
         #
