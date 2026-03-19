@@ -45,9 +45,13 @@ env = {
 #
 # Ancillary logic to clean whitespaces
 #
-#: Regex to help cleaning whitespaces
+#: Regex to help cleaning multiple whitespaces.
 RE_WHITESPC = re.compile(r"[ \t]++")
+
+#: Regex to help cleaning whitespaces at beginning of lines.
 RE_BEGINSPC = re.compile(r"^\s+", re.MULTILINE)
+
+#: Regex to help cleaning whitespaces at the end of lines.
 RE_ENDSPC = re.compile(r"\s+$", re.MULTILINE)
 
 def clean_whitespc(val, relax_whitespace=False):
@@ -60,10 +64,12 @@ def clean_whitespc(val, relax_whitespace=False):
 
     if isinstance(val, str):
         val = val.strip()
+        val = RE_ENDSPC.sub("", val)
+
         if relax_whitespace:
             val = RE_WHITESPC.sub(" ", val)
             val = RE_BEGINSPC.sub("", val)
-            val = RE_ENDSPC.sub("", val)
+
     elif isinstance(val, list):
         val = [clean_whitespc(item, relax_whitespace) for item in val]
     elif isinstance(val, dict):
