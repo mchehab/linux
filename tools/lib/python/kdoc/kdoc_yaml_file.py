@@ -160,7 +160,15 @@ class KDocTestFile():
         # Helper function to better handle multilines
         def str_presenter(dumper, data):
             if "\n" in data:
-                return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+                #
+                # YAML won't accept literal style if line ends with whitespaces
+                #
+                out = ""
+                for line in data.splitlines():
+                    out += line.rstrip() + "\n"
+
+                return dumper.represent_scalar("tag:yaml.org,2002:str",
+                                               out, style="|")
 
             return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
