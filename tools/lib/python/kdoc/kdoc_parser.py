@@ -14,6 +14,7 @@ import re
 from pprint import pformat
 
 from kdoc.c_lex import CTokenizer, tokenizer_set_log
+from kdoc.data_parser import CDataItem, CDataParser
 from kdoc.kdoc_re import KernRe
 from kdoc.kdoc_item import KdocItem
 
@@ -559,127 +560,6 @@ class KernelDoc:
             self.emit_msg(ln,
                           f"No description found for return value of '{declaration_name}'")
 
-    def split_struct_proto(self, proto):
-        """
-        Split apart a structure prototype; returns (struct|union, name,
-        members) or ``None``.
-        """
-
-        type_pattern = r'(struct|union)'
-        qualifiers = [
-            "__attribute__",
-            "__packed",
-            "__aligned",
-            "____cacheline_aligned_in_smp",
-            "____cacheline_aligned",
-        ]
-        definition_body = r'\{(.*)\}\s*' + "(?:" + '|'.join(qualifiers) + ")?"
-
-        r = KernRe(type_pattern + r'\s+(\w+)\s*' + definition_body)
-        if r.search(proto):
-            return (r.group(1), r.group(2), r.group(3))
-        else:
-            r = KernRe(r'typedef\s+' + type_pattern + r'\s*' + definition_body + r'\s*(\w+)\s*;')
-            if r.search(proto):
-                return (r.group(1), r.group(3), r.group(2))
-        return None
-
-    def rewrite_struct_members(self, members):
-        """
-        Process ``struct``/``union`` members from the most deeply nested
-        outward.
-
-        Rewrite the members of a ``struct`` or ``union`` for easier formatting
-        later on. Among other things, this function will turn a member like::
-
-          struct { inner_members; } foo;
-
-        into::
-
-          struct foo; inner_members;
-        """
-
-        #
-        # The trick is in the ``^{`` below - it prevents a match of an outer
-        # ``struct``/``union`` until the inner one has been munged
-        # (removing the ``{`` in the process).
-        #
-        struct_members = KernRe(r'(struct|union)'   # 0: declaration type
-                                r'([^\{\};]+)' 	    # 1: possible name
-                                r'(\{)'
-                                r'([^\{\}]*)'       # 3: Contents of declaration
-                                r'(\})'
-                                r'([^\{\};]*)(;)')  # 5: Remaining stuff after declaration
-        tuples = struct_members.findall(members)
-        while tuples:
-            for t in tuples:
-                newmember = ""
-                oldmember = "".join(t) # Reconstruct the original formatting
-                dtype, name, lbr, content, rbr, rest, semi = t
-                #
-                # Pass through each field name, normalizing the form and formatting.
-                #
-                for s_id in rest.split(','):
-                    s_id = s_id.strip()
-                    newmember += f"{dtype} {s_id}; "
-                    #
-                    # Remove bitfield/array/pointer info, getting the bare name.
-                    #
-                    s_id = KernRe(r'[:\[].*').sub('', s_id)
-                    s_id = KernRe(r'^\s*\**(\S+)\s*').sub(r'\1', s_id)
-                    #
-                    # Pass through the members of this inner structure/union.
-                    #
-                    for arg in content.split(';'):
-                        arg = arg.strip()
-                        #
-                        # Look for (type)(*name)(args) - pointer to function
-                        #
-                        r = KernRe(r'^([^\(]+\(\*?\s*)([\w.]*)(\s*\).*)')
-                        if r.match(arg):
-                            dtype, name, extra = r.group(1), r.group(2), r.group(3)
-                            # Pointer-to-function
-                            if not s_id:
-                                # Anonymous struct/union
-                                newmember += f"{dtype}{name}{extra}; "
-                            else:
-                                newmember += f"{dtype}{s_id}.{name}{extra}; "
-                        #
-                        # Otherwise a non-function member.
-                        #
-                        else:
-                            #
-                            # Remove bitmap and array portions and spaces around commas
-                            #
-                            arg = KernRe(r':\s*\d+\s*').sub('', arg)
-                            arg = KernRe(r'\[.*\]').sub('', arg)
-                            arg = KernRe(r'\s*,\s*').sub(',', arg)
-                            #
-                            # Look for a normal decl - "type name[,name...]"
-                            #
-                            r = KernRe(r'(.*)\s+([\S+,]+)')
-                            if r.search(arg):
-                                for name in r.group(2).split(','):
-                                    name = KernRe(r'^\s*\**(\S+)\s*').sub(r'\1', name)
-                                    if not s_id:
-                                        # Anonymous struct/union
-                                        newmember += f"{r.group(1)} {name}; "
-                                    else:
-                                        newmember += f"{r.group(1)} {s_id}.{name}; "
-                            else:
-                                newmember += f"{arg}; "
-                #
-                # At the end of the s_id loop, replace the original declaration with
-                # the munged version.
-                #
-                members = members.replace(oldmember, newmember)
-            #
-            # End of the tuple loop - search again and see if there are outer members
-            # that now turn up.
-            #
-            tuples = struct_members.findall(members)
-        return members
-
     def format_struct_decl(self, declaration):
         """
         Format the ``struct`` declaration into a standard form for inclusion
@@ -716,7 +596,6 @@ class KernelDoc:
                     level += 1
         return declaration
 
-
     def dump_struct(self, ln, proto, source):
         """
         Store an entry for a ``struct`` or ``union``
@@ -725,37 +604,52 @@ class KernelDoc:
         # Do the basic parse to get the pieces of the declaration.
         #
         source = source
-        proto = trim_private_members(proto)
-        struct_parts = self.split_struct_proto(proto)
-        if not struct_parts:
-            self.emit_msg(ln, f"{proto} error: Cannot parse struct or union!")
+        proto = self.xforms.apply("struct", proto)
+
+        item = CDataParser(proto).item
+
+        decl_type = item.decl_type
+        declaration_name = item.decl_name
+        members = item.members
+
+        if decl_type not in ["struct", "union"]:
+            self.emit_msg(ln, f"expecting struct or union for {decl_type} {self.entry.identifier}\n")
             return
-        decl_type, declaration_name, members = struct_parts
 
         if self.entry.identifier != declaration_name:
             self.emit_msg(ln, f"expecting prototype for {decl_type} {self.entry.identifier}. "
                           f"Prototype was for {decl_type} {declaration_name} instead\n")
             return
-        #
-        # Go through the list of members applying all of our transformations.
-        #
-        members = self.xforms.apply("struct", members)
 
         #
-        # Deal with embedded struct and union members, and drop enums entirely.
+        # For inner structs/unions, the logic below accepts two ways of
+        # specifying parmeters:
+        #   - full name, with dots splitting each parameter
+        #   - just the data name.
         #
-        declaration = members
-        members = self.rewrite_struct_members(members)
-        members = re.sub(r'(\{[^\{\}]*\})', '', members)
-        #
-        # Output the result and we are done.
-        #
-        self.create_parameter_list(ln, decl_type, members, ';',
-                                   declaration_name)
+        for full_name in item.parameterlist:
+            param = full_name
+
+            if "." in full_name:
+                if param not in self.entry.parameterdescs:
+                    name = param.split(".")[-1]
+
+                    if name in self.entry.parameterdescs:
+                        param = name
+
+            if "{unnamed" in param:
+                self.entry.parameterdescs[param] = "anonymous\n"
+                self.entry.parameterlist.append(param)
+            elif param in self.entry.parameterdescs:
+                #
+                # Only add items that have a description
+                #
+                self.entry.parameterlist.append(param)
+
         self.check_sections(ln, declaration_name, decl_type)
         self.output_declaration(decl_type, declaration_name,
                                 source=source,
-                                definition=self.format_struct_decl(declaration),
+                                definition=self.format_struct_decl(members),
                                 purpose=self.entry.declaration_purpose)
 
     def dump_enum(self, ln, proto, source):
