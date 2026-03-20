@@ -238,8 +238,9 @@ class CDataParser:
                 # Ignore struct name if any
 
                 if i < end and tokens[i].kind == CToken.NAME:
-                    if self.item.decl_type and not self.item.decl_name:
-                        self.item.decl_name = tok.value
+                    if not self.item.decl_name:
+                        self.item.decl_type = tokens[prev_kind].value
+                        self.item.decl_name = tokens[i].value
 
                     i += 1
 
@@ -316,5 +317,3 @@ class CDataParser:
             token_list = []
 
         return parametertypes
-
-
