@@ -647,6 +647,10 @@ class KernelDoc:
                 self.entry.parameterlist.append(param)
                 self.entry.parametertypes[param] = item.parametertypes[full_name]
 
+            # HACK:
+            else:
+                print(f"Ignoring {full_name}")
+
         self.check_sections(ln, declaration_name, decl_type)
         self.output_declaration(decl_type, declaration_name,
                                 source=source,
