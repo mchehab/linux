@@ -50,7 +50,7 @@ class CToken():
     STRING = 1      #: A string, including quotation marks.
     CHAR = 2        #: A character, including apostophes.
     NUMBER = 3      #: A number.
-    PUNC = 4        #: A puntuation mark: / ``,`` / ``.``.
+    COMMA = 4       #: A comma character.
     BEGIN = 5       #: A begin character: ``{`` / ``[`` / ``(``.
     END = 6         #: A end character: ``}`` / ``]`` / ``)``.
     CPP = 7         #: A preprocessor macro.
@@ -63,8 +63,10 @@ class CToken():
     NAME = 14       #: A name. Can be an ID or a type.
     SPACE = 15      #: Any space characters, including new lines
     ENDSTMT = 16    #: End of an statement (``;``).
+    DOT = 17        #: A dot character.
 
-    BACKREF = 17    #: Not a valid C sequence, but used at sub regex patterns.
+    BACKREF = 18    #: Not a valid C sequence, but used at sub regex patterns.
+
 
     MISMATCH = 255  #: an error indicator: should never happen in practice.
 
@@ -120,7 +122,9 @@ RE_SCANNER_LIST = [
 
     (CToken.ENDSTMT, r"(?:\s+;|;)"),
 
-    (CToken.PUNC,    r"[,\.]"),
+    (CToken.COMMA,   r"[,]"),
+
+    (CToken.DOT,     r"[\.]"),
 
     (CToken.BEGIN,   r"[\[\(\{]"),
 
@@ -430,7 +434,7 @@ class CTokenArgs:
                 if inner_level < 0:
                     break
 
-            if tok.kind in [CToken.PUNC, CToken.ENDSTMT] and delim == tok.value:
+            if tok.kind in [CToken.COMMA, CToken.ENDSTMT] and delim == tok.value:
                 pos += 1
                 if self.greedy and pos > self.max_group:
                     pos -= 1
