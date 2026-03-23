@@ -117,7 +117,7 @@ TESTS_TOKENIZER = {
             CToken(CToken.BEGIN, "[", brace_level=1, paren_level=1, bracket_level=1),
             CToken(CToken.NUMBER, "0", brace_level=1, paren_level=1, bracket_level=1),
             CToken(CToken.END, "]", brace_level=1, paren_level=1),
-            CToken(CToken.PUNC, ",", brace_level=1, paren_level=1),
+            CToken(CToken.COMMA, ",", brace_level=1, paren_level=1),
             CToken(CToken.BEGIN, "(", brace_level=1, paren_level=2),
             CToken(CToken.NAME, "b", brace_level=1, paren_level=2),
             CToken(CToken.OP, "+", brace_level=1, paren_level=2),
