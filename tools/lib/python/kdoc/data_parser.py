@@ -130,6 +130,7 @@ class CDataParser:
             if cur_tok.level != start_level:
                 continue
 
+#            print(cur_tok)
 
             if cur_tok.kind == CToken.COMMA:
                 has_comma = True
@@ -174,6 +175,7 @@ class CDataParser:
         #
         # Pick remaining elements of the same type
         #
+        print(token_list[pos + 1:])
         if has_comma:
             type_name = ""
             for j in range(pos + 1, len(token_list)):
@@ -196,6 +198,9 @@ class CDataParser:
 
             if type_name:
                 type_list.append(type_name.strip())
+
+        print(name_list)
+        print(type_list)
 
         for i in range(0, len(name_list)):
             name = name_list[i]
