@@ -144,7 +144,7 @@ RE_SCANNER_LIST = [
 
     (CToken.END,     r"[\]\)\}]"),
 
-    (CToken.CPP,     r"#\s*(?:define|include|ifdef|ifndef|if|else|elif|endif|undef|pragma)\b"),
+    (CToken.CPP,     r"#\s*(?:define|include|ifdef|ifndef|if|else|elif|endif|undef|pragma)\b[^\n]*"),
 
     (CToken.HASH,    r"#"),
 
