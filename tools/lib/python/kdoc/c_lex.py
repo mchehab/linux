@@ -90,6 +90,20 @@ class CToken():
 
         return CToken.MISMATCH
 
+    @property
+    def bracket_level(self) -> int:
+        """Bracket level getter."""
+        return self.level[0]
+
+    @property
+    def paren_level(self) -> int:
+        """Parent level getter."""
+        return self.level[1]
+
+    @property
+    def brace_level(self) -> int:
+        """Brace level getter."""
+        return self.level[2]
 
     def __init__(self, kind, value=None, pos=0,
                  brace_level=0, paren_level=0, bracket_level=0):
