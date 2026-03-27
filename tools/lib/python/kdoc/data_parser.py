@@ -91,13 +91,18 @@ class CDataParser:
 
         self.item.members = str(members)
 
-        #
-        # Special case: handle variable declarations
-        #
-        if not self.item.decl_name and len(self.item.parameterlist) == 1:
-            self.item.decl_type = "var"
-            self.item.decl_name = self.item.parameterlist[0]
-            self.item.parameterlist = []
+        if self.item.decl_name:
+            if self.item.parameterlist:
+                if "{unnamed" in self.item.parameterlist[0]:
+                    self.item.parameterlist.pop(0)
+        else:
+            #
+            # Special case: handle variable declarations
+            #
+            if len(self.item.parameterlist) == 1:
+                self.item.decl_type = "var"
+                self.item.decl_name = self.item.parameterlist[0]
+                self.item.parameterlist = []
 
     def out_cur_type(self, token_list, parameterlist):
         #
